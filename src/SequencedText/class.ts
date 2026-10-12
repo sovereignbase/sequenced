@@ -1,26 +1,17 @@
-const segmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' })
 
-/**
- * Splits a string into user-perceived characters using grapheme segmentation.
- *
- * @param value The text to segment.
- * @returns An array of grapheme clusters in source order.
- */
-export function transformStringToGraphemeArray(value: string): string[] {
-  return Array.from(segmenter.segment(value), (x) => x.segment)
-}
 
 import {
-  Projection,
-  type Sequence,
-  type Gossip,
-  type Splice,
+  Projection
 } from '@sovereignbase/sequencer'
 
 import type {
+  SequencedTextSnapshot,
+  SequencedTextChange,
   SequencedTextEventMap,
   SequencedTextEventListenerFor,
 } from './types/type.js'
+
+import {transformStringToGraphemeArray} from "../.helpers/index.js"
 
 /**
  * Represents a convergent replicated text document backed by CR-List state.
@@ -50,16 +41,13 @@ export class SequencedText {
       },
     })
   }
-
   apply(delta: unknown): void {
     const result = this.projection.apply(delta)
     if (result?.[0]) void this.dispatchEvent('change', result[0])
     if (result?.[1]) void this.dispatchEvent('delta', result[1])
   }
 
-  get length(): number {
-    return this.projection.length()
-  }
+
 
   insert(at: number, characters: string): void {
     const delta = this.projection.insert(
@@ -70,6 +58,22 @@ export class SequencedText {
     void this.dispatchEvent('change', [
       [at, at + characters.length, characters],
     ])
+  }
+
+  
+  get length(): number {
+    return this.projection.length()
+  }
+
+  merge(snapshot: unknown): void {
+    const result = this.projection.merge(snapshot)
+    if (!result) return
+
+    const [change, delta] = result
+
+        if (delta) void this.dispatchEvent('delta', delta)
+
+    if (change) void this.dispatchEvent('change',change.map(()))
   }
 
   remove(
@@ -83,16 +87,19 @@ export class SequencedText {
     ])
   }
 
-  merge(snapshot: unknown): void {
-    const result = this.projection.merge(snapshot)
-    if (!result) return
+  replace(
+    selectionStart: number = 0,
+    selecectionEnd: number = this.length, characters:string = "") {
+          const delta = this.projection.replace(
+      transformStringToGraphemeArray(characters),
+      selecectionEnd,selectionStart
+    )
+    void this.dispatchEvent('delta', delta)
+    void this.dispatchEvent('change', [
+    ])
+    }
 
-    const [change, delta] = result
 
-        if (delta) void this.dispatchEvent('delta', delta)
-
-    if (change) void this.dispatchEvent('change', [[change[0], change[1], change.?[2].join("")]])
-  }
 
   /**
    * Dispatches a detached snapshot of the current state.
@@ -106,8 +113,8 @@ export class SequencedText {
    *
    * Called automatically by `JSON.stringify`.
    */
-  toJSON(): Sequence<string> {
-    return this.projection.sequence()
+  toJSON(): SequencedTextSnapshot {
+    return this.projection.sequence() 
   }
   /**
    * Returns this snapshot as a JSON string.
@@ -160,7 +167,7 @@ export class SequencedText {
    * @param listener The listener to register.
    * @param options Listener registration options.
    */
-  addEventListener<K extends keyof SequencedTextEventMap>(
+  public addEventListener<K extends keyof SequencedTextEventMap>(
     type: K,
     listener: SequencedTextEventListenerFor<K> | null,
     options?: boolean | AddEventListenerOptions
@@ -179,7 +186,7 @@ export class SequencedText {
    * @param listener The listener to remove.
    * @param options Listener removal options.
    */
-  removeEventListener<K extends keyof SequencedTextEventMap>(
+ public removeEventListener<K extends keyof SequencedTextEventMap>(
     type: K,
     listener: SequencedTextEventListenerFor<K> | null,
     options?: boolean | EventListenerOptions
@@ -191,7 +198,7 @@ export class SequencedText {
     )
   }
 
-  dispatchEvent<K extends keyof SequencedTextEventMap>(
+ public dispatchEvent<K extends keyof SequencedTextEventMap>(
     type: K,
     detail: SequencedTextEventMap[K]
   ) {
