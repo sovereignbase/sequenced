@@ -39,9 +39,23 @@ export class SequencedArray<T> {
     this.projection.remove(value)
   }
 
-  get(index: number): T | undefined {
-    return this.projection.value(index)
+  at(index: number): T | undefined {
+    return this.projection.value(index < 0 ? this.length + index : index)
   }
+
+  concat() {}
+
+  copyWithin() {
+  }
+
+  entries():ArrayIterator<[number, T]> {
+    return this.projection.values().entries()
+  }
+
+  every((value: T, index: number, array: T[]) => value is T, thisArg?: any) {
+    this.projection.values().every(predicate, thisArg?:)
+  }
+
 
   /**
    * Overwrites the visible value for a key.
@@ -84,7 +98,14 @@ export class SequencedArray<T> {
   }
 
   splice(start: number, deleteCount: number, ...items: T[]) {
-    const delta = this.projection.replace(items, start, deleteCount - 1)
+    const delta =
+      deleteCount >= 0
+        ? this.projection.insert(items, start < 0 ? this.length - start : start)
+        : this.projection.replace(
+            items,
+            start < 0 ? this.length - start : start,
+            deleteCount - 1
+          )
   }
 
   /**
@@ -157,9 +178,10 @@ export class SequencedArray<T> {
   /**
    * Iterates over detached copies of the current live entries.
    */
-  *[Symbol.iterator](): IterableIterator<[string, T]> {
-    for (const entry of this.state.values.values()) {
-      yield [entry.value.key, structuredClone(entry.value.value)]
+  *[Symbol.iterator](): IterableIterator<T> {
+    for (let index = 0; index < this.length; index++) {
+      const value = this.projection.value(index) as T
+      yield value
     }
   }
 
