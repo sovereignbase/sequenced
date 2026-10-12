@@ -6,12 +6,10 @@ import {
 
 import type {
   SequencedTextSnapshot,
-  SequencedTextChange,
   SequencedTextEventMap,
   SequencedTextEventListenerFor,
 } from './types/type.js'
 
-import {transformStringToGraphemeArray} from "../.helpers/index.js"
 
 /**
  * Represents a convergent replicated text document backed by CR-List state.
@@ -25,10 +23,13 @@ export class SequencedText {
    *
    * @param snapshot An optional detached snapshot used to hydrate the initial state.
    */
-  constructor(actorID: number, snapshot?: unknown) {
+  constructor(actorID: number, snapshot?: SequencedTextSnapshot) {
     void Object.defineProperties(this, {
-      state: {
-        value: new Projection(actorID, snapshot),
+      projection: {
+        value: new Projection<string>(
+          actorID,
+          snapshot && [snapshot[0], snapshot[1].split('')]
+        ),
         enumerable: false,
         configurable: false,
         writable: false,
@@ -43,20 +44,25 @@ export class SequencedText {
   }
   apply(delta: unknown): void {
     const result = this.projection.apply(delta)
-    if (result?.[0]) void this.dispatchEvent('change', result[0])
+    if (result?.[0]) void this.dispatchEvent('change', result[0].map(
+      ([start, end, values]) => values
+        ? [start, end, values.join('')]
+        : [start, end]
+    ))
     if (result?.[1]) void this.dispatchEvent('delta', result[1])
   }
 
 
 
   insert(at: number, characters: string): void {
+    if (characters.length === 0) return
     const delta = this.projection.insert(
-      transformStringToGraphemeArray(characters),
+      characters.split(''),
       at
     )
     void this.dispatchEvent('delta', delta)
     void this.dispatchEvent('change', [
-      [at, at + characters.length, characters],
+      [at, at, characters],
     ])
   }
 
@@ -65,21 +71,26 @@ export class SequencedText {
     return this.projection.length()
   }
 
-  merge(snapshot: unknown): void {
-    const result = this.projection.merge(snapshot)
+  merge(snapshot: SequencedTextSnapshot): void {
+    const result = this.projection.merge([snapshot[0], snapshot[1].split('')])
     if (!result) return
 
     const [change, delta] = result
 
         if (delta) void this.dispatchEvent('delta', delta)
 
-    if (change) void this.dispatchEvent('change',change.map(()))
+    if (change) void this.dispatchEvent('change', change.map(
+      ([start, end, values]) => values
+        ? [start, end, values.join('')]
+        : [start, end]
+    ))
   }
 
   remove(
     selectionStart: number = 0,
     selecectionEnd: number = this.length
   ): void {
+    if (selectionStart === selecectionEnd) return
     const delta = this.projection.remove(selectionStart, selecectionEnd - 1)
     void this.dispatchEvent('delta', delta)
     void this.dispatchEvent('change', [
@@ -90,12 +101,14 @@ export class SequencedText {
   replace(
     selectionStart: number = 0,
     selecectionEnd: number = this.length, characters:string = "") {
+    if (selectionStart === selecectionEnd) return this.insert(selectionStart, characters)
           const delta = this.projection.replace(
-      transformStringToGraphemeArray(characters),
-      selecectionEnd,selectionStart
+      characters.split(''),
+      selectionStart, selecectionEnd - 1
     )
     void this.dispatchEvent('delta', delta)
     void this.dispatchEvent('change', [
+      [selectionStart, selecectionEnd, characters],
     ])
     }
 
@@ -105,7 +118,7 @@ export class SequencedText {
    * Dispatches a detached snapshot of the current state.
    */
   snapshot(): void {
-    const snapshot = this.projection.sequence()
+    const snapshot = this.toJSON()
     if (snapshot) void this.dispatchEvent('snapshot', snapshot)
   }
   /**
@@ -114,7 +127,8 @@ export class SequencedText {
    * Called automatically by `JSON.stringify`.
    */
   toJSON(): SequencedTextSnapshot {
-    return this.projection.sequence() 
+    const [meta, values] = this.projection.sequence()
+    return [meta, values.join('')]
   }
   /**
    * Returns this snapshot as a JSON string.
