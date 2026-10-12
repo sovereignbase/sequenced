@@ -7,16 +7,20 @@ import type {
 } from './types/type.js'
 
 /**
- * Represents a convergent replicated text document backed by CR-List state.
+ * Represents a replicated text document with synchronous editing and change events.
+ *
+ * Positions and lengths are measured in UTF-16 code units. Editing ranges include
+ * the start position and exclude the end position.
  */
 export class SequencedText {
   declare private readonly projection: Projection<string>
   declare private readonly eventTarget: EventTarget
 
   /**
-   * Creates a new `SequencedText` instance.
+   * Creates a text document from an optional replication snapshot.
    *
-   * @param snapshot An optional detached snapshot used to hydrate the initial state.
+   * @param actorID The identifier of the local replica's actor.
+   * @param snapshot The replication state to restore. If omitted, the document is empty.
    */
   constructor(actorID: number, snapshot?: SequencedTextSnapshot) {
     void Object.defineProperties(this, {
@@ -37,6 +41,14 @@ export class SequencedText {
       },
     })
   }
+  /**
+   * Applies sequencer gossip to the document's replication state.
+   *
+   * Dispatches a `change` event with the resulting text edits and a `delta` event
+   * if the sequencer produces reply gossip.
+   *
+   * @param delta The gossip received from another replica.
+   */
   apply(delta: unknown): void {
     const result = this.projection.apply(delta)
     if (result?.[0])
@@ -49,6 +61,13 @@ export class SequencedText {
     if (result?.[1]) void this.dispatchEvent('delta', result[1])
   }
 
+  /**
+   * Inserts text at the specified position and dispatches `delta` and `change` events.
+   * An empty string leaves the document unchanged.
+   *
+   * @param at The insertion position, measured in UTF-16 code units.
+   * @param characters The text to insert.
+   */
   insert(at: number, characters: string): void {
     if (characters.length === 0) return
     const delta = this.projection.insert(characters.split(''), at)
@@ -56,10 +75,21 @@ export class SequencedText {
     void this.dispatchEvent('change', [[at, at, characters]])
   }
 
+  /**
+   * Returns the length of the visible text in UTF-16 code units.
+   */
   get length(): number {
     return this.projection.length()
   }
 
+  /**
+   * Merges a replication snapshot into the document's current state.
+   *
+   * Dispatches `delta` and `change` events for any reply gossip and text edits
+   * produced by the sequencer.
+   *
+   * @param snapshot The replication state to merge.
+   */
   merge(snapshot: SequencedTextSnapshot): void {
     const result = this.projection.merge([snapshot[0], snapshot[1].split('')])
     if (!result) return
@@ -77,6 +107,13 @@ export class SequencedText {
       )
   }
 
+  /**
+   * Removes the selected text and dispatches `delta` and `change` events.
+   * An empty selection leaves the document unchanged.
+   *
+   * @param selectionStart The inclusive start position in UTF-16 code units. Defaults to zero.
+   * @param selecectionEnd The exclusive end position in UTF-16 code units. Defaults to `length`.
+   */
   remove(
     selectionStart: number = 0,
     selecectionEnd: number = this.length
@@ -89,6 +126,14 @@ export class SequencedText {
     ])
   }
 
+  /**
+   * Replaces the selected text and dispatches `delta` and `change` events.
+   * An empty selection inserts the replacement text at the selection position.
+   *
+   * @param selectionStart The inclusive start position in UTF-16 code units. Defaults to zero.
+   * @param selecectionEnd The exclusive end position in UTF-16 code units. Defaults to `length`.
+   * @param characters The replacement text. Defaults to an empty string.
+   */
   replace(
     selectionStart: number = 0,
     selecectionEnd: number = this.length,
@@ -108,16 +153,18 @@ export class SequencedText {
   }
 
   /**
-   * Dispatches a detached snapshot of the current state.
+   * Dispatches a `snapshot` event containing the document's replication state.
    */
   snapshot(): void {
     const snapshot = this.toJSON()
     if (snapshot) void this.dispatchEvent('snapshot', snapshot)
   }
   /**
-   * Returns a detached structured-clone-compatible snapshot of this list.
+   * Returns a JSON-compatible snapshot of the document's replication state.
    *
-   * Called automatically by `JSON.stringify`.
+   * Called automatically by `JSON.stringify()`.
+   *
+   * @returns The structural metadata as a numeric array and the retained text content.
    */
   toJSON(): SequencedTextSnapshot {
     const [meta, values] = this.projection.sequence()
@@ -125,41 +172,41 @@ export class SequencedText {
   }
 
   /**
-   * Returns this snapshot as a JSON string.
+   * Returns the visible text as a string.
    */
   toString(): string {
     return this.valueOf()
   }
 
   /**
-   * Returns the current text projection as a string.
+   * Returns the visible text as a string.
    */
   valueOf(): string {
     return this.projection.values().join('')
   }
 
   /**
-   * Returns the current text projection when coerced to a primitive.
+   * Returns the visible text when the document is converted to a primitive value.
    */
   [Symbol.toPrimitive](): string {
     return this.valueOf()
   }
 
   /**
-   * Returns the Node.js console inspection representation.
+   * Returns the visible text for Node.js console inspection.
    */
   [Symbol.for('nodejs.util.inspect.custom')](): string {
     return this.valueOf()
   }
   /**
-   * Returns the Deno console inspection representation.
+   * Returns the visible text for Deno console inspection.
    */
   [Symbol.for('Deno.customInspect')](): string {
     return this.valueOf()
   }
 
   /**
-   * Iterates over detached copies of the current live values in index order.
+   * Returns an iterator over the visible UTF-16 code units in document order.
    */
   *[Symbol.iterator](): IterableIterator<string> {
     for (let index = 0; index < this.length; index++) {
@@ -170,11 +217,11 @@ export class SequencedText {
   }
 
   /**
-   * Registers an event listener.
+   * Registers a listener for the specified document event.
    *
    * @param type The event type to listen for.
    * @param listener The listener to register.
-   * @param options Listener registration options.
+   * @param options Listener options, or a boolean specifying whether to use capture.
    */
   public addEventListener<K extends keyof SequencedTextEventMap>(
     type: K,
@@ -189,11 +236,11 @@ export class SequencedText {
   }
 
   /**
-   * Removes an event listener.
+   * Removes a previously registered listener for the specified document event.
    *
    * @param type The event type to stop listening for.
    * @param listener The listener to remove.
-   * @param options Listener removal options.
+   * @param options Listener options, or a boolean specifying whether to use capture.
    */
   public removeEventListener<K extends keyof SequencedTextEventMap>(
     type: K,
@@ -207,6 +254,12 @@ export class SequencedText {
     )
   }
 
+  /**
+   * Synchronously dispatches a `CustomEvent` to the document's registered listeners.
+   *
+   * @param type The event type to dispatch.
+   * @param detail The payload exposed as the event's `detail` property.
+   */
   public dispatchEvent<K extends keyof SequencedTextEventMap>(
     type: K,
     detail: SequencedTextEventMap[K]
