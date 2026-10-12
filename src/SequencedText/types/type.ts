@@ -1,59 +1,44 @@
-import type {
-  CRListSnapshot,
-  CRListChange,
-  CRListAck,
-  CRListState,
-} from '@sovereignbase/convergent-replicated-list'
+import type { Gossip, Sequence, U32List } from '@sovereignbase/sequencer'
 
-/** CRText specific alias for CRListState */
-export type CRTextState = CRListState<string>
-/** CRText specific alias for CRListSnapshot */
-export type CRTextSnapshot = CRListSnapshot<string>
-/** CRText specific alias for CRListChange */
-export type CRTextChange = CRListChange<string>
-/** Partial CRTextSnapshot */
-export type CRTextDelta = Partial<CRTextSnapshot>
-/** CRText specific alias for CRListAck */
-export type CRTextAck = CRListAck
+export type SequencedTextSnapshot = Readonly<[meta: U32List, data: string]>
+
+export type SequencedTextChange = ReadonlyArray<
+  Readonly<[selectionStart: number, selectionEnd: number, characters?: string]>
+>
 
 /**
- * Maps `CRText` event names to their corresponding `CustomEvent.detail` payloads.
+ * Maps `SequencedText` event names to their corresponding `CustomEvent.detail` payloads.
  */
-export type CRTextEventMap = {
+export type SequencedTextEventMap = {
   /**
    * Fired after `snapshot()` materializes a detached snapshot.
    */
-  snapshot: CRTextSnapshot
+  snapshot: Sequence<string>
 
   /**
    * Fired after local or merged operations change the visible text projection.
    */
-  change: CRTextChange
+  change: SequencedTextChange
 
   /**
    * Fired after a local edit produces a replicable delta payload.
    */
-  delta: CRTextDelta
-
-  /**
-   * Fired after `acknowledge()` yields a frontier acknowledgement.
-   */
-  ack: CRTextAck
+  delta: Gossip<string>
 }
 
 /**
- * Represents a strongly typed `CRText` event listener.
+ * Represents a strongly typed `SequencedText` event listener.
  */
-export type CRTextEventListener<K extends keyof CRTextEventMap> =
-  | ((event: CustomEvent<CRTextEventMap[K]>) => void)
-  | { handleEvent(event: CustomEvent<CRTextEventMap[K]>): void }
+export type SequencedTextEventListener<K extends keyof SequencedTextEventMap> =
+  | ((event: CustomEvent<SequencedTextEventMap[K]>) => void)
+  | { handleEvent(event: CustomEvent<SequencedTextEventMap[K]>): void }
 
 /**
  * Resolves an event name to its corresponding listener type.
  */
-export type CRTextEventListenerFor<K extends string> =
-  K extends keyof CRTextEventMap
-    ? CRTextEventListener<K>
+export type SequencedTextEventListenerFor<K extends string> =
+  K extends keyof SequencedTextEventMap
+    ? SequencedTextEventListener<K>
     : EventListenerOrEventListenerObject
 
 /**

@@ -11,45 +11,33 @@ export function transformStringToGraphemeArray(value: string): string[] {
 }
 
 import {
-  __create,
-  __read,
-  __update,
-  __delete,
-  __merge,
-  __acknowledge,
-  __garbageCollect,
-  __snapshot,
-} from '@sovereignbase/convergent-replicated-list'
-import { CRTextError } from '../.errors/class.js'
-import {
-  dispatchCRTextEvent,
-  transformStringToGraphemeArray,
-} from '../.helpers/index.js'
+  Projection,
+  type Sequence,
+  type Gossip,
+  type Splice,
+} from '@sovereignbase/sequencer'
+
 import type {
-  CRTextEventMap,
-  CRTextEventListenerFor,
-  CRTextState,
-  CRTextSnapshot,
-  CRTextDelta,
-  CRTextAck,
-} from '../.types/type.js'
+  SequencedTextEventMap,
+  SequencedTextEventListenerFor,
+} from './types/type.js'
 
 /**
  * Represents a convergent replicated text document backed by CR-List state.
  */
-export class CRText {
-  declare private readonly state: CRTextState
+export class SequencedText {
+  declare private readonly projection: Projection<string>
   declare private readonly eventTarget: EventTarget
 
   /**
-   * Creates a new `CRText` instance.
+   * Creates a new `SequencedText` instance.
    *
    * @param snapshot An optional detached snapshot used to hydrate the initial state.
    */
-  constructor(snapshot?: CRTextSnapshot) {
+  constructor(actorID: number, snapshot?: unknown) {
     void Object.defineProperties(this, {
       state: {
-        value: __create<string>(snapshot),
+        value: new Projection(actorID, snapshot),
         enumerable: false,
         configurable: false,
         writable: false,
@@ -62,112 +50,64 @@ export class CRText {
       },
     })
   }
-  /**
-   * Returns the current number of grapheme clusters in the text projection.
-   */
-  get size(): number {
-    return this.state.size
+
+  apply(delta: unknown): void {
+    const result = this.projection.apply(delta)
+    if (result?.[0]) void this.dispatchEvent('change', result[0])
+    if (result?.[1]) void this.dispatchEvent('delta', result[1])
   }
 
-  /**
-   * Inserts characters immediately after the specified index.
-   *
-   * Pass `-1` to insert at the beginning of the document.
-   *
-   * @param index The anchor index after which the characters are inserted.
-   * @param characters The text to insert.
-   * @throws {CRTextError} Thrown when the arguments are not a number and string pair.
-   */
-  insertAfter(index: number, characters: string): void {
-    if (typeof index !== 'number' || typeof characters !== 'string')
-      throw new CRTextError(
-        'BAD_PARAMS',
-        '`index` must be typeof number and `characters` must be typeof string.'
-      )
-    let mode: 'after' | 'before' = 'after'
+  get length(): number {
+    return this.projection.length()
+  }
 
-    if (index === -1) {
-      index = 0
-      if (this.size > 0) mode = 'before'
-    }
-    const result = __update<string>(
-      index,
+  insert(at: number, characters: string): void {
+    const delta = this.projection.insert(
       transformStringToGraphemeArray(characters),
-      this.state,
-      mode
+      at
     )
+    void this.dispatchEvent('delta', delta)
+    void this.dispatchEvent('change', [
+      [at, at + characters.length, characters],
+    ])
+  }
+
+  remove(
+    selectionStart: number = 0,
+    selecectionEnd: number = this.length
+  ): void {
+    const delta = this.projection.remove(selectionStart, selecectionEnd - 1)
+    void this.dispatchEvent('delta', delta)
+    void this.dispatchEvent('change', [
+      [selectionStart ?? 0, selecectionEnd ?? this.length],
+    ])
+  }
+
+  merge(snapshot: unknown): void {
+    const result = this.projection.merge(snapshot)
     if (!result) return
-    const { delta, change } = result
-    if (delta) void dispatchCRTextEvent(this.eventTarget, 'delta', delta)
-    if (change) void dispatchCRTextEvent(this.eventTarget, 'change', change)
-  }
 
-  /**
-   * Removes characters starting at the specified index.
-   *
-   * @param index The inclusive start index to remove from.
-   * @param removeCount The number of characters to remove.
-   * @throws {CRTextError} Thrown when the arguments are not numeric.
-   */
-  removeAfter(index: number, removeCount: number): void {
-    if (typeof index !== 'number' || typeof removeCount !== 'number')
-      throw new CRTextError(
-        'BAD_PARAMS',
-        '`index` must be typeof number and `removeCount` must be typeof number.'
-      )
-    const result = __delete<string>(this.state, index, index + removeCount)
-    if (!result) return
-    const { delta, change } = result
-    if (delta) void dispatchCRTextEvent(this.eventTarget, 'delta', delta)
-    if (change) void dispatchCRTextEvent(this.eventTarget, 'change', change)
-  }
+    const [change, delta] = result
 
-  /**
-   * Merges a remote delta into this replica.
-   *
-   * Dispatches a `change` event when the merge updates the current projection.
-   *
-   * @param delta The remote delta to merge.
-   */
-  merge(delta: CRTextDelta): void {
-    const change = __merge(this.state, delta)
-    if (change) void dispatchCRTextEvent(this.eventTarget, 'change', change)
-  }
+        if (delta) void this.dispatchEvent('delta', delta)
 
-  /**
-   * Emits an acknowledgement frontier for the current replica state.
-   *
-   * Dispatches an `ack` event when an acknowledgement is produced.
-   */
-  acknowledge(): void {
-    const ack = __acknowledge(this.state)
-    if (ack) void dispatchCRTextEvent(this.eventTarget, 'ack', ack)
-  }
-
-  /**
-   * Removes tombstoned history acknowledged by every provided frontier.
-   *
-   * @param frontiers The acknowledgement frontiers that permit garbage collection.
-   */
-  garbageCollect(frontiers: Array<CRTextAck>): void {
-    void __garbageCollect(frontiers, this.state)
+    if (change) void this.dispatchEvent('change', [[change[0], change[1], change.?[2].join("")]])
   }
 
   /**
    * Dispatches a detached snapshot of the current state.
    */
   snapshot(): void {
-    const snapshot = __snapshot<string>(this.state)
-    if (snapshot)
-      void dispatchCRTextEvent(this.eventTarget, 'snapshot', snapshot)
+    const snapshot = this.projection.sequence()
+    if (snapshot) void this.dispatchEvent('snapshot', snapshot)
   }
   /**
    * Returns a detached structured-clone-compatible snapshot of this list.
    *
    * Called automatically by `JSON.stringify`.
    */
-  toJSON(): CRTextSnapshot {
-    return __snapshot<string>(this.state)
+  toJSON(): Sequence<string> {
+    return this.projection.sequence()
   }
   /**
    * Returns this snapshot as a JSON string.
@@ -179,8 +119,8 @@ export class CRText {
    * Iterates over detached copies of the current live values in index order.
    */
   *[Symbol.iterator](): IterableIterator<string> {
-    for (let index = 0; index < this.size; index++) {
-      const value = __read<string>(index, this.state)
+    for (let index = 0; index < this.length; index++) {
+      const value = this.projection.value(index)
       if (typeof value !== 'string') continue
       yield value
     }
@@ -190,14 +130,14 @@ export class CRText {
    * Returns the current text projection as a string.
    */
   valueOf(): string {
-    return [...this].join('')
+    return this.projection.values().join('')
   }
 
   /**
    * Returns the current text projection when coerced to a primitive.
    */
   [Symbol.toPrimitive](): string {
-    return [...this].join('')
+    return this.projection.values().join('')
   }
 
   /**
@@ -220,12 +160,12 @@ export class CRText {
    * @param listener The listener to register.
    * @param options Listener registration options.
    */
-  addEventListener<K extends keyof CRTextEventMap>(
+  addEventListener<K extends keyof SequencedTextEventMap>(
     type: K,
-    listener: CRTextEventListenerFor<K> | null,
+    listener: SequencedTextEventListenerFor<K> | null,
     options?: boolean | AddEventListenerOptions
   ): void {
-    this.eventTarget.addEventListener(
+    void this.eventTarget.addEventListener(
       type,
       listener as EventListenerOrEventListenerObject | null,
       options
@@ -239,15 +179,24 @@ export class CRText {
    * @param listener The listener to remove.
    * @param options Listener removal options.
    */
-  removeEventListener<K extends keyof CRTextEventMap>(
+  removeEventListener<K extends keyof SequencedTextEventMap>(
     type: K,
-    listener: CRTextEventListenerFor<K> | null,
+    listener: SequencedTextEventListenerFor<K> | null,
     options?: boolean | EventListenerOptions
   ): void {
-    this.eventTarget.removeEventListener(
+    void this.eventTarget.removeEventListener(
       type,
       listener as EventListenerOrEventListenerObject | null,
       options
+    )
+  }
+
+  dispatchEvent<K extends keyof SequencedTextEventMap>(
+    type: K,
+    detail: SequencedTextEventMap[K]
+  ) {
+    void this.eventTarget.dispatchEvent(
+      new CustomEvent<SequencedTextEventMap[K]>(type, { detail })
     )
   }
 }
