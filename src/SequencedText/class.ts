@@ -1,15 +1,10 @@
-
-
-import {
-  Projection
-} from '@sovereignbase/sequencer'
+import { Projection } from '@sovereignbase/sequencer'
 
 import type {
   SequencedTextSnapshot,
   SequencedTextEventMap,
   SequencedTextEventListenerFor,
 } from './types/type.js'
-
 
 /**
  * Represents a convergent replicated text document backed by CR-List state.
@@ -44,29 +39,23 @@ export class SequencedText {
   }
   apply(delta: unknown): void {
     const result = this.projection.apply(delta)
-    if (result?.[0]) void this.dispatchEvent('change', result[0].map(
-      ([start, end, values]) => values
-        ? [start, end, values.join('')]
-        : [start, end]
-    ))
+    if (result?.[0])
+      void this.dispatchEvent(
+        'change',
+        result[0].map(([start, end, values]) =>
+          values ? [start, end, values.join('')] : [start, end]
+        )
+      )
     if (result?.[1]) void this.dispatchEvent('delta', result[1])
   }
 
-
-
   insert(at: number, characters: string): void {
     if (characters.length === 0) return
-    const delta = this.projection.insert(
-      characters.split(''),
-      at
-    )
+    const delta = this.projection.insert(characters.split(''), at)
     void this.dispatchEvent('delta', delta)
-    void this.dispatchEvent('change', [
-      [at, at, characters],
-    ])
+    void this.dispatchEvent('change', [[at, at, characters]])
   }
 
-  
   get length(): number {
     return this.projection.length()
   }
@@ -77,13 +66,15 @@ export class SequencedText {
 
     const [change, delta] = result
 
-        if (delta) void this.dispatchEvent('delta', delta)
+    if (delta) void this.dispatchEvent('delta', delta)
 
-    if (change) void this.dispatchEvent('change', change.map(
-      ([start, end, values]) => values
-        ? [start, end, values.join('')]
-        : [start, end]
-    ))
+    if (change)
+      void this.dispatchEvent(
+        'change',
+        change.map(([start, end, values]) =>
+          values ? [start, end, values.join('')] : [start, end]
+        )
+      )
   }
 
   remove(
@@ -100,19 +91,21 @@ export class SequencedText {
 
   replace(
     selectionStart: number = 0,
-    selecectionEnd: number = this.length, characters:string = "") {
-    if (selectionStart === selecectionEnd) return this.insert(selectionStart, characters)
-          const delta = this.projection.replace(
+    selecectionEnd: number = this.length,
+    characters: string = ''
+  ) {
+    if (selectionStart === selecectionEnd)
+      return this.insert(selectionStart, characters)
+    const delta = this.projection.replace(
       characters.split(''),
-      selectionStart, selecectionEnd - 1
+      selectionStart,
+      selecectionEnd - 1
     )
     void this.dispatchEvent('delta', delta)
     void this.dispatchEvent('change', [
       [selectionStart, selecectionEnd, characters],
     ])
-    }
-
-
+  }
 
   /**
    * Dispatches a detached snapshot of the current state.
@@ -128,23 +121,14 @@ export class SequencedText {
    */
   toJSON(): SequencedTextSnapshot {
     const [meta, values] = this.projection.sequence()
-    return [meta, values.join('')]
+    return [Array.isArray(meta) ? meta : Array.from(meta), values.join('')]
   }
+
   /**
    * Returns this snapshot as a JSON string.
    */
   toString(): string {
-    return JSON.stringify(this)
-  }
-  /**
-   * Iterates over detached copies of the current live values in index order.
-   */
-  *[Symbol.iterator](): IterableIterator<string> {
-    for (let index = 0; index < this.length; index++) {
-      const value = this.projection.value(index)
-      if (typeof value !== 'string') continue
-      yield value
-    }
+    return this.valueOf()
   }
 
   /**
@@ -158,7 +142,7 @@ export class SequencedText {
    * Returns the current text projection when coerced to a primitive.
    */
   [Symbol.toPrimitive](): string {
-    return this.projection.values().join('')
+    return this.valueOf()
   }
 
   /**
@@ -172,6 +156,17 @@ export class SequencedText {
    */
   [Symbol.for('Deno.customInspect')](): string {
     return this.valueOf()
+  }
+
+  /**
+   * Iterates over detached copies of the current live values in index order.
+   */
+  *[Symbol.iterator](): IterableIterator<string> {
+    for (let index = 0; index < this.length; index++) {
+      const value = this.projection.value(index)
+      if (typeof value !== 'string') continue
+      yield value
+    }
   }
 
   /**
@@ -200,7 +195,7 @@ export class SequencedText {
    * @param listener The listener to remove.
    * @param options Listener removal options.
    */
- public removeEventListener<K extends keyof SequencedTextEventMap>(
+  public removeEventListener<K extends keyof SequencedTextEventMap>(
     type: K,
     listener: SequencedTextEventListenerFor<K> | null,
     options?: boolean | EventListenerOptions
@@ -212,7 +207,7 @@ export class SequencedText {
     )
   }
 
- public dispatchEvent<K extends keyof SequencedTextEventMap>(
+  public dispatchEvent<K extends keyof SequencedTextEventMap>(
     type: K,
     detail: SequencedTextEventMap[K]
   ) {
