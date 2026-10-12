@@ -1,21 +1,12 @@
+import { Projection } from '@sovereignbase/sequencer'
 import type {
   SequencedArrayAck,
   SequencedArrayDelta,
   SequencedArrayEventMap,
 } from './types/type.js'
 
-/**
- * A convergent replicated map for string-keyed state.
- *
- * Reads, iteration, and collection views expose detached copies of the current
- * live projection. Local mutations emit `delta` and `change` events. Merges may
- * emit `change`, `delta`, or both depending on whether the incoming state
- * changes the visible projection or requires a reply delta.
- *
- * @typeParam T - The value type stored in the map.
- */
 export class SequencedArray<T> {
-  declare private readonly state: SequencedArrayState<string, T>
+  declare private readonly projection: Projection<T>
   declare private readonly eventTarget: EventTarget
 
   /**
@@ -23,10 +14,10 @@ export class SequencedArray<T> {
    *
    * @param snapshot - A previously emitted SequencedArray snapshot.
    */
-  constructor(snapshot?: SequencedArraySnapshot<string, T>) {
+  constructor(actorID: number, snapshot?: unknown) {
     Object.defineProperties(this, {
       state: {
-        value: __create<T>(snapshot),
+        value: new Projection<T>(actorID, snapshot),
         enumerable: false,
         configurable: false,
         writable: false,
@@ -40,31 +31,16 @@ export class SequencedArray<T> {
     })
   }
 
-  /**
-   * The current number of live keys.
-   */
-  get size(): number {
-    return this.state.values.size
+  get length(): number {
+    return this.projection.length()
   }
 
-  /**
-   * Reads the current visible value for a key.
-   *
-   * @param key - Target key in the live map.
-   * @returns A detached copy of the value, or `undefined` when the key is absent.
-   */
-  get(key: string): T | undefined {
-    return __read<T>(key, this.state)
+  set length(value) {
+    this.projection.remove(value)
   }
 
-  /**
-   * Checks whether a key currently exists in the live projection.
-   *
-   * @param key - Key to check.
-   * @returns `true` when the key is currently visible.
-   */
-  has(key: string): boolean {
-    return this.state.values.has(key)
+  get(index: number): T | undefined {
+    return this.projection.value(index)
   }
 
   /**
@@ -75,10 +51,9 @@ export class SequencedArray<T> {
    * @throws {SequencedArrayError} Thrown when the key is not a non-empty string.
    * @throws {SequencedArrayError} Thrown when the value is not supported by `structuredClone`.
    */
-  set(key: string, value: T): void {
-    const result = __update<T>(key, value, this.state)
-    /* c8 ignore next -- __update either throws or returns a result object. */
-    if (!result) return
+  set(index: number, value: T): void {
+    const result = this.projection.replace([value], index, index)
+
     void this.eventTarget.dispatchEvent(
       new CustomEvent('delta', { detail: result.delta })
     )
@@ -93,8 +68,8 @@ export class SequencedArray<T> {
    * @param key - Key to remove.
    * @throws {SequencedArrayError} Thrown when the key is not a non-empty string.
    */
-  delete(key: string): void {
-    const result = __delete(this.state, key)
+  delete(index: number): void {
+    const result = this.projection.remove(index)
     if (!result) return
     void this.eventTarget.dispatchEvent(
       new CustomEvent('delta', { detail: result.delta })
@@ -104,50 +79,12 @@ export class SequencedArray<T> {
     )
   }
 
-  /**
-   * Deletes every visible key.
-   */
-  clear(): void {
-    const result = __delete(this.state)
-    if (!result) return
-    void this.eventTarget.dispatchEvent(
-      new CustomEvent('delta', { detail: result.delta })
-    )
-    void this.eventTarget.dispatchEvent(
-      new CustomEvent('change', { detail: result.change })
-    )
+  push(...items: T[]) {
+    const delta = this.projection.insert(items, this.length)
   }
 
-  /**
-   * Returns the current live keys.
-   *
-   * @returns The current keys in map iteration order.
-   */
-  keys(): Array<string> {
-    return Array.from(this.state.values.keys())
-  }
-
-  /**
-   * Returns detached copies of the current live values.
-   *
-   * @returns The current values in map iteration order.
-   */
-  values(): Array<T> {
-    return Array.from(this.state.values.values(), (entry) =>
-      structuredClone(entry.value.value)
-    )
-  }
-
-  /**
-   * Returns detached key-value entries for the current live projection.
-   *
-   * @returns The current entries in map iteration order.
-   */
-  entries(): Array<[string, T]> {
-    return Array.from(this.state.values.values(), (entry) => [
-      entry.value.key,
-      structuredClone(entry.value.value),
-    ])
+  splice(start: number, deleteCount: number, ...items: T[]) {
+    const delta = this.projection.replace(items, start, deleteCount - 1)
   }
 
   /**
@@ -175,24 +112,6 @@ export class SequencedArray<T> {
   }
 
   /**
-   * Emits the current acknowledgement frontier.
-   */
-  acknowledge(): void {
-    const ack = __acknowledge<T>(this.state)
-    if (!ack) return
-    void this.eventTarget.dispatchEvent(new CustomEvent('ack', { detail: ack }))
-  }
-
-  /**
-   * Removes tombstones that every provided frontier has acknowledged.
-   *
-   * @param frontiers - Replica acknowledgement frontiers.
-   */
-  garbageCollect(frontiers: Array<SequencedArrayAck>): void {
-    void __garbageCollect<T>(frontiers, this.state)
-  }
-
-  /**
    * Emits the current serializable map snapshot.
    */
   snapshot(): void {
@@ -200,36 +119,6 @@ export class SequencedArray<T> {
     void this.eventTarget.dispatchEvent(
       new CustomEvent('snapshot', { detail: snapshot })
     )
-  }
-
-  /**
-   * Registers an event listener.
-   *
-   * @param type - The event type to listen for.
-   * @param listener - The listener to register.
-   * @param options - Listener registration options.
-   */
-  addEventListener<K extends keyof SequencedArrayEventMap<string, T>>(
-    type: K,
-    listener: EventListenerOrEventListenerObject | null,
-    options?: boolean | AddEventListenerOptions
-  ): void {
-    this.eventTarget.addEventListener(type, listener, options)
-  }
-
-  /**
-   * Removes an event listener.
-   *
-   * @param type - The event type to stop listening for.
-   * @param listener - The listener to remove.
-   * @param options - Listener removal options.
-   */
-  removeEventListener<K extends keyof SequencedArrayEventMap<string, T>>(
-    type: K,
-    listener: EventListenerOrEventListenerObject | null,
-    options?: boolean | EventListenerOptions
-  ): void {
-    this.eventTarget.removeEventListener(type, listener, options)
   }
 
   /**
@@ -290,5 +179,58 @@ export class SequencedArray<T> {
     for (const [key, value] of this) {
       callback.call(thisArg, value, key, this)
     }
+  }
+
+  /**
+   * Registers a listener for the specified document event.
+   *
+   * @param type The event type to listen for.
+   * @param listener The listener to register.
+   * @param options Listener options, or a boolean specifying whether to use capture.
+   */
+  public addEventListener<K extends keyof SequencedArrayEventMap>(
+    type: K,
+    listener: SequencedArrayEventListenerFor<K> | null,
+    options?: boolean | AddEventListenerOptions
+  ): void {
+    void this.eventTarget.addEventListener(
+      type,
+      listener as EventListenerOrEventListenerObject | null,
+      options
+    )
+  }
+
+  /**
+   * Removes a previously registered listener for the specified document event.
+   *
+   * @param type The event type to stop listening for.
+   * @param listener The listener to remove.
+   * @param options Listener options, or a boolean specifying whether to use capture.
+   */
+  public removeEventListener<K extends keyof SequencedArrayEventMap>(
+    type: K,
+    listener: SequencedArrayEventListenerFor<K> | null,
+    options?: boolean | EventListenerOptions
+  ): void {
+    void this.eventTarget.removeEventListener(
+      type,
+      listener as EventListenerOrEventListenerObject | null,
+      options
+    )
+  }
+
+  /**
+   * Synchronously dispatches a `CustomEvent` to the document's registered listeners.
+   *
+   * @param type The event type to dispatch.
+   * @param detail The payload exposed as the event's `detail` property.
+   */
+  public dispatchEvent<K extends keyof SequencedArrayEventMap>(
+    type: K,
+    detail: SequencedArrayEventMap[K]
+  ) {
+    void this.eventTarget.dispatchEvent(
+      new CustomEvent<SequencedArrayEventMap[K]>(type, { detail })
+    )
   }
 }
