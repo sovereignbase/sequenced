@@ -23,3 +23,5 @@ Thumbs.db
 .wrangler/
 
 .c8/
+
+benchmark/.results/

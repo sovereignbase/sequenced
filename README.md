@@ -16,4 +16,12 @@
 
 ## Tests
 
+[SequencedArray equivalence tests](test/equivelance/array/README.md) run with
+`npm run test:array`; check their TypeScript harness with
+`npm run typecheck:array`.
+
+[Array benchmarks](benchmark/README.md) run with `npm run bench:array` and compare
+plain sequencer with the SequencedArray wrapper, including listener overhead.
+The wrapper source is currently unfinished, so its suites fail until it can load.
+
 ## License

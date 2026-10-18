@@ -34,8 +34,12 @@
     "test": "npm run build && npm run typecheck && npm run test:vitest && npm run test:e2e",
     "typecheck": "tsc --noEmit --project test/tsconfig.json",
     "test:vitest": "vitest run --coverage",
+    "test:array": "vitest run test/equivelance/array --coverage.enabled=false",
+    "test:array:watch": "vitest test/equivelance/array --coverage.enabled=false",
+    "typecheck:array": "tsc --project test/equivelance/array/tsconfig.json",
     "test:e2e": "playwright test",
-    "bench": "npm run build && node benchmark/bench.js",
+    "bench": "npm run bench:array",
+    "bench:array": "vitest run --config benchmark/vitest.config.ts",
     "prepare": "husky",
     "prepublishOnly": "npm run test && npm run bench"
   },
