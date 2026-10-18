@@ -10,6 +10,9 @@ scenario folders contain `test.ts` and shared fixtures live in `.shared`.
 
 `npm run test:array` disables coverage for the targeted suite. The full
 `test:vitest` command retains the repository's existing 100% coverage thresholds.
-`npm run typecheck:array` checks the new test and benchmark harness independently
-of the unfinished implementation. `npm run typecheck` also checks existing tests
-and the source they import.
+`npm run typecheck:array` checks SequencedArray, its public declarations, the Array
+tests and benchmark harness. `npm run typecheck` also checks existing tests and
+their imported source; unfinished Map/Set/Struct scaffolds have independent errors.
+
+The Array suite deliberately retains a failing offline regression for
+[sequencer issue #2](https://github.com/sovereignbase/sequencer/issues/2).

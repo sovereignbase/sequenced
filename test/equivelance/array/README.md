@@ -17,6 +17,8 @@ scenario-folder / `test.ts` layout as `../sequencer/test`.
 | [Callbacks](callbacks/test.ts)          | Argument values/order, receiver identity, thisArg, short circuiting, exceptions, mutations during traversal and live iterators |
 | [Replication](replication/test.ts)      | get/set/delete, apply/merge, sequencer interoperability, convergence, snapshots and EventTarget behavior                       |
 | [Benchmark fixtures](benchmark/test.ts) | Every plain-sequencer workload reaches its independent native-array model from a fresh fixture                                 |
+| [Public types](types/test.ts)           | Package exports, generic inference, type guards and typed events                                                               |
+| [Regressions](regressions/test.ts)      | Callback edits, shallow references, no-op events, synchronous transport and seeded offline delivery                            |
 
 Native arrays provide the expected results; the wrapper is always loaded from
 `src/SequencedArray/class.ts`, without building `dist` or substituting a mock.
@@ -38,15 +40,20 @@ JavaScript `delete array[index]` operator. `set` replaces one visible value.
 Return values for these extensions are deliberately unspecified. Acknowledgements
 travel in `delta` gossip as in SequencedText; no separate `ack` event is required.
 
-The current SequencedArray source is unfinished and contains a parse error.
-Consequently the five wrapper suites fail in their import hook until that source
-can load. Their test bodies are then reported as skipped by Vitest; this is a
-failed run, not a passing or TODO contract. The fixture suite runs independently.
-No implementation edits are part of this setup.
+The seeded offline-delivery regression currently fails because of
+[sequencer issue #2](https://github.com/sovereignbase/sequencer/issues/2). It stays
+enabled and failing: there is no skip, expected-failure annotation or wrapper
+workaround. The other Array tests exercise the actual source implementation.
 
-[Shared contract](../../.shared/array.ts) describes the intended runtime API and
-loads the implementation dynamically so the harness can typecheck while source
-is unfinished. It does **not** verify assignability of the implementation's
-TypeScript declarations; `typecheck:array` validates the harness itself.
+The same length/value inconsistency reproduces without SequencedArray:
+
+```powershell
+node test/equivelance/array/regressions/sequencer-repro.ts
+```
+
+[Shared fixtures](../../.shared/array.ts) load the implementation from source.
+The native-array differential tables use an adapter type for callback receivers;
+[public declaration tests](types/test.ts) check the actual exported types directly.
+`typecheck:array` now includes implementation and declaration checking.
 
 See [array benchmarks](../../../benchmark/README.md) for the wrapper comparison.

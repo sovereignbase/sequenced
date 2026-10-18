@@ -31,6 +31,7 @@ describe('SequencedArray API surface', () => {
     'merge',
     'snapshot',
     'toJSON',
+    'destroy',
     'addEventListener',
     'removeEventListener',
     'dispatchEvent',

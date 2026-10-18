@@ -41,14 +41,13 @@ Reports describe the latest run and are ignored by Git. A failed initial import
 removes previous reports; partial runs are marked incomplete.
 
 Measurements run serially with coverage disabled, with warmup before each case.
-No performance threshold is asserted. Wrapper disposal releases JS references
-for Projection's finalizer because the current wrapper has no public destroy
-method. Plain fixtures explicitly destroy their Projection outside timing.
+No performance threshold is asserted. Both implementations explicitly destroy
+their native Projection outside timing via their public APIs.
 This is a throughput comparison; GC interference and very short operation
 timings still require interpreting the reported uncertainty. It is not a memory
 benchmark.
 
-To run only the baseline while SequencedArray is unfinished:
+To run only the baseline:
 
 ```powershell
 $env:BENCH_IMPLEMENTATIONS = 'plain'
@@ -74,7 +73,7 @@ Remove-Item Env:BENCH_SIZES,Env:BENCH_OPERATIONS,Env:BENCH_TIME
 | `BENCH_BATCH`           | `32`                              | Calls per sample, at most the smallest size                  |
 | `BENCH_TIME`            | `100`                             | Measured time budget per implementation/case in milliseconds |
 
-The default wrapper comparison currently fails when loading the unfinished
-SequencedArray source. The plain-only command remains runnable; the benchmark
-never substitutes a baseline for a missing wrapper. No wrapper overhead number
-can be reported until its implementation loads and passes workload validation.
+All benchmark workloads validate their results, but they do not exercise
+concurrent offline delivery. That scenario still has a failing correctness
+regression: [sequencer issue #2](https://github.com/sovereignbase/sequencer/issues/2).
+Passing throughput measurements do not resolve that defect.

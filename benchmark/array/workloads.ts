@@ -180,8 +180,7 @@ function wrapped(
         replica!.removeEventListener('delta', onDelta)
         replica!.removeEventListener('change', onChange)
       }
-      // The wrapper currently has no public destroy method. Release references
-      // for Projection's FinalizationRegistry instead of accessing private state.
+      replica!.destroy()
       replica = undefined
       eventSink = undefined
     },

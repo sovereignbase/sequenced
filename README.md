@@ -10,7 +10,24 @@
 
 ## Usage
 
+```typescript
+import { Sequenced } from '@sovereignbase/sequenced'
+
+const alice = new Sequenced.Array<string>(1)
+const bob = new Sequenced.Array<string>(2)
+alice.addEventListener('delta', (event) => bob.apply(event.detail))
+alice.push('hello', 'world')
+alice.set(1, 'there')
+console.log([...bob]) // ['hello', 'there']
+alice.destroy()
+bob.destroy()
+```
+
 ## API
+
+`Sequenced.Array<T>` (also exported as `SequencedArray`) implements the ES2024
+Array instance methods, plus `get`, `set`, `delete`, `apply`, `merge`, `snapshot`,
+`toJSON`, typed event listeners and `destroy`. See [the Array API](src/SequencedArray/README.md).
 
 ## Behavior
 
@@ -22,6 +39,7 @@
 
 [Array benchmarks](benchmark/README.md) run with `npm run bench:array` and compare
 plain sequencer with the SequencedArray wrapper, including listener overhead.
-The wrapper source is currently unfinished, so its suites fail until it can load.
+The offline-delivery regression currently fails because of
+[sequencer issue #2](https://github.com/sovereignbase/sequencer/issues/2).
 
 ## License

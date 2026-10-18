@@ -1,4 +1,5 @@
 import { Projection } from '@sovereignbase/sequencer'
+import { SequencedArray } from '../../src/SequencedArray/class.js'
 import type { Change, Gossip, Sequence } from '@sovereignbase/sequencer'
 
 /** ES2024 Array instance methods. Static Array factories are a separate API. */
@@ -69,6 +70,7 @@ export type ArraySubject<T> = Pick<
   merge(snapshot: Sequence<T>): void
   snapshot(): void
   toJSON(): Sequence<T>
+  destroy(): void
   addEventListener<K extends keyof ArrayEvents<T>>(
     type: K,
     listener: ArrayListener<T, K> | null,
@@ -90,16 +92,12 @@ export interface ArrayConstructor {
 }
 
 /**
- * Load source lazily so a broken wrapper cannot prevent plain-sequencer
- * benchmarks or harness typechecking. Import failures remain real test failures.
+ * Uses the real source implementation. The runtime contract above intentionally
+ * types callback receivers as arrays for the shared native-array test tables;
+ * the public wrapper declaration instead types those receivers as SequencedArray.
  */
 export async function loadArray(): Promise<ArrayConstructor> {
-  const source = new URL('../../src/SequencedArray/class.ts', import.meta.url)
-    .href
-  const module = await import(/* @vite-ignore */ source)
-  if (typeof module.SequencedArray !== 'function')
-    throw new TypeError('SequencedArray source must export its constructor')
-  return module.SequencedArray as ArrayConstructor
+  return SequencedArray as unknown as ArrayConstructor
 }
 
 /** Both implementations hydrate exactly the same trusted sequencer snapshot. */
