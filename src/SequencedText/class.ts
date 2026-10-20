@@ -71,8 +71,8 @@ export class SequencedText {
   insert(at: number, characters: string): void {
     if (characters.length === 0) return
     const delta = this.projection.insert(characters.split(''), at)
-    void this.dispatchEvent('delta', delta)
     void this.dispatchEvent('change', [[at, at, characters]])
+    void this.dispatchEvent('delta', delta)
   }
 
   /**
@@ -96,15 +96,13 @@ export class SequencedText {
 
     const [change, delta] = result
 
-    if (delta) void this.dispatchEvent('delta', delta)
-
-    if (change)
-      void this.dispatchEvent(
-        'change',
-        change.map(([start, end, values]) =>
-          values ? [start, end, values.join('')] : [start, end]
-        )
+    void this.dispatchEvent(
+      'change',
+      change.map(([start, end, values]) =>
+        values ? [start, end, values.join('')] : [start, end]
       )
+    )
+    if (delta) void this.dispatchEvent('delta', delta)
   }
 
   /**
@@ -120,10 +118,8 @@ export class SequencedText {
   ): void {
     if (selectionStart === selecectionEnd) return
     const delta = this.projection.remove(selectionStart, selecectionEnd - 1)
+    void this.dispatchEvent('change', [[selectionStart, selecectionEnd]])
     void this.dispatchEvent('delta', delta)
-    void this.dispatchEvent('change', [
-      [selectionStart ?? 0, selecectionEnd ?? this.length],
-    ])
   }
 
   /**
@@ -146,18 +142,17 @@ export class SequencedText {
       selectionStart,
       selecectionEnd - 1
     )
-    void this.dispatchEvent('delta', delta)
     void this.dispatchEvent('change', [
       [selectionStart, selecectionEnd, characters],
     ])
+    void this.dispatchEvent('delta', delta)
   }
 
   /**
    * Dispatches a `snapshot` event containing the document's replication state.
    */
   snapshot(): void {
-    const snapshot = this.toJSON()
-    if (snapshot) void this.dispatchEvent('snapshot', snapshot)
+    void this.dispatchEvent('snapshot', this.toJSON())
   }
   /**
    * Returns a JSON-compatible snapshot of the document's replication state.

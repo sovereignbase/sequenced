@@ -4,7 +4,10 @@ import { defineConfig } from 'vitest/config'
 export default defineConfig({
   test: {
     include: [],
-    benchmark: { enabled: true, include: ['benchmark/array/**/*.bench.ts'] },
+    benchmark: {
+      enabled: true,
+      include: ['benchmark/{array,text}/**/*.bench.ts'],
+    },
     environment: 'node',
     fileParallelism: false,
     maxWorkers: 1,

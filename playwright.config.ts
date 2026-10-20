@@ -1,14 +1,20 @@
 import { defineConfig } from '@playwright/test'
 
 export default defineConfig({
-  testDir: 'test/e2e/runsInBrowsers',
-  testMatch: '**/*.spec.ts',
+  testDir: './test',
+  testMatch: '**/{array,text}/compatibility/**/*.spec.ts',
   timeout: 30_000,
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
   use: {
     trace: 'retain-on-failure',
+    baseURL: 'http://127.0.0.1:4174',
+  },
+  webServer: {
+    command: 'node test/.shared/browser-server.mjs',
+    url: 'http://127.0.0.1:4174',
+    reuseExistingServer: false,
   },
   projects: [
     {
@@ -17,7 +23,12 @@ export default defineConfig({
     },
     {
       name: 'firefox',
-      use: { browserName: 'firefox' },
+      use: {
+        browserName: 'firefox',
+        launchOptions: process.env.PLAYWRIGHT_FIREFOX_EXECUTABLE
+          ? { executablePath: process.env.PLAYWRIGHT_FIREFOX_EXECUTABLE }
+          : undefined,
+      },
     },
     {
       name: 'webkit',

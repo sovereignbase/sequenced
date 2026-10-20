@@ -2,17 +2,17 @@ import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
   test: {
-    include: [
-      'test/unit/**/*.test.ts',
-      'test/integration/**/*.test.ts',
-      'test/equivelance/**/test.ts',
-    ],
+    include: ['test/array/**/test.ts', 'test/text/**/test.ts'],
     environment: 'node',
     fileParallelism: false,
     coverage: {
       enabled: true,
       provider: 'v8',
-      include: ['src/**/*.ts'],
+      include: [
+        'src/SequencedArray/**/*.ts',
+        'src/SequencedText/**/*.ts',
+        'src/index.ts',
+      ],
       reporter: ['text', 'lcov'],
       reportOnFailure: true,
       thresholds: {

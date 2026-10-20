@@ -1,6 +1,6 @@
 import { Projection } from '@sovereignbase/sequencer'
 import { SequencedArray } from '../../src/SequencedArray/class.js'
-import type { Change, Gossip, Sequence } from '@sovereignbase/sequencer'
+import type { Sequence } from '@sovereignbase/sequencer'
 
 /** ES2024 Array instance methods. Static Array factories are a separate API. */
 export const arrayMethods = [
@@ -43,16 +43,6 @@ export const arrayMethods = [
   'values',
   'with',
 ] as const satisfies ReadonlyArray<keyof unknown[]>
-
-export type ArrayEvents<T> = {
-  delta: Gossip<T>
-  change: Change<T>
-  snapshot: Sequence<T>
-}
-
-export type ArrayListener<T, K extends keyof ArrayEvents<T>> =
-  | ((event: CustomEvent<ArrayEvents<T>[K]>) => void)
-  | { handleEvent(event: CustomEvent<ArrayEvents<T>[K]>): void }
 
 export type ArraySubject<T> = SequencedArray<T>
 export type ArrayConstructor = typeof SequencedArray

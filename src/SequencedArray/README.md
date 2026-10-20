@@ -48,8 +48,3 @@ removal. `change` carries sequencer splices `[start, exclusiveEnd, values?]`;
 are dispatched before outgoing gossip so synchronous transport preserves visible
 change order. Empty edits do not emit changes or gossip. Delivery of an already
 applied operation may emit acknowledgement gossip without a visible change.
-
-Concurrent offline delivery currently has a known underlying defect:
-[sequencer issue #2](https://github.com/sovereignbase/sequencer/issues/2).
-The regression remains enabled and failing. The wrapper deliberately contains no
-repair, filtering or replay workaround for that core bug.
