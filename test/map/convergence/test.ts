@@ -1,6 +1,6 @@
 import { Projection } from '@sovereignbase/sequencer'
 import { describe, expect, it } from 'vitest'
-import { SequencedMap } from '../../../src/index.js'
+import { SequencedMap } from '../../../src/SequencedMap/class.js'
 import type {
   SequencedMapEntry,
   SequencedMapChange,

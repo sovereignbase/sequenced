@@ -30,7 +30,9 @@ export function runtimeBundle(): Promise<string> {
   return (bundle ??= build({
     config: false,
     entry: fileURLToPath(new URL('./portable.ts', import.meta.url)),
-    deps: { alwaysBundle: ['@sovereignbase/sequencer'] },
+    deps: {
+      alwaysBundle: ['@sovereignbase/sequencer', '@sovereignbase/bytecodec'],
+    },
     format: 'iife',
     globalName: 'Compatibility',
     platform: 'neutral',
@@ -68,6 +70,8 @@ export const runtimes: Record<string, () => Promise<RuntimeResult>> = {
         imports: {
           '@sovereignbase/sequencer': import.meta
             .resolve('@sovereignbase/sequencer'),
+          '@sovereignbase/bytecodec': import.meta
+            .resolve('@sovereignbase/bytecodec'),
         },
       })
     )
@@ -83,9 +87,19 @@ export const runtimes: Record<string, () => Promise<RuntimeResult>> = {
   },
   edge: async () => ({
     version: require('edge-runtime/package.json').version,
-    outcomes: new EdgeRuntime({ initialCode: await runtimeBundle() }).evaluate(
-      'Compatibility.runSuite()'
-    ),
+    outcomes: new EdgeRuntime({
+      initialCode: `
+      if (typeof CustomEvent === 'undefined') Object.defineProperty(globalThis, 'CustomEvent', {
+        value: class CustomEvent extends Event {
+          constructor(type, init = {}) {
+            super(type, init)
+            Object.defineProperty(this, 'detail', {value: init.detail ?? null})
+          }
+        }
+      });
+      ${await runtimeBundle()}
+    `,
+    }).evaluate('Compatibility.runSuite()'),
   }),
   workerd: async () => {
     const runtime = new Miniflare({

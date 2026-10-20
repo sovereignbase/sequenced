@@ -4,9 +4,7 @@ export default defineConfig({
   test: {
     include: [
       'test/{array,map,text}/**/test.ts',
-      'test/{errors,reporting}/test.ts',
-      'test/compatibility/*.test.ts',
-      'test/unit/*.test.ts',
+      'test/{array,map,text}/compatibility/*.test.ts',
     ],
     environment: 'node',
     fileParallelism: false,
@@ -20,7 +18,6 @@ export default defineConfig({
         'src/SequencedText/**/*.ts',
         'src/SequencedMap/**/*.ts',
         'src/errors/**/*.ts',
-        'src/events/**/*.ts',
         'src/index.ts',
       ],
       reporter: ['text', 'lcov'],

@@ -4,6 +4,10 @@ import { createRequire } from 'node:module'
 import { pathToFileURL } from 'node:url'
 
 const require = createRequire(import.meta.url)
+const bytecodec = new URL(
+  './dist/',
+  pathToFileURL(require.resolve('@sovereignbase/bytecodec/package.json'))
+)
 const routes = new Map([
   ['/dist/index.js', new URL('../../dist/index.js', import.meta.url)],
   [
@@ -15,7 +19,7 @@ const routes = new Map([
   ],
 ])
 const html =
-  '<!doctype html><meta charset="utf-8"><script type="importmap">{"imports":{"@sovereignbase/sequencer":"/sequencer/index.js"}}</script>'
+  '<!doctype html><meta charset="utf-8"><script type="importmap">{"imports":{"@sovereignbase/sequencer":"/sequencer/index.js","@sovereignbase/bytecodec":"/bytecodec/index.js"}}</script>'
 
 createServer(async (request, response) => {
   const path = new URL(request.url, 'http://127.0.0.1:4174').pathname
@@ -23,8 +27,15 @@ createServer(async (request, response) => {
     response.writeHead(200, { 'content-type': 'text/html' }).end(html)
     return
   }
-  const file = routes.get(path)
-  if (!file) {
+  const file =
+    routes.get(path) ??
+    (path.startsWith('/bytecodec/') && path.endsWith('.js')
+      ? new URL(path.slice('/bytecodec/'.length), bytecodec)
+      : undefined)
+  if (
+    !file ||
+    (path.startsWith('/bytecodec/') && !file.href.startsWith(bytecodec.href))
+  ) {
     response.writeHead(404).end()
     return
   }

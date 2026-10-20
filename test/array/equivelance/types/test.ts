@@ -1,5 +1,6 @@
 import { describe, expect, expectTypeOf, it } from 'vitest'
-import { Sequenced, SequencedArray } from '../../../../src/index.js'
+import { Sequenced } from '../../../../src/index.js'
+import { SequencedArray } from '../../../../src/SequencedArray/class.js'
 import type {
   SequencedArrayChange,
   SequencedArrayDelta,
@@ -8,7 +9,7 @@ import type {
 import { arraySnapshot } from '../../array.js'
 
 describe('SequencedArray public declarations', () => {
-  it('exports the constructor directly and through Sequenced.Array', () => {
+  it('exposes the constructor through Sequenced.Array', () => {
     expect(Sequenced.Array).toBe(SequencedArray)
     const array = new Sequenced.Array<number>(1)
     try {

@@ -51,12 +51,12 @@
     "test:map:watch": "vitest test/map --coverage.enabled=false",
     "typecheck:map": "tsc --noEmit --project test/tsconfig.json",
     "bench:map": "vitest run --config benchmark/vitest.config.ts benchmark/map",
-    "test:compability": "npm run build:package && vitest run test/compatibility --coverage.enabled=false && playwright test compatibility",
+    "test:compability": "npm run build:package && vitest run compatibility --coverage.enabled=false && playwright test compatibility",
     "test:convergence": "vitest run convergence --coverage.enabled=false",
     "test:equivelance": "vitest run equivelance --coverage.enabled=false",
     "test:events": "vitest run events --coverage.enabled=false",
     "test:integration": "npm run build:package && playwright test integration",
-    "test:unit": "vitest run test/unit test/errors test/reporting test/array/benchmark test/map/benchmark test/text/benchmark test/array/equivelance/types test/map/types test/text/types --coverage.enabled=false"
+    "test:unit": "vitest run test/array/benchmark test/map/benchmark test/text/benchmark test/array/equivelance/types test/map/types test/text/types /unit/ --coverage.enabled=false"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.4",

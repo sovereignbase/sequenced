@@ -1,5 +1,6 @@
 import { expect, expectTypeOf, it } from 'vitest'
-import { Sequenced, SequencedMap } from '../../../src/index.js'
+import { Sequenced } from '../../../src/index.js'
+import { SequencedMap } from '../../../src/SequencedMap/class.js'
 import type {
   SequencedMapChange,
   SequencedMapDelta,

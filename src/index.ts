@@ -28,4 +28,4 @@ export class Sequenced {
   static readonly Map = SequencedMap
 }
 
-export { base64urlToActorID } from './helpers/base64urlToActorID.js'
+export { base64urlToActorID } from './utils/base64urlToActorID.js'

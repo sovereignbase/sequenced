@@ -1,7 +1,7 @@
 import { Projection } from '@sovereignbase/sequencer'
 import type { Gossip } from '@sovereignbase/sequencer'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { SequencedMap } from '../../../../src/index.js'
+import { SequencedMap } from '../../../../src/SequencedMap/class.js'
 import type { SequencedMapEntry } from '../../../../src/index.js'
 
 type Entry = SequencedMapEntry<string | number, number>

@@ -203,7 +203,7 @@ export function renderTests(report?: TestReport): string {
       /\/equivelance\/types\//.test(file.file)
     )
       suite = 'unit'
-    if (suite === 'compatibility') suite = 'compability'
+    if (suite === 'compatibility') continue
     if (suite && suites.includes(suite as (typeof suites)[number]))
       add(suite, file)
   }

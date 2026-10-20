@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { inspect } from 'node:util'
-import { Sequenced, SequencedMap, SequencedError } from '../../../src/index.js'
+import { Sequenced, SequencedError } from '../../../src/index.js'
+import { SequencedMap } from '../../../src/SequencedMap/class.js'
 import type { SerializableKey as Key } from '../../../src/index.js'
 import { mapSnapshot } from '../map.js'
 

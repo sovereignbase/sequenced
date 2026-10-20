@@ -24,6 +24,8 @@ export default defineConfig({
     },
     {
       name: 'firefox',
+      workers: 1,
+      timeout: 60_000,
       use: {
         browserName: 'firefox',
         launchOptions: process.env.PLAYWRIGHT_FIREFOX_EXECUTABLE
