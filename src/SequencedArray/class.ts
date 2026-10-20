@@ -32,7 +32,7 @@ function callable(callback: unknown): asserts callback is Function {
  */
 export class SequencedArray<T> implements Iterable<T> {
   private readonly projection: Projection<T>
-  private readonly eventTarget = new EventTarget()
+  private eventTarget?: EventTarget
 
   /** Hydrates an optional trusted sequencer snapshot for the supplied actor. */
   constructor(actorID: number, snapshot?: SequencedArraySnapshot<T>) {
@@ -97,12 +97,13 @@ export class SequencedArray<T> implements Iterable<T> {
         : items.length === 0
           ? this.projection.remove(start, start + count - 1)
           : this.projection.replace(items, start, start + count - 1)
-    const change = items.length
-      ? ([[start, start + count, items]] as const)
-      : ([[start, start + count]] as const)
-    // Emit visible changes first so synchronous transports cannot reorder them.
-    this.dispatchEvent('change', change)
-    this.dispatchEvent('delta', delta)
+    if (this.eventTarget) {
+      const change = items.length
+        ? ([[start, start + count, items]] as const)
+        : ([[start, start + count]] as const)
+      this.dispatchEvent('change', change)
+      this.dispatchEvent('delta', delta)
+    }
   }
 
   push(...items: T[]): number {
@@ -520,7 +521,7 @@ export class SequencedArray<T> implements Iterable<T> {
     this.received(this.projection.apply(delta))
   }
 
-  /** Merges a replication snapshot, preserving concurrent edits. */
+  /** Delegates snapshot merging to the sequencer. */
   merge(snapshot: SequencedArraySnapshot<T>): void {
     this.received(this.projection.merge(snapshot))
   }
@@ -558,7 +559,7 @@ export class SequencedArray<T> implements Iterable<T> {
     listener: SequencedArrayEventListenerFor<T, K> | null,
     options?: boolean | AddEventListenerOptions
   ): void {
-    this.eventTarget.addEventListener(
+    ;(this.eventTarget ??= new EventTarget()).addEventListener(
       type,
       listener as EventListenerOrEventListenerObject | null,
       options
@@ -570,7 +571,7 @@ export class SequencedArray<T> implements Iterable<T> {
     listener: SequencedArrayEventListenerFor<T, K> | null,
     options?: boolean | EventListenerOptions
   ): void {
-    this.eventTarget.removeEventListener(
+    this.eventTarget?.removeEventListener(
       type,
       listener as EventListenerOrEventListenerObject | null,
       options
@@ -581,6 +582,6 @@ export class SequencedArray<T> implements Iterable<T> {
     type: K,
     detail: SequencedArrayEventMap<T>[K]
   ): void {
-    this.eventTarget.dispatchEvent(new CustomEvent(type, { detail }))
+    this.eventTarget?.dispatchEvent(new CustomEvent(type, { detail }))
   }
 }

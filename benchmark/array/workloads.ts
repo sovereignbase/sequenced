@@ -5,13 +5,14 @@ import {
   arraySnapshot,
   type ArrayConstructor,
   type ArraySubject,
-} from '../../test/.shared/array.js'
+} from '../../test/array/array.js'
 
 export const operations = [
   'length',
   'at.middle',
   'get.middle',
   'values',
+  'slice.all',
   'slice.middle',
   'push',
   'unshift',
@@ -222,6 +223,10 @@ export function createWorkload(
     values: () => {
       for (let i = 0; i < batch; i++) resultSink = subject.values()
     },
+    'slice.all': () => {
+      for (let i = 0; i < batch; i++)
+        resultSink = subject.slice(0, fixture.values.length)
+    },
     'slice.middle': () => {
       for (let i = 0; i < batch; i++)
         resultSink = subject.slice(
@@ -268,6 +273,7 @@ export function createWorkload(
           deepStrictEqual(resultSink, fixture.values[middle])
           break
         case 'values':
+        case 'slice.all':
           deepStrictEqual(resultSink, fixture.values)
           break
         case 'slice.middle':

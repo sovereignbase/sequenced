@@ -1,8 +1,9 @@
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { cpus, platform, arch } from 'node:os'
 import { resolve } from 'node:path'
+import { createRequire } from 'node:module'
 import { afterAll, beforeAll, describe, it } from 'vitest'
-import { loadArray, type ArrayConstructor } from '../../test/.shared/array.js'
+import { loadArray, type ArrayConstructor } from '../../test/array/array.js'
 import {
   createWorkload,
   operations,
@@ -26,6 +27,9 @@ function integer(name: string, fallback: number): number {
 }
 const batch = integer('BENCH_BATCH', 32)
 const time = integer('BENCH_TIME', 100)
+const sequencerVersion = createRequire(import.meta.url)(
+  '@sovereignbase/sequencer/package.json'
+).version as string
 const implementations = (process.env.BENCH_IMPLEMENTATIONS?.split(',') ?? [
   'plain',
   'wrapper',
@@ -77,6 +81,7 @@ describe('SequencedArray vs plain sequencer', () => {
           'at.middle',
           'get.middle',
           'values',
+          'slice.all',
           'slice.middle',
           'snapshot',
         ].includes(operation)
@@ -148,6 +153,7 @@ afterAll(() => {
       platform: platform(),
       arch: arch(),
       cpu: cpus()[0]?.model,
+      sequencer: sequencerVersion,
     },
     config: {
       sizes,
@@ -171,6 +177,7 @@ afterAll(() => {
     '# SequencedArray benchmark',
     '',
     `Node ${process.version}; ${platform()} ${arch()}; ${cpus()[0]?.model}.`,
+    `Sequencer ${sequencerVersion}.`,
     '',
     `Batch: ${batch} API calls. Times exclude fixture creation, validation and cleanup.`,
     `Complete: ${report.complete}.`,
