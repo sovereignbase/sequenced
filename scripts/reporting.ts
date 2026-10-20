@@ -81,10 +81,8 @@ export interface BenchmarkReport {
 }
 export function modelOf(file: string): Model | undefined {
   const path = file.replaceAll('\\', '/')
-  return (/(?:^|\/)benchmark\/(array|map|text)\//.exec(path)?.[1] ??
-    /(?:^|\/)test\/(?:compability|convergence|equivelance|events|integration|unit)\/(array|map|text)[.]/.exec(
-      path
-    )?.[1]) as Model | undefined
+  return /(?:^|\/)(?:test|benchmark)\/(array|map|text)\//.exec(path)?.[1] as
+    Model | undefined
 }
 export function environment() {
   return { node: process.version, platform: platform(), arch: arch() }
@@ -196,9 +194,16 @@ export function renderTests(report?: TestReport): string {
     groups.set(suite, total)
   }
   for (const file of unit?.files ?? []) {
-    const suite = /(?:^|\/)test\/([^/]+)\//.exec(
+    let suite = /(?:^|\/)test\/(?:array|map|text)\/([^/]+)\//.exec(
       file.file.replaceAll('\\', '/')
     )?.[1]
+    if (
+      suite === 'benchmark' ||
+      suite === 'types' ||
+      /\/equivelance\/types\//.test(file.file)
+    )
+      suite = 'unit'
+    if (suite === 'compatibility') suite = 'compability'
     if (suite && suites.includes(suite as (typeof suites)[number]))
       add(suite, file)
   }

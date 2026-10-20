@@ -86,12 +86,12 @@ Node v24.16.0 · win32 x64 · Intel(R) Core(TM) i5-10210U CPU @ 1.60GHz · Seque
 
 | Test suite  | Passed | Failed | Skipped |
 | ----------- | -----: | -----: | ------: |
-| compability |     15 |      4 |       0 |
-| convergence |      8 |      0 |       0 |
-| equivelance |    280 |      0 |       0 |
-| events      |     22 |      0 |       0 |
+| compability |     16 |      3 |       0 |
+| convergence |      — |      — |       — |
+| equivelance |      — |      — |       — |
+| events      |      — |      — |       — |
 | integration |      4 |      2 |       0 |
-| unit        |     45 |      0 |       0 |
+| unit        |      — |      — |       — |
 
 | Statements | Branches | Functions | Lines |
 | ---------: | -------: | --------: | ----: |
@@ -105,7 +105,7 @@ Node v24.16.0 · win32 x64 · Intel(R) Core(TM) i5-10210U CPU @ 1.60GHz · Seque
 | Node.js CJS  | v24.16.0     | passed |
 | Bun          | 1.4.3        | passed |
 | Deno         | —            | failed |
-| Edge Runtime | 4.0.1        | failed |
+| Edge Runtime | 4.0.1        | passed |
 | workerd      | 1.20261006.1 | passed |
 | Chromium     | 156.0.8078.4 | failed |
 | Firefox      | 153.0        | failed |
@@ -190,12 +190,12 @@ Node v24.16.0 · win32 x64 · Intel(R) Core(TM) i5-10210U CPU @ 1.60GHz · Seque
 
 | Test suite  | Passed | Failed | Skipped |
 | ----------- | -----: | -----: | ------: |
-| compability |     15 |      4 |       0 |
-| convergence |     10 |      0 |       0 |
-| equivelance |    135 |      0 |       0 |
-| events      |     35 |      0 |       0 |
+| compability |     16 |      3 |       0 |
+| convergence |      — |      — |       — |
+| equivelance |      — |      — |       — |
+| events      |      — |      — |       — |
 | integration |      4 |      2 |       0 |
-| unit        |     95 |      0 |       0 |
+| unit        |      — |      — |       — |
 
 | Statements | Branches | Functions | Lines |
 | ---------: | -------: | --------: | ----: |
@@ -209,7 +209,7 @@ Node v24.16.0 · win32 x64 · Intel(R) Core(TM) i5-10210U CPU @ 1.60GHz · Seque
 | Node.js CJS  | v24.16.0     | passed |
 | Bun          | 1.4.3        | passed |
 | Deno         | —            | failed |
-| Edge Runtime | 4.0.1        | failed |
+| Edge Runtime | 4.0.1        | passed |
 | workerd      | 1.20261006.1 | passed |
 | Chromium     | 156.0.8078.4 | failed |
 | Firefox      | 153.0        | failed |
@@ -272,12 +272,12 @@ Node v24.16.0 · win32 x64 · Intel(R) Core(TM) i5-10210U CPU @ 1.60GHz · Seque
 
 | Test suite  | Passed | Failed | Skipped |
 | ----------- | -----: | -----: | ------: |
-| compability |     15 |      4 |       0 |
-| convergence |      8 |      0 |       0 |
-| equivelance |     66 |      0 |       0 |
-| events      |     16 |      0 |       0 |
+| compability |     16 |      3 |       0 |
+| convergence |      — |      — |       — |
+| equivelance |      — |      — |       — |
+| events      |      — |      — |       — |
 | integration |      4 |      2 |       0 |
-| unit        |     35 |      0 |       0 |
+| unit        |      — |      — |       — |
 
 | Statements | Branches | Functions | Lines |
 | ---------: | -------: | --------: | ----: |
@@ -291,7 +291,7 @@ Node v24.16.0 · win32 x64 · Intel(R) Core(TM) i5-10210U CPU @ 1.60GHz · Seque
 | Node.js CJS  | v24.16.0     | passed |
 | Bun          | 1.4.3        | passed |
 | Deno         | —            | failed |
-| Edge Runtime | 4.0.1        | failed |
+| Edge Runtime | 4.0.1        | passed |
 | workerd      | 1.20261006.1 | passed |
 | Chromium     | 156.0.8078.4 | failed |
 | Firefox      | 153.0        | failed |

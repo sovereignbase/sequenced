@@ -3,6 +3,7 @@ import { createRequire } from 'node:module'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
+import { mkdirSync, writeFileSync } from 'node:fs'
 import { build } from 'tsdown'
 import { EdgeRuntime } from 'edge-runtime'
 import { Miniflare } from 'miniflare'
@@ -56,14 +57,30 @@ export const runtimes: Record<string, () => Promise<RuntimeResult>> = {
       entry,
     ])
   },
-  deno: () =>
-    processRun(process.execPath, [
+  deno: () => {
+    const map = fileURLToPath(
+      new URL('../.results/deno-imports.json', import.meta.url)
+    )
+    mkdirSync(dirname(map), { recursive: true })
+    writeFileSync(
+      map,
+      JSON.stringify({
+        imports: {
+          '@sovereignbase/sequencer': import.meta
+            .resolve('@sovereignbase/sequencer'),
+        },
+      })
+    )
+    return processRun(process.execPath, [
       require.resolve('deno/bin.cjs'),
       'run',
       '--no-config',
       '--no-lock',
+      '--import-map',
+      map,
       entry,
-    ]),
+    ])
+  },
   edge: async () => ({
     version: require('edge-runtime/package.json').version,
     outcomes: new EdgeRuntime({ initialCode: await runtimeBundle() }).evaluate(
