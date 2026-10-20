@@ -207,6 +207,54 @@ export class SequencedMap<K extends SerializableKey, V> implements Iterable<
     this.received(this.projection.merge(snapshot))
   }
 
+  snapshot(): void {
+    this.dispatchEvent('snapshot', this.toJSON())
+  }
+  toJSON(): SequencedMapSnapshot<K, V> {
+    const [words, values] = this.projection.sequence()
+    return [Array.isArray(words) ? words : Array.from(words), values]
+  }
+  destroy(): void {
+    this.projection.destroy()
+    this.index.clear()
+    this.positions.length = 0
+    this.duplicates?.clear()
+  }
+  [Symbol.for('nodejs.util.inspect.custom')](): Map<K, V> {
+    return new Map(this)
+  }
+  [Symbol.for('Deno.customInspect')](): Map<K, V> {
+    return new Map(this)
+  }
+  addEventListener<E extends keyof SequencedMapEventMap<K, V>>(
+    type: E,
+    listener: SequencedMapEventListener<K, V, E> | null,
+    options?: boolean | AddEventListenerOptions
+  ): void {
+    ;(this.eventTarget ??= new EventTarget()).addEventListener(
+      type,
+      listener as EventListenerOrEventListenerObject | null,
+      options
+    )
+  }
+  removeEventListener<E extends keyof SequencedMapEventMap<K, V>>(
+    type: E,
+    listener: SequencedMapEventListener<K, V, E> | null,
+    options?: boolean | EventListenerOptions
+  ): void {
+    this.eventTarget?.removeEventListener(
+      type,
+      listener as EventListenerOrEventListenerObject | null,
+      options
+    )
+  }
+  dispatchEvent<E extends keyof SequencedMapEventMap<K, V>>(
+    type: E,
+    detail: SequencedMapEventMap<K, V>[E]
+  ): void {
+    this.eventTarget?.dispatchEvent(new CustomEvent(type, { detail }))
+  }
+
   private received(result: Result<SequencedMapEntry<K, V>> | undefined): void {
     if (!result) return
     const patches = result[0]
@@ -258,6 +306,8 @@ export class SequencedMap<K extends SerializableKey, V> implements Iterable<
     }
     if (result[1]?.length) this.dispatchEvent('delta', result[1])
   }
+
+  // HELPERS
 
   private patch(
     start: number,
@@ -341,53 +391,5 @@ export class SequencedMap<K extends SerializableKey, V> implements Iterable<
       }
     }
     return orderFrom
-  }
-
-  snapshot(): void {
-    this.dispatchEvent('snapshot', this.toJSON())
-  }
-  toJSON(): SequencedMapSnapshot<K, V> {
-    const [words, values] = this.projection.sequence()
-    return [Array.isArray(words) ? words : Array.from(words), values]
-  }
-  destroy(): void {
-    this.projection.destroy()
-    this.index.clear()
-    this.positions.length = 0
-    this.duplicates?.clear()
-  }
-  [Symbol.for('nodejs.util.inspect.custom')](): Map<K, V> {
-    return new Map(this)
-  }
-  [Symbol.for('Deno.customInspect')](): Map<K, V> {
-    return new Map(this)
-  }
-  addEventListener<E extends keyof SequencedMapEventMap<K, V>>(
-    type: E,
-    listener: SequencedMapEventListener<K, V, E> | null,
-    options?: boolean | AddEventListenerOptions
-  ): void {
-    ;(this.eventTarget ??= new EventTarget()).addEventListener(
-      type,
-      listener as EventListenerOrEventListenerObject | null,
-      options
-    )
-  }
-  removeEventListener<E extends keyof SequencedMapEventMap<K, V>>(
-    type: E,
-    listener: SequencedMapEventListener<K, V, E> | null,
-    options?: boolean | EventListenerOptions
-  ): void {
-    this.eventTarget?.removeEventListener(
-      type,
-      listener as EventListenerOrEventListenerObject | null,
-      options
-    )
-  }
-  dispatchEvent<E extends keyof SequencedMapEventMap<K, V>>(
-    type: E,
-    detail: SequencedMapEventMap<K, V>[E]
-  ): void {
-    this.eventTarget?.dispatchEvent(new CustomEvent(type, { detail }))
   }
 }
