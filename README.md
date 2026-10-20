@@ -6,9 +6,21 @@
 
 # Sequenced
 
-## Installation
+## Contents
 
-## Usage
+-> Array
+---> Usage
+---> Benchmarks generated result
+---> Tests generated
+-> Map
+...
+-> Text
+...
+License
+
+## Array
+
+### Usage
 
 ```typescript
 import { Sequenced } from '@sovereignbase/sequenced'
@@ -26,15 +38,9 @@ alice.destroy()
 bob.destroy()
 ```
 
-## API
+### Benchmarks
 
-`Sequenced.Array<T>` (also exported as `SequencedArray`) implements the ES2024
-Array instance methods, plus `get`, `set`, `delete`, `apply`, `merge`, `snapshot`,
-`toJSON`, typed event listeners and `destroy`. See [the Array API](src/SequencedArray/README.md).
-
-## Behavior
-
-## Tests
+### Tests
 
 [Array tests](test/array/README.md) compare the methods with native Array.
 [Text tests](test/text/README.md) compare current editing operations with string
@@ -44,6 +50,10 @@ browser checks. Run `npm test`, or `npm run test:array` / `npm run test:text`.
 [Benchmarks](benchmark/README.md) compare plain Sequencer with each wrapper,
 with and without listeners: `npm run bench:array`, `npm run bench:text`, or
 `npm run bench` for both.
+
+## Map
+
+## Text
 
 ## License
 

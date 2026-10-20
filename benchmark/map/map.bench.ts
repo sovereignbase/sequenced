@@ -2,9 +2,18 @@ import { mkdirSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { cpus, platform, arch } from 'node:os'
 import { createRequire } from 'node:module'
-import { afterAll, describe, it } from 'vitest'
+import { defaultMaxListeners, setMaxListeners } from 'node:events'
+import { afterAll, beforeAll, describe, it } from 'vitest'
 import { SequencedMap } from '../../src/SequencedMap/class.js'
-import { operations, prepareFixture, createWorkload } from './workloads.js'
+import {
+  operations,
+  prepareFixture,
+  createWorkload,
+  callsPerSample,
+  isReadOnly,
+  isTraversal,
+  supports,
+} from './workloads.js'
 import type { Operation, Implementation } from './workloads.js'
 
 function integers(name: string, fallback: number[]) {
@@ -16,6 +25,9 @@ function integers(name: string, fallback: number[]) {
 const sizes = integers('BENCH_SIZES', [100, 1000, 10000])
 const batch = integers('BENCH_BATCH', [32])[0]
 const time = integers('BENCH_TIME', [20])[0]
+const seed = Number(process.env.BENCH_SEED ?? 0xc0ffee)
+if (!Number.isInteger(seed) || seed < 0 || seed > 0xffffffff)
+  throw new RangeError('BENCH_SEED requires a uint32')
 if (sizes.some((size) => size < batch))
   throw new RangeError('Batch must not exceed size')
 const selected = (process.env.BENCH_OPERATIONS?.split(',') ??
@@ -39,22 +51,33 @@ const rows: Array<{
   implementation: string
   callsPerSample: number
   meanNanosecondsPerCall: number
+  callsPerSecond: number
+  entriesPerSecond?: number
   relativeMarginOfErrorPercent: number
   samples: number
   wrapperToPlain?: number
 }> = []
+const listenerLimit = defaultMaxListeners
+beforeAll(() => setMaxListeners(0))
 
 describe('SequencedMap vs plain Projection', () => {
   for (const size of sizes)
     for (const operation of selected) {
-      it(`${operation} / size=${size}`, async ({ bench }) => {
-        const calls =
-          operation === 'clear' || operation === 'construct' ? 1 : batch
-        const fixture = prepareFixture(operation, size, calls)
-        const readOnly = ['size', 'get', 'has', 'entries', 'snapshot'].includes(
-          operation
+      it.skipIf(
+        !implementations.some((implementation) =>
+          supports(operation, implementation)
         )
-        const registrations = implementations.map((implementation) => {
+      )(`${operation} / size=${size}`, async ({ bench }) => {
+        const calls = callsPerSample(operation, batch)
+        const fixture = prepareFixture(operation, size, calls, seed)
+        const readOnly = isReadOnly(operation)
+        const listenerMutation =
+          operation === 'addEventListener' ||
+          operation === 'removeEventListener'
+        const available = implementations.filter((implementation) =>
+          supports(operation, implementation)
+        )
+        const registrations = available.map((implementation) => {
           let workload: ReturnType<typeof createWorkload>
           const setup = () => {
             workload = createWorkload(fixture, implementation, SequencedMap)
@@ -70,9 +93,15 @@ describe('SequencedMap vs plain Projection', () => {
             implementation,
             {
               async: false,
-              ...(readOnly
-                ? { beforeAll: setup, afterAll: teardown }
-                : { beforeEach: setup, afterEach: teardown }),
+              ...(listenerMutation
+                ? {
+                    beforeAll: setup,
+                    beforeEach: () => workload.resetListeners(),
+                    afterAll: teardown,
+                  }
+                : readOnly
+                  ? { beforeAll: setup, afterAll: teardown }
+                  : { beforeEach: setup, afterEach: teardown }),
             },
             () => workload.run()
           )
@@ -88,9 +117,7 @@ describe('SequencedMap vs plain Projection', () => {
             ? [await registrations[0].run(options)]
             : await bench
                 .compare(...registrations, options)
-                .then((storage) =>
-                  implementations.map((name) => storage.get(name))
-                )
+                .then((storage) => available.map((name) => storage.get(name)))
         const plain = results.find((result) => result.name === 'plain')
         for (const result of results)
           rows.push({
@@ -99,6 +126,10 @@ describe('SequencedMap vs plain Projection', () => {
             implementation: result.name,
             callsPerSample: calls,
             meanNanosecondsPerCall: (result.latency.mean * 1e6) / calls,
+            callsPerSecond: (calls * 1e3) / result.latency.mean,
+            entriesPerSecond: isTraversal(operation)
+              ? (calls * size * 1e3) / result.latency.mean
+              : undefined,
             relativeMarginOfErrorPercent: result.latency.rme,
             samples: result.latency.samplesCount,
             wrapperToPlain: plain
@@ -113,6 +144,7 @@ describe('SequencedMap vs plain Projection', () => {
 })
 
 afterAll(() => {
+  setMaxListeners(listenerLimit)
   const report = {
     generatedAt: new Date().toISOString(),
     environment: {
@@ -124,9 +156,32 @@ afterAll(() => {
       arch: arch(),
       cpu: cpus()[0]?.model,
     },
-    config: { sizes, batch, time, implementations, operations: selected },
+    config: { sizes, batch, time, seed, implementations, operations: selected },
+    units: {
+      callsPerSecond:
+        'complete method calls per second; iteration calls consume the entire collection',
+      entriesPerSecond: 'entries visited per second by traversal methods',
+    },
+    unavailable: selected.flatMap((operation) =>
+      implementations
+        .filter((implementation) => !supports(operation, implementation))
+        .map((implementation) => ({
+          operation,
+          implementation,
+          reason: 'Projection has no equivalent API',
+        }))
+    ),
     complete:
-      rows.length === sizes.length * selected.length * implementations.length,
+      rows.length ===
+      sizes.length *
+        selected.reduce(
+          (count, operation) =>
+            count +
+            implementations.filter((implementation) =>
+              supports(operation, implementation)
+            ).length,
+          0
+        ),
     results: rows,
   }
   const output = resolve('benchmark/.results')
@@ -135,4 +190,27 @@ afterAll(() => {
     resolve(output, 'map.json'),
     JSON.stringify(report, null, 2) + '\n'
   )
+  for (const size of sizes) {
+    console.log('Map throughput, size=' + size + ' (ops/s)')
+    console.table(
+      selected.map((operation) =>
+        Object.fromEntries([
+          ['operation', operation],
+          ...implementations.map((implementation) => [
+            implementation,
+            rows
+              .find(
+                (row) =>
+                  row.size === size &&
+                  row.operation === operation &&
+                  row.implementation === implementation
+              )
+              ?.callsPerSecond.toLocaleString('en-US', {
+                maximumFractionDigits: 0,
+              }) ?? '—',
+          ]),
+        ])
+      )
+    )
+  }
 })

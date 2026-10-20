@@ -1,4 +1,4 @@
-import { deepStrictEqual } from 'node:assert'
+import { deepStrictEqual, throws } from 'node:assert'
 import { Projection } from '@sovereignbase/sequencer'
 import type { Gossip } from '@sovereignbase/sequencer'
 import { SequencedMap } from '../../src/SequencedMap/class.js'
@@ -10,34 +10,105 @@ import type {
 import { mapSnapshot } from '../../test/map/map.js'
 
 export const operations = [
-  'size',
-  'get',
-  'has',
-  'entries',
-  'set.existing',
+  'get.random',
+  'has.random',
+  'set.random',
+  'delete.random',
+  'apply.set.random',
+  'apply.delete.random',
   'set.new',
-  'delete.head',
-  'delete.tail',
+  'apply.set.new',
+  'size',
   'clear',
-  'apply.insert',
-  'apply.replace',
-  'merge.insert',
-  'merge.replace',
+  'keys',
+  'values',
+  'entries',
+  'iterator',
+  'forEach',
+  'merge.set.random',
+  'merge.delete.random',
+  'merge.set.new',
+  'merge.identical',
   'snapshot',
+  'toJSON',
   'construct',
+  'destroy',
+  'addEventListener',
+  'removeEventListener',
+  'dispatchEvent',
+  'toStringTag',
+  'inspect.node',
+  'inspect.deno',
 ] as const
 export type Operation = (typeof operations)[number]
 export type Implementation = 'plain' | 'wrapper' | 'wrapper+listeners'
+
 type Entry = SequencedMapEntry<SerializableKey, number>
 type Snapshot = SequencedMapSnapshot<SerializableKey, number>
 type MapReplica = SequencedMap<SerializableKey, number>
 export let resultSink: unknown
 let eventSink: unknown
 
+const wrapperOnly: readonly Operation[] = [
+  'addEventListener',
+  'removeEventListener',
+  'dispatchEvent',
+  'toStringTag',
+]
+export function supports(
+  operation: Operation,
+  implementation: Implementation
+): boolean {
+  return implementation !== 'plain' || !wrapperOnly.includes(operation)
+}
+export function callsPerSample(operation: Operation, batch: number): number {
+  return ['clear', 'construct', 'destroy'].includes(operation) ? 1 : batch
+}
+export function isReadOnly(operation: Operation): boolean {
+  return [
+    'get.random',
+    'has.random',
+    'size',
+    'keys',
+    'values',
+    'entries',
+    'iterator',
+    'forEach',
+    'snapshot',
+    'toJSON',
+    'toStringTag',
+    'inspect.node',
+    'inspect.deno',
+    'dispatchEvent',
+    'merge.identical',
+  ].includes(operation)
+}
+export function isTraversal(operation: Operation): boolean {
+  return [
+    'keys',
+    'values',
+    'entries',
+    'iterator',
+    'forEach',
+    'inspect.node',
+    'inspect.deno',
+  ].includes(operation)
+}
+
+function random(seed: number) {
+  return () => {
+    let word = (seed += 0x6d2b79f5)
+    word = Math.imul(word ^ (word >>> 15), word | 1)
+    word ^= word + Math.imul(word ^ (word >>> 7), word | 61)
+    return ((word ^ (word >>> 14)) >>> 0) / 0x100000000
+  }
+}
+
 export function prepareFixture(
   operation: Operation,
   size: number,
-  batch: number
+  batch: number,
+  seed = 0xc0ffee
 ) {
   if (
     !Number.isInteger(size) ||
@@ -46,87 +117,97 @@ export function prepareFixture(
     size < batch
   )
     throw new RangeError('Fixture requires integers 1 <= batch <= size')
+  if (!Number.isInteger(seed) || seed < 0 || seed > 0xffffffff)
+    throw new RangeError('Seed must be a uint32')
   const entries = Array.from({ length: size }, (_, i): Entry => [
     i % 2 ? String(i) : i,
     i,
   ])
   const snapshot = mapSnapshot(entries)
+  const next = random(seed)
+  const shuffled = Array.from({ length: size }, (_, i) => i)
+  const traceLength =
+    operation === 'get.random' || operation === 'has.random' ? size : batch
+  const selected = new Array<number>(traceLength)
+  for (let i = 0; i < traceLength; i++) {
+    const other = i + Math.floor(next() * (size - i))
+    selected[i] = shuffled[other]
+    shuffled[other] = shuffled[i]
+  }
+  const keys = selected.map((at) => entries[at][0])
+  const deletion = operation.includes('delete')
+  const positions = selected.map((at, i) => {
+    let position = at
+    if (deletion)
+      for (let previous = 0; previous < i; previous++)
+        if (selected[previous] < at) position--
+    return position
+  })
   const payloads = Array.from({ length: batch }, (_, i): Entry => [
-    `new-${i}`,
+    operation.endsWith('.new') ? 'new-' + i : entries[selected[i]][0],
     -i - 1,
   ])
-  const middle = Math.floor(size / 2)
   const expected = new Map(entries)
   const deltas: Gossip<Entry>[] = []
   const states: Snapshot[] = []
-  if (operation.startsWith('apply.') || operation.startsWith('merge.')) {
+  if (operation === 'merge.identical') {
+    const identical = new Projection<Entry>(1, snapshot)
+    try {
+      states.push(identical.sequence())
+    } finally {
+      identical.destroy()
+    }
+  } else if (operation.startsWith('apply.') || operation.startsWith('merge.')) {
     const sender = new Projection<Entry>(200, snapshot)
-    const model = entries.slice()
     try {
       sender.apply([[1]])
-      for (const payload of payloads) {
-        if (operation.endsWith('.replace')) {
-          const entry: Entry = [entries[middle][0], payload[1]]
-          deltas.push(sender.replace([entry], middle, middle))
-          model[middle] = entry
+      for (let i = 0; i < batch; i++) {
+        if (deletion) {
+          deltas.push(sender.remove(positions[i], positions[i]))
+          expected.delete(keys[i])
+        } else if (operation.endsWith('.new')) {
+          deltas.push(sender.insert([payloads[i]], sender.length()))
+          expected.set(...payloads[i])
         } else {
-          deltas.push(sender.insert([payload], middle))
-          model.splice(middle, 0, payload)
+          deltas.push(sender.replace([payloads[i]], positions[i], positions[i]))
+          expected.set(...payloads[i])
         }
         if (operation.startsWith('merge.')) states.push(sender.sequence())
       }
-      expected.clear()
-      for (const [key, value] of model) expected.set(key, value)
     } finally {
       sender.destroy()
     }
   } else
     for (let i = 0; i < batch; i++) {
-      switch (operation) {
-        case 'set.existing':
-          expected.set(entries[middle][0], payloads[i][1])
-          break
-        case 'set.new':
-          expected.set(...payloads[i])
-          break
-        case 'delete.head':
-          expected.delete(entries[i][0])
-          break
-        case 'delete.tail':
-          expected.delete(entries[size - i - 1][0])
-          break
-        case 'clear':
-          expected.clear()
-          break
-      }
+      if (operation === 'set.random' || operation === 'set.new')
+        expected.set(...payloads[i])
+      else if (operation === 'delete.random') expected.delete(keys[i])
+      else if (operation === 'clear' || operation === 'destroy')
+        expected.clear()
     }
   return {
     operation,
     entries,
     snapshot,
+    keys,
+    selected,
+    positions,
     payloads,
-    middle,
     expected: [...expected],
     deltas,
     states,
     batch,
+    seed,
   }
 }
 
-interface Subject {
-  size(): number
-  get(): number | undefined
-  has(): boolean
-  entries(): Entry[]
-  setExisting(entry: Entry): unknown
-  setNew(entry: Entry): unknown
-  deleteHead(key: SerializableKey): unknown
-  deleteTail(key: SerializableKey): unknown
-  clear(): unknown
-  apply(delta: Gossip<Entry>): unknown
-  merge(snapshot: Snapshot): unknown
-  snapshot(): Snapshot
-  dispose(): void
+function listen(map: MapReplica) {
+  const listener = ({ detail }: CustomEvent<unknown>) => {
+    eventSink = detail
+  }
+  map.addEventListener('change', listener)
+  map.addEventListener('delta', listener)
+  map.addEventListener('snapshot', listener)
 }
 
 export function createWorkload(
@@ -134,161 +215,259 @@ export function createWorkload(
   implementation: Implementation,
   Constructor?: typeof SequencedMap
 ) {
+  if (!supports(fixture.operation, implementation))
+    throw new TypeError('Projection has no equivalent for ' + fixture.operation)
   if (implementation !== 'plain' && !Constructor)
     throw new TypeError('Map benchmarks require the real wrapper constructor')
   const {
     operation,
-    middle,
     batch,
     entries,
     snapshot,
+    keys,
+    selected,
+    positions,
     payloads,
     deltas,
     states,
   } = fixture
-  if (operation === 'construct') {
-    let replica: Projection<Entry> | MapReplica
-    return {
-      run() {
-        replica =
-          implementation === 'plain'
-            ? new Projection<Entry>(1, snapshot)
-            : new Constructor!<SerializableKey, number>(1, snapshot)
-        if (implementation === 'wrapper+listeners') {
-          const map = replica as MapReplica
-          const listener = ({ detail }: CustomEvent<unknown>) => {
-            eventSink = detail
-          }
-          map.addEventListener('change', listener)
-          map.addEventListener('delta', listener)
-        }
-        resultSink = replica
-      },
-      verify() {
-        deepStrictEqual(
-          implementation === 'plain'
-            ? (replica as Projection<Entry>).values()
-            : Array.from(replica as MapReplica),
-          fixture.expected
-        )
-      },
-      dispose() {
-        replica.destroy()
-        resultSink = undefined
-      },
+  let raw: Projection<Entry> | undefined
+  let map: MapReplica | undefined
+  const create = () => {
+    if (implementation === 'plain') raw = new Projection<Entry>(1, snapshot)
+    else {
+      map = new Constructor!<SerializableKey, number>(1, snapshot)
+      if (implementation === 'wrapper+listeners') listen(map)
     }
   }
-  let subject: Subject
-  if (implementation === 'plain') {
-    const raw = new Projection<Entry>(1, snapshot)
-    subject = {
-      size: () => raw.length(),
-      get: () => raw.value(middle)?.[1],
-      has: () => raw.value(middle) !== undefined,
-      entries: () => raw.values(),
-      setExisting: ([, value]) =>
-        raw.replace([[entries[middle][0], value]], middle, middle),
-      setNew: (entry) => raw.insert([entry], raw.length()),
-      deleteHead: () => raw.remove(0, 0),
-      deleteTail: () => raw.remove(raw.length() - 1, raw.length() - 1),
-      clear: () => raw.remove(0, raw.length() - 1),
-      apply: (delta) => raw.apply(delta),
-      merge: (state) => raw.merge(state),
-      snapshot: () => raw.sequence(),
-      dispose: () => raw.destroy(),
-    }
-  } else {
-    const map = new Constructor!<SerializableKey, number>(1, snapshot)
-    const listener = ({ detail }: CustomEvent<unknown>) => {
-      eventSink = detail
-    }
-    if (implementation === 'wrapper+listeners') {
-      map.addEventListener('change', listener)
-      map.addEventListener('delta', listener)
-    }
-    subject = {
-      size: () => map.size,
-      get: () => map.get(entries[middle][0]),
-      has: () => map.has(entries[middle][0]),
-      entries: () => Array.from(map),
-      setExisting: ([, value]) => map.set(entries[middle][0], value),
-      setNew: ([key, value]) => map.set(key, value),
-      deleteHead: (key) => map.delete(key),
-      deleteTail: (key) => map.delete(key),
-      clear: () => map.clear(),
-      apply: (delta) => map.apply(delta),
-      merge: (state) => map.merge(state),
-      snapshot: () => map.toJSON(),
-      dispose() {
-        map.removeEventListener('change', listener)
-        map.removeEventListener('delta', listener)
-        map.destroy()
-        eventSink = undefined
-      },
+  if (operation !== 'construct') create()
+  let call: (i: number) => unknown
+  let eventCalls = 0
+  let callbackTotal = 0
+  const visit = (value: number) => {
+    callbackTotal += value
+  }
+  const visitEntry = ([, value]: Entry) => visit(value)
+  const listeners =
+    operation === 'addEventListener' || operation === 'removeEventListener'
+      ? Array.from({ length: batch }, () => () => {
+          eventCalls++
+        })
+      : []
+  if (operation === 'removeEventListener')
+    for (const listener of listeners) map!.addEventListener('change', listener)
+  if (operation === 'dispatchEvent')
+    map!.addEventListener('change', () => {
+      eventCalls++
+    })
+  const detail = Object.freeze({ benchmark: 1 })
+  switch (operation) {
+    case 'get.random':
+      call = raw
+        ? (i) => raw!.value(positions[i])?.[1]
+        : (i) => map!.get(keys[i])
+      break
+    case 'has.random':
+      call = raw
+        ? (i) => raw!.value(positions[i]) !== undefined
+        : (i) => map!.has(keys[i])
+      break
+    case 'set.random':
+      call = raw
+        ? (i) => raw!.replace([payloads[i]], positions[i], positions[i])
+        : (i) => map!.set(...payloads[i])
+      break
+    case 'delete.random':
+      call = raw
+        ? (i) => raw!.remove(positions[i], positions[i])
+        : (i) => map!.delete(keys[i])
+      break
+    case 'set.new':
+      call = raw
+        ? (i) => raw!.insert([payloads[i]], raw!.length())
+        : (i) => map!.set(...payloads[i])
+      break
+    case 'apply.set.random':
+    case 'apply.delete.random':
+    case 'apply.set.new':
+      call = raw ? (i) => raw!.apply(deltas[i]) : (i) => map!.apply(deltas[i])
+      break
+    case 'merge.set.random':
+    case 'merge.delete.random':
+    case 'merge.set.new':
+      call = raw ? (i) => raw!.merge(states[i]) : (i) => map!.merge(states[i])
+      break
+    case 'merge.identical':
+      call = raw ? () => raw!.merge(states[0]) : () => map!.merge(states[0])
+      break
+    case 'size':
+      call = raw ? () => raw!.length() : () => map!.size
+      break
+    case 'clear':
+      call = raw ? () => raw!.remove(0, raw!.length() - 1) : () => map!.clear()
+      break
+    case 'keys':
+      call = raw
+        ? () => raw!.values().map(([key]) => key)
+        : () => Array.from(map!.keys())
+      break
+    case 'values':
+      call = raw
+        ? () => raw!.values().map(([, value]) => value)
+        : () => Array.from(map!.values())
+      break
+    case 'entries':
+      call = raw ? () => raw!.values() : () => Array.from(map!.entries())
+      break
+    case 'iterator':
+      call = raw
+        ? () => Array.from(raw!.values()[Symbol.iterator]())
+        : () => Array.from(map![Symbol.iterator]())
+      break
+    case 'forEach':
+      call = raw
+        ? () => raw!.values().forEach(visitEntry)
+        : () => map!.forEach(visit)
+      break
+    case 'snapshot':
+      call = raw ? () => raw!.sequence() : () => map!.snapshot()
+      break
+    case 'toJSON':
+      call = raw ? () => raw!.sequence() : () => map!.toJSON()
+      break
+    case 'construct':
+      call = () => {
+        create()
+        return raw ?? map
+      }
+      break
+    case 'destroy':
+      call = raw ? () => raw!.destroy() : () => map!.destroy()
+      break
+    case 'addEventListener':
+      call = (i) => map!.addEventListener('change', listeners[i])
+      break
+    case 'removeEventListener':
+      call = (i) => map!.removeEventListener('change', listeners[i])
+      break
+    case 'dispatchEvent':
+      call = () => map!.dispatchEvent('change', detail)
+      break
+    case 'toStringTag':
+      call = () => map![Symbol.toStringTag]
+      break
+    case 'inspect.node':
+    case 'inspect.deno': {
+      const symbol = Symbol.for(
+        operation === 'inspect.node'
+          ? 'nodejs.util.inspect.custom'
+          : 'Deno.customInspect'
+      )
+      call = raw
+        ? () => new Map(raw!.values())
+        : () => Reflect.apply(Reflect.get(map!, symbol), map, [])
+      break
     }
   }
+  let runs = 0
+  let checksum = 0
+  let cursor = 0
+  let start = 0
+  const pointRead = operation === 'get.random' || operation === 'has.random'
   return {
+    resetListeners() {
+      for (const listener of listeners) {
+        if (operation === 'addEventListener')
+          map!.removeEventListener('change', listener)
+        else map!.addEventListener('change', listener)
+      }
+    },
     run() {
-      for (let i = 0; i < batch; i++)
-        switch (operation) {
-          case 'size':
-            resultSink = subject.size()
-            break
-          case 'get':
-            resultSink = subject.get()
-            break
-          case 'has':
-            resultSink = subject.has()
-            break
-          case 'entries':
-            resultSink = subject.entries()
-            break
-          case 'set.existing':
-            resultSink = subject.setExisting(payloads[i])
-            break
-          case 'set.new':
-            resultSink = subject.setNew(payloads[i])
-            break
-          case 'delete.head':
-            resultSink = subject.deleteHead(entries[i][0])
-            break
-          case 'delete.tail':
-            resultSink = subject.deleteTail(entries[entries.length - i - 1][0])
-            break
-          case 'clear':
-            resultSink = subject.clear()
-            break
-          case 'apply.insert':
-          case 'apply.replace':
-            resultSink = subject.apply(deltas[i])
-            break
-          case 'merge.insert':
-          case 'merge.replace':
-            resultSink = subject.merge(states[i])
-            break
-          case 'snapshot':
-            resultSink = subject.snapshot()
-            break
-        }
+      callbackTotal = 0
+      checksum = 0
+      start = cursor
+      for (let i = 0; i < batch; i++) {
+        const result = call(pointRead ? cursor : i)
+        if (pointRead && ++cursor === selected.length) cursor = 0
+        if (operation === 'get.random') checksum += result as number
+        else if (
+          operation === 'has.random' ||
+          (operation === 'delete.random' && map)
+        )
+          checksum += Number(result)
+        resultSink = result
+      }
+      runs++
     },
     verify() {
-      deepStrictEqual(subject.entries(), fixture.expected)
+      if (operation === 'destroy') {
+        if (raw) throws(() => raw!.length())
+        else deepStrictEqual(map!.size, 0)
+        return
+      }
+      deepStrictEqual(raw ? raw.values() : Array.from(map!), fixture.expected)
+      if (operation === 'get.random') {
+        let expected = 0
+        for (let i = 0; i < batch; i++)
+          expected += entries[selected[(start + i) % selected.length]][1]
+        deepStrictEqual(checksum, expected)
+      }
+      if (operation === 'has.random' || (operation === 'delete.random' && map))
+        deepStrictEqual(checksum, batch)
       if (operation === 'size') deepStrictEqual(resultSink, entries.length)
-      if (operation === 'get') deepStrictEqual(resultSink, entries[middle][1])
-      if (operation === 'has') deepStrictEqual(resultSink, true)
-      if (operation === 'entries') deepStrictEqual(resultSink, entries)
-      if (operation === 'snapshot') {
-        const restored = new Projection<Entry>(300, resultSink)
+      if (operation === 'keys')
+        deepStrictEqual(
+          resultSink,
+          entries.map(([key]) => key)
+        )
+      if (operation === 'values')
+        deepStrictEqual(
+          resultSink,
+          entries.map(([, value]) => value)
+        )
+      if (operation === 'entries' || operation === 'iterator')
+        deepStrictEqual(resultSink, entries)
+      if (operation === 'forEach')
+        deepStrictEqual(
+          callbackTotal,
+          batch * entries.reduce((sum, [, value]) => sum + value, 0)
+        )
+      if (operation === 'inspect.node' || operation === 'inspect.deno')
+        deepStrictEqual(resultSink, new Map(entries))
+      if (operation === 'toStringTag') deepStrictEqual(resultSink, 'Map')
+      if (
+        operation === 'toJSON' ||
+        (operation === 'snapshot' &&
+          (raw || implementation === 'wrapper+listeners'))
+      ) {
+        const restored = new Projection<Entry>(
+          300,
+          raw || operation === 'toJSON' ? resultSink : eventSink
+        )
         try {
           deepStrictEqual(restored.values(), fixture.expected)
         } finally {
           restored.destroy()
         }
       }
+      if (
+        operation === 'addEventListener' ||
+        operation === 'removeEventListener'
+      ) {
+        map!.dispatchEvent('change', detail)
+        deepStrictEqual(
+          eventCalls,
+          operation === 'addEventListener' ? batch : 0
+        )
+      }
+      if (operation === 'dispatchEvent')
+        deepStrictEqual(eventCalls, runs * batch)
     },
     dispose() {
-      subject.dispose()
+      raw?.destroy()
+      map?.destroy()
       resultSink = undefined
+      eventSink = undefined
     },
   }
 }
