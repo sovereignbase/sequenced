@@ -11,7 +11,7 @@ export default defineConfig({
     environment: 'node',
     fileParallelism: false,
     maxWorkers: 1,
-    reporters: ['default'],
+    reporters: ['default', './scripts/vitest-reporter.ts'],
     testTimeout: 120_000,
     coverage: { enabled: false },
   },

@@ -7,6 +7,7 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
+  reporter: [['list'], ['./scripts/playwright-reporter.ts']],
   use: {
     trace: 'retain-on-failure',
     baseURL: 'http://127.0.0.1:4174',

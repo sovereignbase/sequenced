@@ -2,7 +2,12 @@ import { expect, test } from '@playwright/test'
 
 test('Map methods, JSON keys and replication events work in a browser', async ({
   page,
-}) => {
+  browser,
+}, testInfo) => {
+  testInfo.annotations.push({
+    type: 'browser-version',
+    description: browser.version(),
+  })
   await page.goto('/')
   const result = await page.evaluate(async () => {
     const { Sequenced } = await import(

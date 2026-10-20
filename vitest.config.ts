@@ -7,9 +7,11 @@ export default defineConfig({
       'test/text/**/test.ts',
       'test/map/**/test.ts',
       'test/errors/**/test.ts',
+      'test/reporting/**/test.ts',
     ],
     environment: 'node',
     fileParallelism: false,
+    reporters: ['default', './scripts/vitest-reporter.ts'],
     coverage: {
       enabled: true,
       provider: 'v8',

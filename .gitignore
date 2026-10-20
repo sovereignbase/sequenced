@@ -26,3 +26,4 @@ Thumbs.db
 .c8/
 
 benchmark/.results/
+test/.results/
