@@ -3,10 +3,10 @@
   "license": "Apache-2.0",
   "name": "@sovereignbase/sequenced",
   "version": "0.0.0",
-  "description": "",
+  "description": "Replicated Array, Map and Text implementations built on Sequencer",
   "keywords": [
-    "typescript",
-    "sovereignbase"
+    "crdt",
+    "collaborative-editing"
   ],
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",

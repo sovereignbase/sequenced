@@ -6,8 +6,7 @@
 
 # Sequenced
 
-Replicated Array, Map and Text wrappers built on [Sequencer](https://github.com/sovereignbase/sequencer).
-Replicas exchange `delta` events through `apply()`. `merge()` accepts a complete replication snapshot.
+Replicated Array, Map and Text implementations built on [Sequencer](https://github.com/sovereignbase/sequencer).
 
 ## Contents
 
@@ -40,13 +39,10 @@ bob.destroy()
 ```
 
 The dense Array method API uses `get(index)`, `set(index, value)` and `delete(index)` for individual positions.
+
 Copying methods return plain arrays. Callbacks receive the wrapper, and iterators observe subsequent edits.
 
-#### Errors
-
-Wrapper validation throws `SequencedError` with a message prefixed with `{@sovereignbase/sequenced}`.
-`SequencedError` and `SequencedErrorCode` are exported from the package; the constructor accepts standard `ErrorOptions`, including `cause`.
-Callback exceptions and errors from Sequencer or delegated platform methods retain their original types.
+#### Errorss
 
 | Code                        | Meaning                                                 |
 | --------------------------- | ------------------------------------------------------- |
@@ -152,8 +148,6 @@ Local operations follow native Map behavior. Concurrent duplicate keys resolve b
 | `INVALID_MAP_KEY`   | A key is neither a string nor a finite number. |
 | `INVALID_MAP_ENTRY` | An entry is not a `[key, value]` pair.         |
 | `INVALID_CALLBACK`  | The `forEach` callback is not callable.        |
-
-These are `SequencedError` instances with the same prefix and `cause` support described for Array.
 
 ### Benchmarks
 
