@@ -5,6 +5,7 @@ export default defineConfig({
     include: [
       'test/{array,map,text}/**/test.ts',
       'test/{array,map,text}/compatibility/*.test.ts',
+      'test/unit/**/test.ts',
     ],
     environment: 'node',
     fileParallelism: false,
@@ -13,13 +14,7 @@ export default defineConfig({
     coverage: {
       enabled: true,
       provider: 'v8',
-      include: [
-        'src/SequencedArray/**/*.ts',
-        'src/SequencedText/**/*.ts',
-        'src/SequencedMap/**/*.ts',
-        'src/errors/**/*.ts',
-        'src/index.ts',
-      ],
+      include: ['src/**/*.ts'],
       reporter: ['text', 'lcov'],
       reportOnFailure: true,
       thresholds: {

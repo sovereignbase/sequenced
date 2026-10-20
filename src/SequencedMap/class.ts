@@ -1,3 +1,4 @@
+import { unknownError } from '../errors/unknown.js'
 import { Projection } from '@sovereignbase/sequencer'
 import { SequencedError } from '../errors/class.js'
 import type { Change, Result } from '@sovereignbase/sequencer'
@@ -31,33 +32,20 @@ function entryKey<K extends SerializableKey>(entry: unknown): K {
   return keyOf(entry[0]) as K
 }
 
-// Malformed batches can discard the engine's returned prefix patches. Only that
-// path uses individual tuples; ordinary Gossip is applied once, unchanged.
-function validTuple(entry: unknown): boolean {
-  const insertion = Array.isArray(entry) && typeof entry[0] !== 'number'
-  const words = insertion ? entry[0] : entry
-  if (!(Array.isArray(words) || words instanceof Uint32Array)) return false
-  if (insertion) {
+function validEntries(
+  values: readonly unknown[],
+  allowMissing = false
+): boolean {
+  for (const entry of values) {
+    if (allowMissing && entry === undefined) continue
+    if (!Array.isArray(entry) || entry.length !== 2) return false
+    const key: unknown = entry[0]
     if (
-      entry.length > 2 ||
-      words.length !== 6 ||
-      (entry[1] !== undefined && !Array.isArray(entry[1]))
+      typeof key !== 'string' &&
+      (typeof key !== 'number' || !Number.isFinite(key))
     )
       return false
-  } else if (!words.length || words.length % 2 !== 1) return false
-  if (Array.isArray(words))
-    for (let i = 0; i < words.length; i++) {
-      if (
-        i in words &&
-        (!Number.isInteger(words[i]) || words[i] < 0 || words[i] > 0xffffffff)
-      )
-        return false
-    }
-  return true
-}
-
-function validBatch(delta: unknown[]): boolean {
-  for (let i = 0; i < delta.length; i++) if (!validTuple(delta[i])) return false
+  }
   return true
 }
 
@@ -71,25 +59,37 @@ export class SequencedMap<K extends SerializableKey, V> implements Iterable<
   private duplicates?: Map<K, number>
   private eventTarget?: EventTarget
 
-  constructor(actorID: number, snapshot?: SequencedMapSnapshot<K, V>) {
-    this.projection = new Projection(actorID, snapshot)
+  #value(at: number): SequencedMapEntry<K, V> {
     try {
-      let duplicates: number[] | undefined
-      const entries = this.projection.values()
-      for (let at = 0; at < entries.length; at++) {
-        const key = entryKey<K>(entries[at])
-        if (this.index.has(key)) (duplicates ??= []).push(at)
-        else {
-          this.index.set(key, this.positions.length)
-          this.positions.push(key)
+      return this.projection.value(at)!
+    } catch (cause) {
+      throw unknownError(cause, 'SequencedMap.#value()')
+    }
+  }
+
+  constructor(actorID: number, snapshot?: SequencedMapSnapshot<K, V>) {
+    try {
+      this.projection = new Projection(actorID, snapshot)
+      try {
+        let duplicates: number[] | undefined
+        const entries = this.projection.values()
+        for (let at = 0; at < entries.length; at++) {
+          const key = entryKey<K>(entries[at])
+          if (this.index.has(key)) (duplicates ??= []).push(at)
+          else {
+            this.index.set(key, this.positions.length)
+            this.positions.push(key)
+          }
         }
+        if (duplicates)
+          for (let i = duplicates.length - 1; i >= 0; i--)
+            this.projection.remove(duplicates[i], duplicates[i])
+      } catch (error) {
+        this.projection.destroy()
+        throw error
       }
-      if (duplicates)
-        for (let i = duplicates.length - 1; i >= 0; i--)
-          this.projection.remove(duplicates[i], duplicates[i])
-    } catch (error) {
-      this.projection.destroy()
-      throw error
+    } catch (cause) {
+      throw unknownError(cause, 'SequencedMap.constructor()')
     }
   }
 
@@ -101,88 +101,100 @@ export class SequencedMap<K extends SerializableKey, V> implements Iterable<
   }
   get(key: K): V | undefined {
     const position = this.index.get(keyOf(key))
-    return position === undefined
-      ? undefined
-      : this.projection.value(position)![1]
+    return position === undefined ? undefined : this.#value(position)![1]
   }
   has(key: K): boolean {
     return this.index.has(keyOf(key))
   }
 
   set(key: K, value: V): this {
-    key = keyOf(key)
-    const position = this.index.get(key)
-    const entry: SequencedMapEntry<K, V> = [key, value]
-    let delta: SequencedMapDelta<K, V>
-    if (position === undefined) {
-      const at = this.positions.length
-      delta = this.projection.insert([entry], at)
-      this.positions.push(key)
-      this.index.set(key, at)
-    } else delta = this.projection.replace([entry], position, position)
-    if (this.eventTarget)
-      this.dispatchEvent('change', { [key]: value } as SequencedMapChange<K, V>)
-    this.dispatchEvent('delta', delta)
-    return this
+    try {
+      key = keyOf(key)
+      const position = this.index.get(key)
+      const entry: SequencedMapEntry<K, V> = [key, value]
+      let delta: SequencedMapDelta<K, V>
+      if (position === undefined) {
+        const at = this.positions.length
+        delta = this.projection.insert([entry], at)
+        this.positions.push(key)
+        this.index.set(key, at)
+      } else delta = this.projection.replace([entry], position, position)
+      if (this.eventTarget)
+        this.dispatchEvent('change', { [key]: value } as SequencedMapChange<
+          K,
+          V
+        >)
+      this.dispatchEvent('delta', delta)
+      return this
+    } catch (cause) {
+      throw unknownError(cause, 'SequencedMap.set()')
+    }
   }
 
   delete(key: K): boolean {
-    key = keyOf(key)
-    const position = this.index.get(key)
-    if (position === undefined) return false
-    let delta: SequencedMapDelta<K, V>
-    if (this.duplicates?.has(key)) {
-      const replies: Array<SequencedMapDelta<K, V>[number]> = []
-      for (let at = this.positions.length - 1; at >= position; at--)
-        if (this.positions[at] === key)
-          for (const tuple of this.projection.remove(at, at))
-            replies.push(tuple)
-      delta = replies
-      this.duplicates.delete(key)
-    } else delta = this.projection.remove(position, position)
-    this.index.delete(key)
-    let write = position
-    for (let read = position + 1; read < this.positions.length; read++) {
-      const other = this.positions[read]
-      if (other === key) continue
-      this.positions[write] = other
-      if (this.index.get(other) === read) this.index.set(other, write)
-      write++
+    try {
+      key = keyOf(key)
+      const position = this.index.get(key)
+      if (position === undefined) return false
+      let delta: SequencedMapDelta<K, V>
+      if (this.duplicates?.has(key)) {
+        const replies: Array<SequencedMapDelta<K, V>[number]> = []
+        for (let at = this.positions.length - 1; at >= position; at--)
+          if (this.positions[at] === key)
+            for (const tuple of this.projection.remove(at, at))
+              replies.push(tuple)
+        delta = replies
+        this.duplicates.delete(key)
+      } else delta = this.projection.remove(position, position)
+      this.index.delete(key)
+      let write = position
+      for (let read = position + 1; read < this.positions.length; read++) {
+        const other = this.positions[read]
+        if (other === key) continue
+        this.positions[write] = other
+        if (this.index.get(other) === read) this.index.set(other, write)
+        write++
+      }
+      this.positions.length = write
+      if (this.eventTarget)
+        this.dispatchEvent('change', { [key]: undefined } as SequencedMapChange<
+          K,
+          V
+        >)
+      this.dispatchEvent('delta', delta)
+      return true
+    } catch (cause) {
+      throw unknownError(cause, 'SequencedMap.delete()')
     }
-    this.positions.length = write
-    if (this.eventTarget)
-      this.dispatchEvent('change', { [key]: undefined } as SequencedMapChange<
-        K,
-        V
-      >)
-    this.dispatchEvent('delta', delta)
-    return true
   }
 
   clear(): void {
-    if (!this.size) return
-    let changes: Record<K, V | undefined> | undefined
-    if (this.eventTarget) {
-      changes = Object.create(null)
-      for (const key of this.index.keys()) changes![key] = undefined
+    try {
+      if (!this.size) return
+      let changes: Record<K, V | undefined> | undefined
+      if (this.eventTarget) {
+        changes = Object.create(null)
+        for (const key of this.index.keys()) changes![key] = undefined
+      }
+      const delta = this.projection.remove(0, this.positions.length - 1)
+      this.positions.length = 0
+      this.index.clear()
+      this.duplicates?.clear()
+      if (changes) this.dispatchEvent('change', changes)
+      this.dispatchEvent('delta', delta)
+    } catch (cause) {
+      throw unknownError(cause, 'SequencedMap.clear()')
     }
-    const delta = this.projection.remove(0, this.positions.length - 1)
-    this.positions.length = 0
-    this.index.clear()
-    this.duplicates?.clear()
-    if (changes) this.dispatchEvent('change', changes)
-    this.dispatchEvent('delta', delta)
   }
 
   keys(): MapIterator<K> {
     return this.index.keys()
   }
   *values(): MapIterator<V> {
-    for (const at of this.index.values()) yield this.projection.value(at)![1]
+    for (const at of this.index.values()) yield this.#value(at)![1]
   }
   *entries(): MapIterator<[K, V]> {
-    for (const [key, at] of this.index)
-      yield [key, this.projection.value(at)![1]]
+    for (const [key, at] of this.index) yield [key, this.#value(at)![1]]
   }
   [Symbol.iterator](): MapIterator<[K, V]> {
     return this.entries()
@@ -201,34 +213,53 @@ export class SequencedMap<K extends SerializableKey, V> implements Iterable<
   }
 
   apply(delta: unknown): void {
-    if (!Array.isArray(delta) || delta.length < 2 || validBatch(delta)) {
+    try {
+      if (Array.isArray(delta)) {
+        for (const tuple of delta) {
+          if (!Array.isArray(tuple) || typeof tuple[0] === 'number') continue
+          const words = tuple[0]
+          const count = words?.[5]
+          if (
+            count > 0 &&
+            count < 0x80000000 &&
+            (!Array.isArray(tuple[1]) ||
+              tuple[1].length < count ||
+              !validEntries(tuple[1]))
+          )
+            return
+        }
+      }
       this.received(this.projection.apply(delta))
-      return
-    }
-    const lane = [delta[0]]
-    for (let i = 0; i < delta.length; i++) {
-      lane[0] = delta[i]
-      const result = this.projection.apply(lane)
-      this.received(result)
-      if (!result) break
-    }
+    } catch {}
   }
   merge(snapshot: SequencedMapSnapshot<K, V>): void {
-    this.received(this.projection.merge(snapshot))
+    try {
+      if (Array.isArray(snapshot?.[1]) && !validEntries(snapshot[1], true))
+        return
+      this.received(this.projection.merge(snapshot))
+    } catch {}
   }
 
   snapshot(): void {
     this.dispatchEvent('snapshot', this.toJSON())
   }
   toJSON(): SequencedMapSnapshot<K, V> {
-    const [words, values] = this.projection.sequence()
-    return [Array.isArray(words) ? words : Array.from(words), values]
+    try {
+      const [words, values] = this.projection.sequence()
+      return [Array.isArray(words) ? words : Array.from(words), values]
+    } catch (cause) {
+      throw unknownError(cause, 'SequencedMap.toJSON()')
+    }
   }
   destroy(): void {
-    this.projection.destroy()
-    this.index.clear()
-    this.positions.length = 0
-    this.duplicates?.clear()
+    try {
+      this.projection.destroy()
+      this.index.clear()
+      this.positions.length = 0
+      this.duplicates?.clear()
+    } catch (cause) {
+      throw unknownError(cause, 'SequencedMap.destroy()')
+    }
   }
   [Symbol.for('nodejs.util.inspect.custom')](): Map<K, V> {
     return new Map(this)
@@ -241,28 +272,40 @@ export class SequencedMap<K extends SerializableKey, V> implements Iterable<
     listener: SequencedMapEventListener<K, V, E> | null,
     options?: boolean | AddEventListenerOptions
   ): void {
-    ;(this.eventTarget ??= new EventTarget()).addEventListener(
-      type,
-      listener as EventListenerOrEventListenerObject | null,
-      options
-    )
+    try {
+      ;(this.eventTarget ??= new EventTarget()).addEventListener(
+        type,
+        listener as EventListenerOrEventListenerObject | null,
+        options
+      )
+    } catch (cause) {
+      throw unknownError(cause, 'SequencedMap.addEventListener()')
+    }
   }
   removeEventListener<E extends keyof SequencedMapEventMap<K, V>>(
     type: E,
     listener: SequencedMapEventListener<K, V, E> | null,
     options?: boolean | EventListenerOptions
   ): void {
-    this.eventTarget?.removeEventListener(
-      type,
-      listener as EventListenerOrEventListenerObject | null,
-      options
-    )
+    try {
+      this.eventTarget?.removeEventListener(
+        type,
+        listener as EventListenerOrEventListenerObject | null,
+        options
+      )
+    } catch (cause) {
+      throw unknownError(cause, 'SequencedMap.removeEventListener()')
+    }
   }
   dispatchEvent<E extends keyof SequencedMapEventMap<K, V>>(
     type: E,
     detail: SequencedMapEventMap<K, V>[E]
   ): void {
-    this.eventTarget?.dispatchEvent(new CustomEvent(type, { detail }))
+    try {
+      this.eventTarget?.dispatchEvent(new CustomEvent(type, { detail }))
+    } catch (cause) {
+      throw unknownError(cause, 'SequencedMap.dispatchEvent()')
+    }
   }
 
   private received(result: Result<SequencedMapEntry<K, V>> | undefined): void {
@@ -329,7 +372,7 @@ export class SequencedMap<K extends SerializableKey, V> implements Iterable<
     if (
       end === start + 1 &&
       added === 1 &&
-      this.positions[start] === entryKey<K>(values![0])
+      this.positions[start] === values![0]![0]
     ) {
       const key = this.positions[start]
       if (this.index.get(key) === start) changed?.add(key)
@@ -381,7 +424,7 @@ export class SequencedMap<K extends SerializableKey, V> implements Iterable<
     }
     for (let i = 0; i < added; i++) {
       const at = start + i
-      const key = entryKey<K>(values![i])
+      const key = values![i]![0]
       this.positions[at] = key
       const first = this.index.get(key)
       if (first === undefined) {

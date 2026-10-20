@@ -5,6 +5,7 @@ export type SequencedErrorCode =
   | 'REDUCE_EMPTY_ARRAY'
   | 'INVALID_MAP_KEY'
   | 'INVALID_MAP_ENTRY'
+  | 'UNKNOWN_ERROR'
 
 export class SequencedError extends Error {
   readonly code: SequencedErrorCode

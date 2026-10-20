@@ -12,6 +12,7 @@
     "array/**/*.ts",
     "map/**/*.ts",
     "text/**/*.ts",
+    "unit/**/*.ts",
     ".shared/**/*.ts",
     "../benchmark/**/*.ts",
     "../scripts/**/*.ts",

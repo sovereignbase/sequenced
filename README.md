@@ -89,7 +89,7 @@ Node v24.16.0 · win32 x64 · Intel(R) Core(TM) i5-10210U CPU @ 1.60GHz · Seque
 | compability |      9 |      0 |       0 |
 | convergence |      8 |      0 |       0 |
 | equivelance |    280 |      0 |       0 |
-| events      |     22 |      0 |       0 |
+| events      |     40 |      0 |       0 |
 | integration |      6 |      0 |       0 |
 | unit        |     46 |      0 |       0 |
 
@@ -193,7 +193,7 @@ Node v24.16.0 · win32 x64 · Intel(R) Core(TM) i5-10210U CPU @ 1.60GHz · Seque
 | compability |      9 |      0 |       0 |
 | convergence |     10 |      0 |       0 |
 | equivelance |    135 |      0 |       0 |
-| events      |     35 |      0 |       0 |
+| events      |     66 |      0 |       0 |
 | integration |      6 |      0 |       0 |
 | unit        |     95 |      0 |       0 |
 
@@ -246,21 +246,21 @@ Sequencer errors are propagated unchanged.
 
 2026-10-20 · ops/sec
 
-Node v24.16.0 · win32 x64 · Intel(R) Core(TM) i5-10210U CPU @ 1.60GHz · Sequencer 1.0.2
+Node v24.16.0 · win32 x64 · Intel(R) Core(TM) i5-10210U CPU @ 1.60GHz · Sequencer 1.1.1
 
 | Operation        |        100 |      1,000 |     10,000 |
 | ---------------- | ---------: | ---------: | ---------: |
-| `length`         | 55,165,848 | 45,348,586 | 41,587,760 |
-| `read`           |    634,728 |     72,498 |      8,079 |
-| `iterate`        |    133,286 |     14,701 |      1,526 |
-| `insert.head`    |    781,833 |    848,514 |    810,321 |
-| `insert.middle`  |    856,303 |    785,584 |    943,363 |
-| `insert.tail`    |    789,969 |    919,122 |    650,968 |
-| `remove.middle`  |    247,958 |    522,787 |    555,633 |
-| `replace.middle` |    391,759 |    281,665 |    293,702 |
-| `apply.insert`   |    581,862 |    625,453 |    727,876 |
-| `merge.insert`   |     79,044 |     60,045 |     10,663 |
-| `snapshot`       |    555,431 |     76,557 |      9,727 |
+| `length`         | 37,408,810 | 25,071,824 | 34,043,418 |
+| `read`           |    549,931 |     40,203 |      5,782 |
+| `iterate`        |    106,831 |      3,165 |        589 |
+| `insert.head`    |    439,975 |    688,054 |    288,583 |
+| `insert.middle`  |    366,061 |    641,507 |    485,393 |
+| `insert.tail`    |    700,030 |    707,272 |    570,646 |
+| `remove.middle`  |    583,811 |    415,678 |    401,142 |
+| `replace.middle` |    357,634 |    284,990 |    264,359 |
+| `apply.insert`   |    555,286 |    554,510 |    460,970 |
+| `merge.insert`   |     29,858 |     41,471 |     11,182 |
+| `snapshot`       |    472,198 |     79,791 |     10,859 |
 
 <!-- END GENERATED:text:benchmarks -->
 
@@ -275,7 +275,7 @@ Node v24.16.0 · win32 x64 · Intel(R) Core(TM) i5-10210U CPU @ 1.60GHz · Seque
 | compability |      9 |      0 |       0 |
 | convergence |      8 |      0 |       0 |
 | equivelance |     66 |      0 |       0 |
-| events      |     16 |      0 |       0 |
+| events      |     34 |      0 |       0 |
 | integration |      6 |      0 |       0 |
 | unit        |     35 |      0 |       0 |
 

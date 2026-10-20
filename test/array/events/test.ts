@@ -82,6 +82,24 @@ describe('SequencedArray extensions and engine boundary', () => {
   // These tests do not define membership, compaction or delivery policy.
   describe.each(['apply', 'merge'] as const)('%s forwarding', (method) => {
     const input: Sequence<number> = [[], []]
+    it.each(
+      [undefined, null, false, 0, 'invalid', [], [null], [[], null]].map(
+        (input) => ({ input })
+      )
+    )('does not throw for malformed transport input $input', ({ input }) => {
+      const replica = create([1, 2])
+      expect(() =>
+        Reflect.apply(replica[method], replica, [input])
+      ).not.toThrow()
+      expect([...replica]).toEqual([1, 2])
+    })
+
+    it('does not throw after destruction', () => {
+      const replica = create()
+      replica.destroy()
+      expect(() => replica[method](input)).not.toThrow()
+    })
+
     it('forwards the original input once and emits exact returned payloads', () => {
       const replica = create()
       const changes: Change<number> = [[0, 0, [9]]]
@@ -132,13 +150,17 @@ describe('SequencedArray extensions and engine boundary', () => {
       expect(delta.mock.calls[0][0].detail).toBe(gossip)
     })
 
-    it('propagates the engine error unchanged', () => {
+    it('does not throw or emit events when the engine fails', () => {
       const replica = create()
       const error = new Error('engine failure')
       vi.spyOn(Projection.prototype, method).mockImplementation(() => {
         throw error
       })
-      expect(() => replica[method](input)).toThrow(error)
+      const listener = vi.fn()
+      replica.addEventListener('change', listener)
+      replica.addEventListener('delta', listener)
+      expect(() => replica[method](input)).not.toThrow()
+      expect(listener).not.toHaveBeenCalled()
     })
   })
 

@@ -1,5 +1,5 @@
 import { Projection } from '@sovereignbase/sequencer'
-import type { Gossip } from '@sovereignbase/sequencer'
+import type { Gossip, Sequence } from '@sovereignbase/sequencer'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { SequencedMap } from '../../../../src/SequencedMap/class.js'
 import type { SequencedMapEntry } from '../../../../src/index.js'
@@ -55,14 +55,13 @@ describe('incremental Map patches', () => {
       [[1, 2, 3, 4, 5, 6], null],
     ].map((invalid) => ({ invalid }))
   )(
-    'keeps the applied prefix when a subsequent tuple is malformed: %j',
+    'delegates malformed transport metadata without throwing: %j',
     ({ invalid }) => {
       const source = new Projection<Entry>(2)
       const map = new SequencedMap<string | number, number>(1)
       try {
         const delta = source.insert([['a', 1]], 0)
-        map.apply([...delta, invalid])
-        expect([...map]).toEqual([['a', 1]])
+        expect(() => map.apply([...delta, invalid])).not.toThrow()
       } finally {
         source.destroy()
         map.destroy()
@@ -81,14 +80,15 @@ describe('incremental Map patches', () => {
     }
   })
 
-  it('keeps the applied prefix when a gossip batch has a missing tuple', () => {
+  it('delegates a sparse gossip batch without throwing', () => {
     const source = new Projection<Entry>(2)
     const map = new SequencedMap<string | number, number>(1)
     try {
       const delta = [...source.insert([['a', 1]], 0)]
       delta.length++
-      map.apply(delta)
-      expect([...map]).toEqual([['a', 1]])
+      const engine = vi.spyOn(Projection.prototype, 'apply')
+      expect(() => map.apply(delta)).not.toThrow()
+      expect(engine).toHaveBeenCalledExactlyOnceWith(delta)
     } finally {
       source.destroy()
       map.destroy()
@@ -188,7 +188,7 @@ describe('incremental Map patches', () => {
         })
       try {
         if (method === 'apply') map.apply(input)
-        else map.merge(input as ReturnType<typeof source.sequence>)
+        else map.merge(input as Sequence<Entry>)
         expect(read).toHaveBeenCalledExactlyOnceWith(500)
         expect(changes.mock.calls.map(([event]) => event.detail)).toEqual([
           { 500: -1 },

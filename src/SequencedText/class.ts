@@ -1,3 +1,4 @@
+import { unknownError } from '../errors/unknown.js'
 import { Projection } from '@sovereignbase/sequencer'
 
 import type {
@@ -16,6 +17,14 @@ export class SequencedText {
   declare private readonly projection: Projection<string>
   declare private eventTarget: EventTarget
 
+  #value(at: number): string | undefined {
+    try {
+      return this.projection.value(at)
+    } catch (cause) {
+      throw unknownError(cause, 'SequencedText.#value()')
+    }
+  }
+
   /**
    * Creates a text document from an optional replication snapshot.
    *
@@ -23,10 +32,11 @@ export class SequencedText {
    * @param snapshot The replication state to restore. If omitted, the document is empty.
    */
   constructor(actorID: number, snapshot?: SequencedTextSnapshot) {
-    this.projection = new Projection<string>(
-      actorID,
-      snapshot && [snapshot[0], snapshot[1].split('')]
-    )
+    try {
+      this.projection = new Projection<string>(actorID, snapshot)
+    } catch (cause) {
+      throw unknownError(cause, 'SequencedText.constructor()')
+    }
   }
   /**
    * Applies sequencer gossip to the document's replication state.
@@ -37,15 +47,17 @@ export class SequencedText {
    * @param delta The gossip received from another replica.
    */
   apply(delta: unknown): void {
-    const result = this.projection.apply(delta)
-    if (result?.[0])
-      void this.dispatchEvent(
-        'change',
-        result[0].map(([start, end, values]) =>
-          values ? [start, end, values.join('')] : [start, end]
+    try {
+      const result = this.projection.apply(delta)
+      if (result?.[0])
+        void this.dispatchEvent(
+          'change',
+          result[0].map(([start, end, values]) =>
+            values ? [start, end, values.join('')] : [start, end]
+          )
         )
-      )
-    if (result?.[1]) void this.dispatchEvent('delta', result[1])
+      if (result?.[1]) void this.dispatchEvent('delta', result[1])
+    } catch {}
   }
 
   /**
@@ -56,17 +68,25 @@ export class SequencedText {
    * @param characters The text to insert.
    */
   insert(at: number, characters: string): void {
-    if (characters.length === 0) return
-    const delta = this.projection.insert(characters.split(''), at)
-    void this.dispatchEvent('change', [[at, at, characters]])
-    void this.dispatchEvent('delta', delta)
+    try {
+      if (characters.length === 0) return
+      const delta = this.projection.insert(characters.split(''), at)
+      void this.dispatchEvent('change', [[at, at, characters]])
+      void this.dispatchEvent('delta', delta)
+    } catch (cause) {
+      throw unknownError(cause, 'SequencedText.insert()')
+    }
   }
 
   /**
    * Returns the length of the visible text in UTF-16 code units.
    */
   get length(): number {
-    return this.projection.length()
+    try {
+      return this.projection.length()
+    } catch (cause) {
+      throw unknownError(cause, 'SequencedText.length()')
+    }
   }
 
   /**
@@ -78,18 +98,20 @@ export class SequencedText {
    * @param snapshot The replication state to merge.
    */
   merge(snapshot: SequencedTextSnapshot): void {
-    const result = this.projection.merge([snapshot[0], snapshot[1].split('')])
-    if (!result) return
+    try {
+      const result = this.projection.merge(snapshot)
+      if (!result) return
 
-    const [change, delta] = result
+      const [change, delta] = result
 
-    void this.dispatchEvent(
-      'change',
-      change.map(([start, end, values]) =>
-        values ? [start, end, values.join('')] : [start, end]
+      void this.dispatchEvent(
+        'change',
+        change.map(([start, end, values]) =>
+          values ? [start, end, values.join('')] : [start, end]
+        )
       )
-    )
-    if (delta) void this.dispatchEvent('delta', delta)
+      if (delta) void this.dispatchEvent('delta', delta)
+    } catch {}
   }
 
   /**
@@ -103,10 +125,14 @@ export class SequencedText {
     selectionStart: number = 0,
     selecectionEnd: number = this.length
   ): void {
-    if (selectionStart === selecectionEnd) return
-    const delta = this.projection.remove(selectionStart, selecectionEnd - 1)
-    void this.dispatchEvent('change', [[selectionStart, selecectionEnd]])
-    void this.dispatchEvent('delta', delta)
+    try {
+      if (selectionStart === selecectionEnd) return
+      const delta = this.projection.remove(selectionStart, selecectionEnd - 1)
+      void this.dispatchEvent('change', [[selectionStart, selecectionEnd]])
+      void this.dispatchEvent('delta', delta)
+    } catch (cause) {
+      throw unknownError(cause, 'SequencedText.remove()')
+    }
   }
 
   /**
@@ -122,17 +148,21 @@ export class SequencedText {
     selecectionEnd: number = this.length,
     characters: string = ''
   ) {
-    if (selectionStart === selecectionEnd)
-      return this.insert(selectionStart, characters)
-    const delta = this.projection.replace(
-      characters.split(''),
-      selectionStart,
-      selecectionEnd - 1
-    )
-    void this.dispatchEvent('change', [
-      [selectionStart, selecectionEnd, characters],
-    ])
-    void this.dispatchEvent('delta', delta)
+    try {
+      if (selectionStart === selecectionEnd)
+        return this.insert(selectionStart, characters)
+      const delta = this.projection.replace(
+        characters.split(''),
+        selectionStart,
+        selecectionEnd - 1
+      )
+      void this.dispatchEvent('change', [
+        [selectionStart, selecectionEnd, characters],
+      ])
+      void this.dispatchEvent('delta', delta)
+    } catch (cause) {
+      throw unknownError(cause, 'SequencedText.replace()')
+    }
   }
 
   /**
@@ -149,8 +179,12 @@ export class SequencedText {
    * @returns The structural metadata as a numeric array and the retained text content.
    */
   toJSON(): SequencedTextSnapshot {
-    const [meta, values] = this.projection.sequence()
-    return [Array.isArray(meta) ? meta : Array.from(meta), values.join('')]
+    try {
+      const [meta, values] = this.projection.sequence(true)
+      return [Array.isArray(meta) ? meta : Array.from(meta), values]
+    } catch (cause) {
+      throw unknownError(cause, 'SequencedText.toJSON()')
+    }
   }
 
   /**
@@ -164,7 +198,11 @@ export class SequencedText {
    * Returns the visible text as a string.
    */
   valueOf(): string {
-    return this.projection.values().join('')
+    try {
+      return this.projection.values().join('')
+    } catch (cause) {
+      throw unknownError(cause, 'SequencedText.valueOf()')
+    }
   }
 
   /**
@@ -192,7 +230,7 @@ export class SequencedText {
    */
   *[Symbol.iterator](): IterableIterator<string> {
     for (let index = 0; index < this.length; index++) {
-      const value = this.projection.value(index)
+      const value = this.#value(index)
       if (typeof value !== 'string') continue
       yield value
     }
@@ -203,11 +241,15 @@ export class SequencedText {
     listener: SequencedTextEventListenerFor<K> | null,
     options?: boolean | AddEventListenerOptions
   ): void {
-    ;(this.eventTarget ??= new EventTarget()).addEventListener(
-      type,
-      listener as EventListenerOrEventListenerObject | null,
-      options
-    )
+    try {
+      ;(this.eventTarget ??= new EventTarget()).addEventListener(
+        type,
+        listener as EventListenerOrEventListenerObject | null,
+        options
+      )
+    } catch (cause) {
+      throw unknownError(cause, 'SequencedText.addEventListener()')
+    }
   }
 
   removeEventListener<K extends keyof SequencedTextEventMap>(
@@ -215,17 +257,25 @@ export class SequencedText {
     listener: SequencedTextEventListenerFor<K> | null,
     options?: boolean | EventListenerOptions
   ): void {
-    this.eventTarget?.removeEventListener(
-      type,
-      listener as EventListenerOrEventListenerObject | null,
-      options
-    )
+    try {
+      this.eventTarget?.removeEventListener(
+        type,
+        listener as EventListenerOrEventListenerObject | null,
+        options
+      )
+    } catch (cause) {
+      throw unknownError(cause, 'SequencedText.removeEventListener()')
+    }
   }
 
   dispatchEvent<K extends keyof SequencedTextEventMap>(
     type: K,
     detail: SequencedTextEventMap[K]
   ): void {
-    this.eventTarget?.dispatchEvent(new CustomEvent(type, { detail }))
+    try {
+      this.eventTarget?.dispatchEvent(new CustomEvent(type, { detail }))
+    } catch (cause) {
+      throw unknownError(cause, 'SequencedText.dispatchEvent()')
+    }
   }
 }

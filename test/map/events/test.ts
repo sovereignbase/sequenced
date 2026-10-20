@@ -145,6 +145,52 @@ describe('Map entries, index and events', () => {
   })
 
   describe.each(['apply', 'merge'] as const)('%s forwarding', (method) => {
+    it.each(
+      [null, ['a'], ['a', 1, 2], [{}, 1], [NaN, 1], [Infinity, 1]].map(
+        (entry) => ({ entry })
+      )
+    )(
+      'rejects a malformed Map entry without throwing or changing state: %j',
+      ({ entry }) => {
+        const map = create([['existing', 1]])
+        const sender = new Projection<unknown>(2)
+        try {
+          const delta = sender.insert([['valid', 2], entry], 0)
+          const input = method === 'apply' ? delta : sender.sequence()
+          const engine = vi.spyOn(Projection.prototype, method)
+          const change = vi.fn()
+          map.addEventListener('change', change)
+          expect(() => Reflect.apply(map[method], map, [input])).not.toThrow()
+          expect(engine).not.toHaveBeenCalled()
+          expect(change).not.toHaveBeenCalled()
+          expect([...map]).toEqual([['existing', 1]])
+          map.set('after', 3)
+          expect([...map]).toEqual([
+            ['existing', 1],
+            ['after', 3],
+          ])
+        } finally {
+          sender.destroy()
+        }
+      }
+    )
+
+    it.each(
+      [undefined, null, 0, false, 'invalid', [], [null], [[], null]].map(
+        (input) => ({ input })
+      )
+    )('does not throw for malformed transport input %j', ({ input }) => {
+      const map = create([['a', 1]])
+      expect(() => Reflect.apply(map[method], map, [input])).not.toThrow()
+      expect([...map]).toEqual([['a', 1]])
+    })
+
+    it('does not throw after destruction', () => {
+      const map = create()
+      map.destroy()
+      expect(() => map[method]([[], []])).not.toThrow()
+    })
+
     it('forwards the original input and reply; visible events use Map keys', () => {
       const map = create([['a', 1]])
       const input: unknown = method === 'apply' ? [[1], [2]] : [[], []]
@@ -199,18 +245,42 @@ describe('Map entries, index and events', () => {
       engine.mockImplementation(() => {
         throw error
       })
-      expect(() => map[method]([[], []])).toThrow(error)
+      expect(() => map[method]([[], []])).not.toThrow()
+      expect(listener).not.toHaveBeenCalled()
     })
   })
 
-  it('keeps its index consistent with a valid prefix of an invalid gossip batch', () => {
+  it('rejects insertion footage with missing Map entries without throwing', () => {
+    const map = create([['existing', 1]])
+    const sender = new Projection<Entry>(2)
+    try {
+      const insertion = sender.insert(
+        [
+          ['a', 1],
+          ['b', 2],
+        ],
+        0
+      )
+      const tuple = insertion.find((item) => Array.isArray(item[0]))!
+      const words = tuple[0]
+      for (const footage of [undefined, [], [['a', 1]]]) {
+        expect(() => map.apply([[words, footage]])).not.toThrow()
+        expect([...map]).toEqual([['existing', 1]])
+      }
+    } finally {
+      sender.destroy()
+    }
+  })
+
+  it('delegates a malformed gossip batch unchanged without throwing', () => {
     const map = create()
     const raw = new Projection<Entry>(2)
     try {
       const delta = raw.insert([['a', 1]], 0)
-      map.apply([...delta, null])
-      expect(map.get('a')).toBe(1)
-      expect([...map]).toEqual([['a', 1]])
+      const input = [...delta, null]
+      const engine = vi.spyOn(Projection.prototype, 'apply')
+      expect(() => map.apply(input)).not.toThrow()
+      expect(engine).toHaveBeenCalledExactlyOnceWith(input)
     } finally {
       raw.destroy()
     }

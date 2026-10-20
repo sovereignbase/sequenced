@@ -1,3 +1,4 @@
+import { unknownError } from '../errors/unknown.js'
 import { Projection } from '@sovereignbase/sequencer'
 import { SequencedError } from '../errors/class.js'
 import type { Result } from '@sovereignbase/sequencer'
@@ -35,13 +36,37 @@ export class SequencedArray<T> implements Iterable<T> {
   private readonly projection: Projection<T>
   private eventTarget?: EventTarget
 
+  #value(at: number): T | undefined {
+    try {
+      return this.projection.value(at)
+    } catch (cause) {
+      throw unknownError(cause, 'SequencedArray.#value()')
+    }
+  }
+
+  #values(start?: number, end?: number): T[] {
+    try {
+      return this.projection.values(start, end)
+    } catch (cause) {
+      throw unknownError(cause, 'SequencedArray.#values()')
+    }
+  }
+
   /** Hydrates an optional trusted sequencer snapshot for the supplied actor. */
   constructor(actorID: number, snapshot?: SequencedArraySnapshot<T>) {
-    this.projection = new Projection<T>(actorID, snapshot)
+    try {
+      this.projection = new Projection<T>(actorID, snapshot)
+    } catch (cause) {
+      throw unknownError(cause, 'SequencedArray.constructor()')
+    }
   }
 
   get length(): number {
-    return this.projection.length()
+    try {
+      return this.projection.length()
+    } catch (cause) {
+      throw unknownError(cause, 'SequencedArray.length()')
+    }
   }
 
   /** Grown slots are explicit undefined values, rather than sparse properties. */
@@ -62,7 +87,7 @@ export class SequencedArray<T> implements Iterable<T> {
   /** Reads a zero-based position; invalid or missing positions return undefined. */
   get(index: number): T | undefined {
     return Number.isInteger(index) && index >= 0 && index < this.length
-      ? this.projection.value(index)
+      ? this.#value(index)
       : undefined
   }
 
@@ -70,7 +95,7 @@ export class SequencedArray<T> implements Iterable<T> {
     const length = this.length
     const offset = integer(index)
     const at = offset < 0 ? length + offset : offset
-    return at >= 0 && at < length ? this.projection.value(at) : undefined
+    return at >= 0 && at < length ? this.#value(at) : undefined
   }
 
   /** Replaces one existing position; rejects positions outside the visible sequence. */
@@ -95,19 +120,23 @@ export class SequencedArray<T> implements Iterable<T> {
 
   /** Converts a half-open edit to the sequencer's inclusive removal range. */
   private edit(start: number, count: number, items: T[]): void {
-    if (count === 0 && items.length === 0) return
-    const delta =
-      count === 0
-        ? this.projection.insert(items, start)
-        : items.length === 0
-          ? this.projection.remove(start, start + count - 1)
-          : this.projection.replace(items, start, start + count - 1)
-    if (this.eventTarget) {
-      const change = items.length
-        ? ([[start, start + count, items]] as const)
-        : ([[start, start + count]] as const)
-      this.dispatchEvent('change', change)
-      this.dispatchEvent('delta', delta)
+    try {
+      if (count === 0 && items.length === 0) return
+      const delta =
+        count === 0
+          ? this.projection.insert(items, start)
+          : items.length === 0
+            ? this.projection.remove(start, start + count - 1)
+            : this.projection.replace(items, start, start + count - 1)
+      if (this.eventTarget) {
+        const change = items.length
+          ? ([[start, start + count, items]] as const)
+          : ([[start, start + count]] as const)
+        this.dispatchEvent('change', change)
+        this.dispatchEvent('delta', delta)
+      }
+    } catch (cause) {
+      throw unknownError(cause, 'SequencedArray.edit()')
     }
   }
 
@@ -126,14 +155,14 @@ export class SequencedArray<T> implements Iterable<T> {
   pop(): T | undefined {
     const length = this.length
     if (length === 0) return undefined
-    const value = this.projection.value(length - 1)
+    const value = this.#value(length - 1)
     this.edit(length - 1, 1, [])
     return value
   }
 
   shift(): T | undefined {
     if (this.length === 0) return undefined
-    const value = this.projection.value(0)
+    const value = this.#value(0)
     this.edit(0, 1, [])
     return value
   }
@@ -147,7 +176,7 @@ export class SequencedArray<T> implements Iterable<T> {
         : arguments.length === 1
           ? length - at
           : Math.min(Math.max(integer(deleteCount as number), 0), length - at)
-    const removed = count ? this.projection.values(at, at + count - 1) : []
+    const removed = count ? this.#values(at, at + count - 1) : []
     this.edit(at, count, items)
     return removed
   }
@@ -168,19 +197,18 @@ export class SequencedArray<T> implements Iterable<T> {
       Math.max(position(end, length) - from, 0),
       length - to
     )
-    if (count)
-      this.edit(to, count, this.projection.values(from, from + count - 1))
+    if (count) this.edit(to, count, this.#values(from, from + count - 1))
     return this
   }
 
   reverse(): this {
-    const values = this.projection.values()
+    const values = this.#values()
     if (values.length > 1) this.edit(0, values.length, values.reverse())
     return this
   }
 
   sort(compareFn?: (a: T, b: T) => number): this {
-    const values = this.projection.values().sort(compareFn)
+    const values = this.#values().sort(compareFn)
     if (values.length)
       this.edit(0, Math.min(values.length, this.length), values)
     return this
@@ -190,30 +218,30 @@ export class SequencedArray<T> implements Iterable<T> {
     const length = this.length
     const from = position(start, length)
     const to = position(end, length)
-    return to > from ? this.projection.values(from, to - 1) : []
+    return to > from ? this.#values(from, to - 1) : []
   }
 
   concat(...items: (T | ConcatArray<T>)[]): T[] {
-    return this.projection.values().concat(...items)
+    return this.#values().concat(...items)
   }
 
   includes(searchElement: T, fromIndex?: number): boolean {
-    return this.projection.values().includes(searchElement, fromIndex)
+    return this.#values().includes(searchElement, fromIndex)
   }
 
   indexOf(searchElement: T, fromIndex?: number): number {
-    return this.projection.values().indexOf(searchElement, fromIndex)
+    return this.#values().indexOf(searchElement, fromIndex)
   }
 
   lastIndexOf(searchElement: T, fromIndex?: number): number {
-    const values = this.projection.values()
+    const values = this.#values()
     return arguments.length < 2
       ? values.lastIndexOf(searchElement)
       : values.lastIndexOf(searchElement, fromIndex)
   }
 
   join(separator?: string): string {
-    return this.projection.values().join(separator)
+    return this.#values().join(separator)
   }
 
   toString(): string {
@@ -224,38 +252,33 @@ export class SequencedArray<T> implements Iterable<T> {
     locales?: Intl.LocalesArgument,
     options?: Intl.NumberFormatOptions & Intl.DateTimeFormatOptions
   ): string {
-    return Reflect.apply(
-      Array.prototype.toLocaleString,
-      this.projection.values(),
-      [locales, options]
-    )
+    return Reflect.apply(Array.prototype.toLocaleString, this.#values(), [
+      locales,
+      options,
+    ])
   }
 
   flat<A, D extends number = 1>(
     this: SequencedArray<A>,
     depth?: D
   ): FlatArray<A[], D>[] {
-    return this.projection.values().flat(depth)
+    return this.#values().flat(depth)
   }
 
   toReversed(): T[] {
-    return this.projection.values().toReversed()
+    return this.#values().toReversed()
   }
 
   toSorted(compareFn?: (a: T, b: T) => number): T[] {
-    return this.projection.values().toSorted(compareFn)
+    return this.#values().toSorted(compareFn)
   }
 
   toSpliced(start?: number, deleteCount?: number, ...items: T[]): T[] {
-    return Reflect.apply(
-      Array.prototype.toSpliced,
-      this.projection.values(),
-      arguments
-    )
+    return Reflect.apply(Array.prototype.toSpliced, this.#values(), arguments)
   }
 
   with(index: number, value: T): T[] {
-    return this.projection.values().with(index, value)
+    return this.#values().with(index, value)
   }
 
   /** Captures length once; pending values stay live during callback edits. */
@@ -508,7 +531,7 @@ export class SequencedArray<T> implements Iterable<T> {
 
   *values(): ArrayIterator<T> {
     for (let index = 0; index < this.length; index++)
-      yield this.projection.value(index) as T
+      yield this.#value(index) as T
   }
 
   *keys(): ArrayIterator<number> {
@@ -517,7 +540,7 @@ export class SequencedArray<T> implements Iterable<T> {
 
   *entries(): ArrayIterator<[number, T]> {
     for (let index = 0; index < this.length; index++)
-      yield [index, this.projection.value(index) as T]
+      yield [index, this.#value(index) as T]
   }
 
   [Symbol.iterator](): ArrayIterator<T> {
@@ -526,12 +549,16 @@ export class SequencedArray<T> implements Iterable<T> {
 
   /** Applies Gossip and emits ordered visible changes plus any reply Gossip. */
   apply(delta: unknown): void {
-    this.received(this.projection.apply(delta))
+    try {
+      this.received(this.projection.apply(delta))
+    } catch {}
   }
 
   /** Delegates snapshot merging to the sequencer. */
   merge(snapshot: SequencedArraySnapshot<T>): void {
-    this.received(this.projection.merge(snapshot))
+    try {
+      this.received(this.projection.merge(snapshot))
+    } catch {}
   }
 
   private received(result: Result<T> | undefined): void {
@@ -546,20 +573,28 @@ export class SequencedArray<T> implements Iterable<T> {
 
   /** Replication state, not just visible values; metadata is JSON-compatible. */
   toJSON(): SequencedArraySnapshot<T> {
-    const [meta, values] = this.projection.sequence()
-    return [Array.isArray(meta) ? meta : Array.from(meta), values]
+    try {
+      const [meta, values] = this.projection.sequence()
+      return [Array.isArray(meta) ? meta : Array.from(meta), values]
+    } catch (cause) {
+      throw unknownError(cause, 'SequencedArray.toJSON()')
+    }
   }
 
   /** Releases native state deterministically. Do not use the replica afterwards. */
   destroy(): void {
-    this.projection.destroy()
+    try {
+      this.projection.destroy()
+    } catch (cause) {
+      throw unknownError(cause, 'SequencedArray.destroy()')
+    }
   }
 
   [Symbol.for('nodejs.util.inspect.custom')](): T[] {
-    return this.projection.values()
+    return this.#values()
   }
   [Symbol.for('Deno.customInspect')](): T[] {
-    return this.projection.values()
+    return this.#values()
   }
 
   addEventListener<K extends keyof SequencedArrayEventMap<T>>(
@@ -567,11 +602,15 @@ export class SequencedArray<T> implements Iterable<T> {
     listener: SequencedArrayEventListenerFor<T, K> | null,
     options?: boolean | AddEventListenerOptions
   ): void {
-    ;(this.eventTarget ??= new EventTarget()).addEventListener(
-      type,
-      listener as EventListenerOrEventListenerObject | null,
-      options
-    )
+    try {
+      ;(this.eventTarget ??= new EventTarget()).addEventListener(
+        type,
+        listener as EventListenerOrEventListenerObject | null,
+        options
+      )
+    } catch (cause) {
+      throw unknownError(cause, 'SequencedArray.addEventListener()')
+    }
   }
 
   removeEventListener<K extends keyof SequencedArrayEventMap<T>>(
@@ -579,17 +618,25 @@ export class SequencedArray<T> implements Iterable<T> {
     listener: SequencedArrayEventListenerFor<T, K> | null,
     options?: boolean | EventListenerOptions
   ): void {
-    this.eventTarget?.removeEventListener(
-      type,
-      listener as EventListenerOrEventListenerObject | null,
-      options
-    )
+    try {
+      this.eventTarget?.removeEventListener(
+        type,
+        listener as EventListenerOrEventListenerObject | null,
+        options
+      )
+    } catch (cause) {
+      throw unknownError(cause, 'SequencedArray.removeEventListener()')
+    }
   }
 
   dispatchEvent<K extends keyof SequencedArrayEventMap<T>>(
     type: K,
     detail: SequencedArrayEventMap<T>[K]
   ): void {
-    this.eventTarget?.dispatchEvent(new CustomEvent(type, { detail }))
+    try {
+      this.eventTarget?.dispatchEvent(new CustomEvent(type, { detail }))
+    } catch (cause) {
+      throw unknownError(cause, 'SequencedArray.dispatchEvent()')
+    }
   }
 }

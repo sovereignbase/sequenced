@@ -1,6 +1,6 @@
 import { deepStrictEqual } from 'node:assert'
 import { Projection } from '@sovereignbase/sequencer'
-import type { Gossip, Sequence } from '@sovereignbase/sequencer'
+import type { Gossip } from '@sovereignbase/sequencer'
 import {
   SequencedText,
   editText,
@@ -45,20 +45,18 @@ export function prepareFixture(
     throw new RangeError('Fixture requires integers 1 <= batch <= size')
   const value = 'x'.repeat(size)
   const snapshot = textSnapshot(value)
-  const raw: Sequence<string> = [snapshot[0], snapshot[1].split('')]
   const payloads = Array.from({ length: batch }, (_, i) => `${i % 10}😀`)
   const middle = Math.floor(size / 2)
   const deltas: Gossip<string>[] = []
   const states: SequencedTextSnapshot[] = []
   let expected = value
   if (operation === 'apply.insert' || operation === 'merge.insert') {
-    const sender = new Projection<string>(200, raw)
+    const sender = new Projection<string>(200, snapshot)
     try {
       for (const payload of payloads) {
         deltas.push(sender.insert(payload.split(''), middle))
         if (operation === 'merge.insert') {
-          const [words, values] = sender.sequence()
-          states.push([words, values.join('')])
+          states.push(sender.sequence(true))
         }
         expected = editText(expected, middle, middle, payload)
       }
@@ -109,15 +107,12 @@ interface Subject {
   remove(start: number, end: number): unknown
   replace(start: number, end: number, payload: string, units: string[]): unknown
   apply(delta: Gossip<string>): unknown
-  merge(text: SequencedTextSnapshot, raw: Sequence<string>): unknown
+  merge(snapshot: SequencedTextSnapshot): unknown
   snapshot(): unknown
   dispose(): void
 }
 function plain(snapshot: SequencedTextSnapshot): Subject {
-  const projection = new Projection<string>(1, [
-    snapshot[0],
-    snapshot[1].split(''),
-  ])
+  const projection = new Projection<string>(1, snapshot)
   return {
     length: () => projection.length(),
     read: () => projection.values().join(''),
@@ -127,8 +122,8 @@ function plain(snapshot: SequencedTextSnapshot): Subject {
     replace: (start, end, _payload, units) =>
       projection.replace(units, start, end - 1),
     apply: (delta) => projection.apply(delta),
-    merge: (_text, raw) => projection.merge(raw),
-    snapshot: () => projection.sequence(),
+    merge: (snapshot) => projection.merge(snapshot),
+    snapshot: () => projection.sequence(true),
     dispose: () => projection.destroy(),
   }
 }
@@ -185,10 +180,7 @@ export function createWorkload(
     units: text.split(''),
   }))
   const deltas = structuredClone(fixture.deltas)
-  const states = structuredClone(fixture.states).map((text) => ({
-    text,
-    raw: [text[0], text[1].split('')] as Sequence<string>,
-  }))
+  const states = structuredClone(fixture.states)
   const { operation, middle, batch } = fixture
   return {
     run() {
@@ -225,7 +217,7 @@ export function createWorkload(
             resultSink = subject.apply(deltas[i])
             break
           case 'merge.insert':
-            resultSink = subject.merge(states[i].text, states[i].raw)
+            resultSink = subject.merge(states[i])
             break
           case 'snapshot':
             resultSink = subject.snapshot()
@@ -241,12 +233,7 @@ export function createWorkload(
       if (operation === 'iterate')
         deepStrictEqual(resultSink, fixture.value.split(''))
       if (operation === 'snapshot') {
-        const [words, data] = resultSink as
-          Sequence<string> | SequencedTextSnapshot
-        const restored = new Projection<string>(300, [
-          words,
-          typeof data === 'string' ? data.split('') : data,
-        ])
+        const restored = new Projection<string>(300, resultSink)
         try {
           deepStrictEqual(restored.values().join(''), fixture.expected)
         } finally {

@@ -50,6 +50,22 @@ describe('Text wrapper events and engine boundary', () => {
 
   describe.each(['apply', 'merge'] as const)('%s', (method) => {
     const input: SequencedTextSnapshot = [[], '😀']
+    it.each(
+      [undefined, null, false, 0, 'invalid', [], [null], [[], null]].map(
+        (input) => ({ input })
+      )
+    )('does not throw for malformed transport input $input', ({ input }) => {
+      const text = create('abc')
+      expect(() => Reflect.apply(text[method], text, [input])).not.toThrow()
+      expect(text.toString()).toBe('abc')
+    })
+
+    it('does not throw after destruction', () => {
+      const text = create()
+      releaseText(text)
+      expect(() => text[method](input)).not.toThrow()
+    })
+
     it('delegates input and converts engine splices to ordered text edits', () => {
       const text = create()
       const gossip: Gossip<string> = [[1]]
@@ -69,11 +85,7 @@ describe('Text wrapper events and engine boundary', () => {
       text.addEventListener('delta', delta)
       text[method](input)
       expect(engine).toHaveBeenCalledTimes(1)
-      if (method === 'apply') expect(engine.mock.calls[0][0]).toBe(input)
-      else {
-        expect(engine.mock.calls[0][0]).toEqual([input[0], input[1].split('')])
-        expect((engine.mock.calls[0][0] as unknown[])[0]).toBe(input[0])
-      }
+      expect(engine.mock.calls[0][0]).toBe(input)
       expect(change).toHaveBeenCalledTimes(1)
       expect(change.mock.calls[0][0].detail).toEqual([
         [0, 0, '😀'],
@@ -108,13 +120,17 @@ describe('Text wrapper events and engine boundary', () => {
       expect(delta).not.toHaveBeenCalled()
     })
 
-    it('propagates the engine error unchanged', () => {
+    it('does not throw or emit events when the engine fails', () => {
       const text = create()
       const error = new Error('engine failure')
       vi.spyOn(Projection.prototype, method).mockImplementation(() => {
         throw error
       })
-      expect(() => text[method](input)).toThrow(error)
+      const listener = vi.fn()
+      text.addEventListener('change', listener)
+      text.addEventListener('delta', listener)
+      expect(() => text[method](input)).not.toThrow()
+      expect(listener).not.toHaveBeenCalled()
     })
   })
 
@@ -123,11 +139,11 @@ describe('Text wrapper events and engine boundary', () => {
     (typed) => {
       const text = create()
       const words = [0, 1, 2]
-      vi.spyOn(Projection.prototype, 'sequence').mockReturnValue([
-        typed ? Uint32Array.from(words) : words,
-        ['a', '\ud83d', '\ude00'],
-      ])
+      const sequence = vi
+        .spyOn(Projection.prototype, 'sequence')
+        .mockReturnValue([typed ? Uint32Array.from(words) : words, 'a😀'])
       expect(text.toJSON()).toEqual([words, 'a😀'])
+      expect(sequence).toHaveBeenCalledExactlyOnceWith(true)
       expect(JSON.parse(JSON.stringify(text))).toEqual([words, 'a😀'])
     }
   )

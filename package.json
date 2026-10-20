@@ -88,6 +88,6 @@
   "homepage": "https://sovereignbase.dev/sequenced",
   "dependencies": {
     "@sovereignbase/bytecodec": "^2.0.1",
-    "@sovereignbase/sequencer": "1.0.2"
+    "@sovereignbase/sequencer": "1.1.1"
   }
 }

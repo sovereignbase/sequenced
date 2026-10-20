@@ -8,8 +8,7 @@ export function textSnapshot(value: string): SequencedTextSnapshot {
   const projection = new Projection<string>(100)
   try {
     if (value.length) projection.insert(value.split(''), 0)
-    const [words, values] = projection.sequence()
-    return [words, values.join('')]
+    return projection.sequence(true)
   } finally {
     projection.destroy()
   }

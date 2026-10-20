@@ -1,4 +1,4 @@
-import type { Gossip, U32List } from '@sovereignbase/sequencer'
+import type { Gossip, Sequence } from '@sovereignbase/sequencer'
 
 /**
  * Represents a text document's replication state as structural metadata and
@@ -6,7 +6,7 @@ import type { Gossip, U32List } from '@sovereignbase/sequencer'
  *
  * Snapshots returned by `toJSON()` use a numeric array for the metadata.
  */
-export type SequencedTextSnapshot = Readonly<[meta: U32List, data: string]>
+export type SequencedTextSnapshot = Sequence<string, true>
 
 /**
  * Represents an ordered list of edits to the visible text.
