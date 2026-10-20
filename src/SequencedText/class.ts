@@ -14,7 +14,7 @@ import type {
  */
 export class SequencedText {
   declare private readonly projection: Projection<string>
-  declare private readonly eventTarget: EventTarget
+  declare private eventTarget: EventTarget
 
   /**
    * Creates a text document from an optional replication snapshot.
@@ -23,23 +23,10 @@ export class SequencedText {
    * @param snapshot The replication state to restore. If omitted, the document is empty.
    */
   constructor(actorID: number, snapshot?: SequencedTextSnapshot) {
-    void Object.defineProperties(this, {
-      projection: {
-        value: new Projection<string>(
-          actorID,
-          snapshot && [snapshot[0], snapshot[1].split('')]
-        ),
-        enumerable: false,
-        configurable: false,
-        writable: false,
-      },
-      eventTarget: {
-        value: new EventTarget(),
-        enumerable: false,
-        configurable: false,
-        writable: false,
-      },
-    })
+    this.projection = new Projection<string>(
+      actorID,
+      snapshot && [snapshot[0], snapshot[1].split('')]
+    )
   }
   /**
    * Applies sequencer gossip to the document's replication state.
@@ -211,56 +198,34 @@ export class SequencedText {
     }
   }
 
-  /**
-   * Registers a listener for the specified document event.
-   *
-   * @param type The event type to listen for.
-   * @param listener The listener to register.
-   * @param options Listener options, or a boolean specifying whether to use capture.
-   */
-  public addEventListener<K extends keyof SequencedTextEventMap>(
+  addEventListener<K extends keyof SequencedTextEventMap>(
     type: K,
     listener: SequencedTextEventListenerFor<K> | null,
     options?: boolean | AddEventListenerOptions
   ): void {
-    void this.eventTarget.addEventListener(
+    ;(this.eventTarget ??= new EventTarget()).addEventListener(
       type,
       listener as EventListenerOrEventListenerObject | null,
       options
     )
   }
 
-  /**
-   * Removes a previously registered listener for the specified document event.
-   *
-   * @param type The event type to stop listening for.
-   * @param listener The listener to remove.
-   * @param options Listener options, or a boolean specifying whether to use capture.
-   */
-  public removeEventListener<K extends keyof SequencedTextEventMap>(
+  removeEventListener<K extends keyof SequencedTextEventMap>(
     type: K,
     listener: SequencedTextEventListenerFor<K> | null,
     options?: boolean | EventListenerOptions
   ): void {
-    void this.eventTarget.removeEventListener(
+    this.eventTarget?.removeEventListener(
       type,
       listener as EventListenerOrEventListenerObject | null,
       options
     )
   }
 
-  /**
-   * Synchronously dispatches a `CustomEvent` to the document's registered listeners.
-   *
-   * @param type The event type to dispatch.
-   * @param detail The payload exposed as the event's `detail` property.
-   */
-  public dispatchEvent<K extends keyof SequencedTextEventMap>(
+  dispatchEvent<K extends keyof SequencedTextEventMap>(
     type: K,
     detail: SequencedTextEventMap[K]
-  ) {
-    void this.eventTarget.dispatchEvent(
-      new CustomEvent<SequencedTextEventMap[K]>(type, { detail })
-    )
+  ): void {
+    this.eventTarget?.dispatchEvent(new CustomEvent(type, { detail }))
   }
 }

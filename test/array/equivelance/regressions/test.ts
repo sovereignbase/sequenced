@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { SequencedArray } from '../../../../src/SequencedArray/class.js'
+import { SequencedError } from '../../../../src/errors/class.js'
 import { arraySnapshot } from '../../array.js'
 import { inspect } from 'node:util'
 
@@ -154,8 +155,8 @@ describe('SequencedArray implementation regressions', () => {
       replica.length = 0
       for (const index of [-1, 0, 0.5, Infinity, NaN]) {
         expect(replica.get(index)).toBeUndefined()
-        expect(() => replica.set(index, 1)).toThrow(RangeError)
-        expect(() => replica.delete(index)).toThrow(RangeError)
+        expect(() => replica.set(index, 1)).toThrow(SequencedError)
+        expect(() => replica.delete(index)).toThrow(SequencedError)
       }
       expect(listener).not.toHaveBeenCalled()
       expect([...replica]).toEqual([])

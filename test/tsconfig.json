@@ -11,6 +11,7 @@
     "array/**/*.ts",
     "text/**/*.ts",
     "map/**/*.ts",
+    "errors/**/*.ts",
     ".shared/**/*.ts",
     "../benchmark/**/*.ts",
     "../playwright.config.ts",

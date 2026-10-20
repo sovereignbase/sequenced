@@ -1,4 +1,5 @@
 import { Projection } from '@sovereignbase/sequencer'
+import { SequencedError } from '../errors/class.js'
 import type { Result } from '@sovereignbase/sequencer'
 import type {
   SequencedArraySnapshot,
@@ -19,7 +20,7 @@ function position(value: number, length: number): number {
 
 function callable(callback: unknown): asserts callback is Function {
   if (typeof callback !== 'function')
-    throw new TypeError('Callback must be a function')
+    throw new SequencedError('INVALID_CALLBACK', 'Callback must be a function')
 }
 
 /**
@@ -46,7 +47,8 @@ export class SequencedArray<T> implements Iterable<T> {
   /** Grown slots are explicit undefined values, rather than sparse properties. */
   set length(value: number) {
     const length = value >>> 0
-    if (length !== +value) throw new RangeError('Invalid array length')
+    if (length !== +value)
+      throw new SequencedError('INVALID_ARRAY_LENGTH', 'Invalid array length')
     const previous = this.length
     if (length < previous) this.edit(length, previous - length, [])
     else if (length > previous)
@@ -85,7 +87,10 @@ export class SequencedArray<T> implements Iterable<T> {
 
   private checkIndex(index: number): void {
     if (!Number.isInteger(index) || index < 0 || index >= this.length)
-      throw new RangeError('Index must address an existing element')
+      throw new SequencedError(
+        'ARRAY_INDEX_OUT_OF_BOUNDS',
+        'Index must address an existing element'
+      )
   }
 
   /** Converts a half-open edit to the sequencer's inclusive removal range. */
@@ -468,7 +473,10 @@ export class SequencedArray<T> implements Iterable<T> {
       } else result = callback(result, value, index, this)
     }, backwards)
     if (!initialized)
-      throw new TypeError('Reduce of empty array with no initial value')
+      throw new SequencedError(
+        'REDUCE_EMPTY_ARRAY',
+        'Reduce of empty array with no initial value'
+      )
     return result
   }
 

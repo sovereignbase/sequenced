@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { inspect } from 'node:util'
-import { Sequenced, SequencedMap } from '../../../src/index.js'
+import { Sequenced, SequencedMap, SequencedError } from '../../../src/index.js'
 import type { SerializableKey as Key } from '../../../src/index.js'
 import { mapSnapshot } from '../map.js'
 
@@ -231,9 +231,11 @@ describe('Map native equivalence for JSON keys', () => {
         throw error
       })
     ).toThrow(error)
-    expect(() => Reflect.apply(map.forEach, map, [null])).toThrow(TypeError)
+    expect(() => Reflect.apply(map.forEach, map, [null])).toThrow(
+      SequencedError
+    )
     expect(() => Reflect.apply(create().forEach, create(), [null])).toThrow(
-      TypeError
+      SequencedError
     )
   })
 
@@ -253,7 +255,7 @@ describe('Map native equivalence for JSON keys', () => {
     const map = create(initial)
     for (const method of ['get', 'has', 'delete', 'set'] as const)
       expect(() => Reflect.apply(map[method], map, [key, 99])).toThrow(
-        TypeError
+        SequencedError
       )
     expect([...map]).toEqual(initial)
   })

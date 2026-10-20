@@ -1,4 +1,5 @@
 import { Projection } from '@sovereignbase/sequencer'
+import { SequencedError } from '../errors/class.js'
 import type { Change, Result } from '@sovereignbase/sequencer'
 import type {
   SerializableKey,
@@ -15,12 +16,18 @@ function keyOf<K extends SerializableKey>(key: K): K {
     typeof key !== 'string' &&
     (typeof key !== 'number' || !Number.isFinite(key))
   )
-    throw new TypeError('Map keys must be strings or finite numbers')
+    throw new SequencedError(
+      'INVALID_MAP_KEY',
+      'Map keys must be strings or finite numbers'
+    )
   return (key === 0 ? 0 : key) as K
 }
 function entryKey<K extends SerializableKey>(entry: unknown): K {
   if (!Array.isArray(entry) || entry.length !== 2)
-    throw new TypeError('Map entries must be [key, value] pairs')
+    throw new SequencedError(
+      'INVALID_MAP_ENTRY',
+      'Map entries must be [key, value] pairs'
+    )
   return keyOf(entry[0]) as K
 }
 
@@ -185,7 +192,10 @@ export class SequencedMap<K extends SerializableKey, V> implements Iterable<
     thisArg?: unknown
   ): void {
     if (typeof callback !== 'function')
-      throw new TypeError('Callback must be a function')
+      throw new SequencedError(
+        'INVALID_CALLBACK',
+        'Callback must be a function'
+      )
     for (const [key, value] of this)
       Reflect.apply(callback, thisArg, [value, key, this])
   }

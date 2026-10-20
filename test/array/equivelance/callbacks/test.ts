@@ -1,4 +1,5 @@
 import { beforeAll, describe, expect, it } from 'vitest'
+import { SequencedError } from '../../../../src/errors/class.js'
 import {
   arraySnapshot,
   loadArray,
@@ -66,7 +67,7 @@ describe('SequencedArray callbacks and iterators', () => {
   it.each(methods)('%s rejects a non-callable callback', (method) => {
     const replica = new ArrayReplica(1, arraySnapshot([1]))
     expect(() => Reflect.apply(replica[method], replica, [null])).toThrow(
-      TypeError
+      SequencedError
     )
   })
 

@@ -1,4 +1,5 @@
 import { beforeAll, describe, expect, it } from 'vitest'
+import { SequencedError } from '../../../../src/errors/class.js'
 import {
   arraySnapshot,
   loadArray,
@@ -124,9 +125,20 @@ describe('SequencedArray read equivalence', () => {
     }
   )
 
-  it('matches empty array results and reduction errors', () => {
+  it('matches empty array results and scopes reduction errors', () => {
     const replica = new ArrayReplica<number>(1)
     for (const [name, read] of cases) {
+      if (
+        name === 'reduce without initial' ||
+        name === 'reduceRight without initial'
+      ) {
+        expect(() => read([])).toThrow(TypeError)
+        expect(() => read(replica)).toThrow(SequencedError)
+        expect(() => read(replica)).toThrowError(
+          expect.objectContaining({ code: 'REDUCE_EMPTY_ARRAY' })
+        )
+        continue
+      }
       const outcome = (array: ArraySubject<number> | number[]) => {
         try {
           return { value: read(array) }

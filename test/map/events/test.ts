@@ -1,6 +1,6 @@
 import { Projection } from '@sovereignbase/sequencer'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { SequencedMap } from '../../../src/index.js'
+import { SequencedMap, SequencedError } from '../../../src/index.js'
 import type {
   SequencedMapEntry,
   SequencedMapSnapshot,
@@ -65,7 +65,7 @@ describe('Map entries, index and events', () => {
     [Infinity, 1],
   ])('rejects an invalid snapshot entry %j', (entry) => {
     const snapshot = mapSnapshot([entry as unknown as Entry])
-    expect(() => new SequencedMap(1, snapshot)).toThrow(TypeError)
+    expect(() => new SequencedMap(1, snapshot)).toThrow(SequencedError)
   })
 
   it('uses Projection positions for reads and replaces existing keys in place', () => {

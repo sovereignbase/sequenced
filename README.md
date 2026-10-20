@@ -10,6 +10,7 @@
 
 -> Array
 ---> Usage
+-----> Errors
 ---> Benchmarks generated result
 ---> Tests generated
 -> Map
@@ -37,6 +38,8 @@ console.log([...bob]) // ['hello', 'there']
 alice.destroy()
 bob.destroy()
 ```
+
+#### Errors
 
 ### Benchmarks
 

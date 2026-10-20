@@ -1,4 +1,5 @@
 import { beforeAll, describe, expect, it } from 'vitest'
+import { SequencedError } from '../../../../src/errors/class.js'
 import {
   arraySnapshot,
   loadArray,
@@ -86,7 +87,7 @@ describe('SequencedArray mutation equivalence', () => {
       const replica = new ArrayReplica(1, arraySnapshot([1, 2, 3]))
       expect(() => {
         replica.length = length
-      }).toThrow(RangeError)
+      }).toThrow(SequencedError)
       expect([...replica]).toEqual([1, 2, 3])
     }
   )
