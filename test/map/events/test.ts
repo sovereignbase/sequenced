@@ -146,12 +146,11 @@ describe('Map entries, index and events', () => {
   describe.each(['apply', 'merge'] as const)('%s forwarding', (method) => {
     it('forwards the original input and reply; visible events use Map keys', () => {
       const map = create([['a', 1]])
-      const input: SequencedMapSnapshot<string | number, unknown> = [[], []]
+      const input: unknown = method === 'apply' ? [[1], [2]] : [[], []]
       const reply = [[1]] as const
-      vi.spyOn(Projection.prototype, 'values').mockReturnValue([
-        ['a', 2],
-        [1, undefined],
-      ])
+      vi.spyOn(Projection.prototype, 'values').mockImplementation(() => {
+        throw new Error('apply/merge must not read the entire Projection')
+      })
       const engine = vi.spyOn(Projection.prototype, method).mockReturnValue([
         [
           [
@@ -165,20 +164,19 @@ describe('Map entries, index and events', () => {
         ],
         reply,
       ])
-      vi.spyOn(Projection.prototype, 'value')
-        .mockImplementation(
-          (at) =>
-            [
-              ['a', 2],
-              [1, undefined],
-            ][at]
-        )
-        .mockReturnValueOnce(['a', 1])
+      vi.spyOn(Projection.prototype, 'value').mockImplementation(
+        (at) =>
+          [
+            ['a', 2],
+            [1, undefined],
+          ][at]
+      )
       const changes = vi.fn()
       const delta = vi.fn()
       map.addEventListener('change', changes)
       map.addEventListener('delta', delta)
-      map[method](input)
+      if (method === 'apply') map.apply(input)
+      else map.merge(input as SequencedMapSnapshot<string | number, unknown>)
       expect(engine).toHaveBeenCalledExactlyOnceWith(input)
       expect(engine.mock.calls[0][0]).toBe(input)
       expect(delta.mock.calls[0][0].detail).toBe(reply)

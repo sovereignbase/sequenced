@@ -20,7 +20,9 @@ export const operations = [
   'delete.tail',
   'clear',
   'apply.insert',
+  'apply.replace',
   'merge.insert',
+  'merge.replace',
   'snapshot',
   'construct',
 ] as const
@@ -57,14 +59,21 @@ export function prepareFixture(
   const expected = new Map(entries)
   const deltas: Gossip<Entry>[] = []
   const states: Snapshot[] = []
-  if (operation === 'apply.insert' || operation === 'merge.insert') {
+  if (operation.startsWith('apply.') || operation.startsWith('merge.')) {
     const sender = new Projection<Entry>(200, snapshot)
     const model = entries.slice()
     try {
+      sender.apply([[1]])
       for (const payload of payloads) {
-        deltas.push(sender.insert([payload], middle))
-        if (operation === 'merge.insert') states.push(sender.sequence())
-        model.splice(middle, 0, payload)
+        if (operation.endsWith('.replace')) {
+          const entry: Entry = [entries[middle][0], payload[1]]
+          deltas.push(sender.replace([entry], middle, middle))
+          model[middle] = entry
+        } else {
+          deltas.push(sender.insert([payload], middle))
+          model.splice(middle, 0, payload)
+        }
+        if (operation.startsWith('merge.')) states.push(sender.sequence())
       }
       expected.clear()
       for (const [key, value] of model) expected.set(key, value)
@@ -127,8 +136,16 @@ export function createWorkload(
 ) {
   if (implementation !== 'plain' && !Constructor)
     throw new TypeError('Map benchmarks require the real wrapper constructor')
-  const snapshot = structuredClone(fixture.snapshot)
-  const { operation, middle, batch, entries } = fixture
+  const {
+    operation,
+    middle,
+    batch,
+    entries,
+    snapshot,
+    payloads,
+    deltas,
+    states,
+  } = fixture
   if (operation === 'construct') {
     let replica: Projection<Entry> | MapReplica
     return {
@@ -161,9 +178,6 @@ export function createWorkload(
       },
     }
   }
-  const payloads = fixture.payloads.map(([key, value]): Entry => [key, value])
-  const deltas = structuredClone(fixture.deltas)
-  const states = structuredClone(fixture.states)
   let subject: Subject
   if (implementation === 'plain') {
     const raw = new Projection<Entry>(1, snapshot)
@@ -245,9 +259,11 @@ export function createWorkload(
             resultSink = subject.clear()
             break
           case 'apply.insert':
+          case 'apply.replace':
             resultSink = subject.apply(deltas[i])
             break
           case 'merge.insert':
+          case 'merge.replace':
             resultSink = subject.merge(states[i])
             break
           case 'snapshot':
