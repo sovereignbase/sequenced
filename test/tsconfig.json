@@ -9,11 +9,12 @@
     "types": ["node"]
   },
   "include": [
-    "array/**/*.ts",
-    "text/**/*.ts",
-    "map/**/*.ts",
-    "errors/**/*.ts",
-    "reporting/**/*.ts",
+    "compability/*.ts",
+    "convergence/*.ts",
+    "equivelance/*.ts",
+    "events/*.ts",
+    "integration/*.ts",
+    "unit/*.ts",
     ".shared/**/*.ts",
     "../benchmark/**/*.ts",
     "../scripts/**/*.ts",

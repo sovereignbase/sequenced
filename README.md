@@ -42,7 +42,7 @@ The dense Array method API uses `get(index)`, `set(index, value)` and `delete(in
 
 Copying methods return plain arrays. Callbacks receive the wrapper, and iterators observe subsequent edits.
 
-#### Errorss
+#### Errors
 
 | Code                        | Meaning                                                 |
 | --------------------------- | ------------------------------------------------------- |
@@ -55,13 +55,9 @@ Copying methods return plain arrays. Callbacks receive the wrapper, and iterator
 
 <!-- BEGIN GENERATED:array:benchmarks -->
 
-Latest run: 2026-10-20T08:48:26.986Z. Status: **passed**.
+2026-10-20 · ops/sec
 
-Node v24.16.0; win32 x64; Intel(R) Core(TM) i5-10210U CPU @ 1.60GHz.
-Sequencer 1.0.2.
-
-Throughput is measured in **ops/sec per API call**. Iterators are consumed completely. Fixture setup, validation and cleanup are outside timing.
-Batch: 32; measurement budget: 20 ms per variant/case. Measured selection: complete.
+Node v24.16.0 · win32 x64 · Intel(R) Core(TM) i5-10210U CPU @ 1.60GHz · Sequencer 1.0.2
 
 | Operation       |        100 |      1,000 |     10,000 |
 | --------------- | ---------: | ---------: | ---------: |
@@ -80,30 +76,22 @@ Batch: 32; measurement budget: 20 ms per variant/case. Measured selection: compl
 | `merge.insert`  |    134,352 |    150,712 |    129,472 |
 | `snapshot`      |  3,564,461 |  4,783,091 |  4,544,964 |
 
-— means unmeasured or no equivalent API. RME, sample counts and full metadata are saved locally in `benchmark/.results/`.
-
 <!-- END GENERATED:array:benchmarks -->
 
 ### Tests
 
-Native Array is the oracle for local method behavior. The suites cover mutations, reads, callbacks, live iterators, public types, events, replication and convergence with registered participants.
-
 <!-- BEGIN GENERATED:array:tests -->
 
-Latest Vitest run: 2026-10-20T08:46:51.653Z. Status: **passed**.
-Node v24.16.0; win32 x64. 9 test files; 355 passed, 0 failed, 0 skipped.
+2026-10-20 · **failed**
 
-| Test suite                                                            | Passed | Failed | Skipped | Status | Duration (s) |
-| --------------------------------------------------------------------- | -----: | -----: | ------: | ------ | -----------: |
-| [benchmark](test/array/benchmark/test.ts)                             |     43 |      0 |       0 | passed |         0.06 |
-| [convergence](test/array/convergence/test.ts)                         |      8 |      0 |       0 | passed |         0.05 |
-| [equivelance/api](test/array/equivelance/api/test.ts)                 |     52 |      0 |       0 | passed |         0.02 |
-| [equivelance/callbacks](test/array/equivelance/callbacks/test.ts)     |     38 |      0 |       0 | passed |         0.02 |
-| [equivelance/mutations](test/array/equivelance/mutations/test.ts)     |    105 |      0 |       0 | passed |         0.10 |
-| [equivelance/reads](test/array/equivelance/reads/test.ts)             |     76 |      0 |       0 | passed |         0.07 |
-| [equivelance/regressions](test/array/equivelance/regressions/test.ts) |      9 |      0 |       0 | passed |         0.02 |
-| [equivelance/types](test/array/equivelance/types/test.ts)             |      2 |      0 |       0 | passed |         0.01 |
-| [events](test/array/events/test.ts)                                   |     22 |      0 |       0 | passed |         0.03 |
+| Test suite  | Passed | Failed | Skipped |
+| ----------- | -----: | -----: | ------: |
+| compability |     15 |      4 |       0 |
+| convergence |      8 |      0 |       0 |
+| equivelance |    280 |      0 |       0 |
+| events      |     22 |      0 |       0 |
+| integration |      4 |      2 |       0 |
+| unit        |     45 |      0 |       0 |
 
 | Statements | Branches | Functions | Lines |
 | ---------: | -------: | --------: | ----: |
@@ -111,14 +99,17 @@ Node v24.16.0; win32 x64. 9 test files; 355 passed, 0 failed, 0 skipped.
 
 #### Compatibility
 
-| Runtime                       | Version      | Status | Passed | Failed | Skipped | Checked (UTC)            |
-| ----------------------------- | ------------ | ------ | -----: | -----: | ------: | ------------------------ |
-| Node.js (Vitest source tests) | v24.16.0     | passed |    355 |      0 |       0 | 2026-10-20T08:46:51.653Z |
-| Chromium browser window       | 156.0.8078.4 | passed |      1 |      0 |       0 | 2026-10-20T08:47:21.280Z |
-| Firefox browser window        | 153.0        | passed |      1 |      0 |       0 | 2026-10-20T08:47:21.281Z |
-| WebKit browser window         | 27.2         | passed |      1 |      0 |       0 | 2026-10-20T08:47:21.281Z |
-
-Only executed runtimes are marked as verified. Browser checks import the built ESM package and test editing, events and replication. Counts describe the latest selection; other model sections retain their own latest run.
+| Runtime      | Version      | Status |
+| ------------ | ------------ | ------ |
+| Node.js ESM  | v24.16.0     | passed |
+| Node.js CJS  | v24.16.0     | passed |
+| Bun          | 1.4.3        | passed |
+| Deno         | —            | failed |
+| Edge Runtime | 4.0.1        | failed |
+| workerd      | 1.20261006.1 | passed |
+| Chromium     | 156.0.8078.4 | failed |
+| Firefox      | 153.0        | failed |
+| WebKit       | 27.2         | passed |
 
 <!-- END GENERATED:array:tests -->
 
@@ -139,7 +130,7 @@ map.destroy()
 ```
 
 Keys are strings or finite numbers. Numeric and string keys remain distinct.
-Local operations follow native Map behavior. Concurrent duplicate keys resolve by Projection order.
+Concurrent duplicate keys keep the first entry.
 
 #### Errors
 
@@ -153,13 +144,9 @@ Local operations follow native Map behavior. Concurrent duplicate keys resolve b
 
 <!-- BEGIN GENERATED:map:benchmarks -->
 
-Latest run: 2026-10-20T08:50:21.571Z. Status: **passed**.
+2026-10-20 · ops/sec
 
-Node v24.16.0; win32 x64; Intel(R) Core(TM) i5-10210U CPU @ 1.60GHz.
-Sequencer 1.0.2.
-
-Throughput is measured in **ops/sec per API call**. Iterators are consumed completely. Fixture setup, validation and cleanup are outside timing.
-Batch: 32; measurement budget: 20 ms per variant/case. Measured selection: complete.
+Node v24.16.0 · win32 x64 · Intel(R) Core(TM) i5-10210U CPU @ 1.60GHz · Sequencer 1.0.2
 
 | Operation             |        100 |      1,000 |     10,000 |
 | --------------------- | ---------: | ---------: | ---------: |
@@ -193,28 +180,22 @@ Batch: 32; measurement budget: 20 ms per variant/case. Measured selection: compl
 | `inspect.node`        |     80,196 |      7,194 |        474 |
 | `inspect.deno`        |     73,789 |      7,434 |        495 |
 
-— means unmeasured or no equivalent API. RME, sample counts and full metadata are saved locally in `benchmark/.results/`.
-
 <!-- END GENERATED:map:benchmarks -->
 
 ### Tests
 
-Native Map is the oracle for local methods, key identity and iteration order.
-The suites also cover JSON keys, incremental patches, change events, first-entry conflict resolution and model convergence.
-
 <!-- BEGIN GENERATED:map:tests -->
 
-Latest Vitest run: 2026-10-20T08:46:51.665Z. Status: **passed**.
-Node v24.16.0; win32 x64. 6 test files; 275 passed, 0 failed, 0 skipped.
+2026-10-20 · **failed**
 
-| Test suite                                                | Passed | Failed | Skipped | Status | Duration (s) |
-| --------------------------------------------------------- | -----: | -----: | ------: | ------ | -----------: |
-| [benchmark](test/map/benchmark/test.ts)                   |     94 |      0 |       0 | passed |         0.28 |
-| [convergence](test/map/convergence/test.ts)               |     10 |      0 |       0 | passed |         0.06 |
-| [equivelance](test/map/equivelance/test.ts)               |    135 |      0 |       0 | passed |         0.18 |
-| [events/incremental](test/map/events/incremental/test.ts) |     16 |      0 |       0 | passed |         0.49 |
-| [events](test/map/events/test.ts)                         |     19 |      0 |       0 | passed |         0.03 |
-| [types](test/map/types/test.ts)                           |      1 |      0 |       0 | passed |         0.01 |
+| Test suite  | Passed | Failed | Skipped |
+| ----------- | -----: | -----: | ------: |
+| compability |     15 |      4 |       0 |
+| convergence |     10 |      0 |       0 |
+| equivelance |    135 |      0 |       0 |
+| events      |     35 |      0 |       0 |
+| integration |      4 |      2 |       0 |
+| unit        |     95 |      0 |       0 |
 
 | Statements | Branches | Functions | Lines |
 | ---------: | -------: | --------: | ----: |
@@ -222,14 +203,17 @@ Node v24.16.0; win32 x64. 6 test files; 275 passed, 0 failed, 0 skipped.
 
 #### Compatibility
 
-| Runtime                       | Version      | Status | Passed | Failed | Skipped | Checked (UTC)            |
-| ----------------------------- | ------------ | ------ | -----: | -----: | ------: | ------------------------ |
-| Node.js (Vitest source tests) | v24.16.0     | passed |    275 |      0 |       0 | 2026-10-20T08:46:51.665Z |
-| Chromium browser window       | 156.0.8078.4 | passed |      1 |      0 |       0 | 2026-10-20T08:47:21.281Z |
-| Firefox browser window        | 153.0        | passed |      1 |      0 |       0 | 2026-10-20T08:47:21.281Z |
-| WebKit browser window         | 27.2         | passed |      1 |      0 |       0 | 2026-10-20T08:47:21.281Z |
-
-Only executed runtimes are marked as verified. Browser checks import the built ESM package and test editing, events and replication. Counts describe the latest selection; other model sections retain their own latest run.
+| Runtime      | Version      | Status |
+| ------------ | ------------ | ------ |
+| Node.js ESM  | v24.16.0     | passed |
+| Node.js CJS  | v24.16.0     | passed |
+| Bun          | 1.4.3        | passed |
+| Deno         | —            | failed |
+| Edge Runtime | 4.0.1        | failed |
+| workerd      | 1.20261006.1 | passed |
+| Chromium     | 156.0.8078.4 | failed |
+| Firefox      | 153.0        | failed |
+| WebKit       | 27.2         | passed |
 
 <!-- END GENERATED:map:tests -->
 
@@ -254,20 +238,15 @@ Editing uses UTF-16 offsets and half-open selections: `[start, end)`.
 
 #### Errors
 
-Text currently creates no wrapper-specific validation errors.
-Sequencer and platform errors propagate with their original types and codes.
+Sequencer errors are propagated unchanged.
 
 ### Benchmarks
 
 <!-- BEGIN GENERATED:text:benchmarks -->
 
-Latest run: 2026-10-20T08:50:40.299Z. Status: **passed**.
+2026-10-20 · ops/sec
 
-Node v24.16.0; win32 x64; Intel(R) Core(TM) i5-10210U CPU @ 1.60GHz.
-Sequencer 1.0.2.
-
-Throughput is measured in **ops/sec per API call**. Iterators are consumed completely. Fixture setup, validation and cleanup are outside timing.
-Batch: 32; measurement budget: 20 ms per variant/case. Measured selection: complete.
+Node v24.16.0 · win32 x64 · Intel(R) Core(TM) i5-10210U CPU @ 1.60GHz · Sequencer 1.0.2
 
 | Operation        |        100 |      1,000 |     10,000 |
 | ---------------- | ---------: | ---------: | ---------: |
@@ -283,28 +262,22 @@ Batch: 32; measurement budget: 20 ms per variant/case. Measured selection: compl
 | `merge.insert`   |     79,044 |     60,045 |     10,663 |
 | `snapshot`       |    555,431 |     76,557 |      9,727 |
 
-— means unmeasured or no equivalent API. RME, sample counts and full metadata are saved locally in `benchmark/.results/`.
-
 <!-- END GENERATED:text:benchmarks -->
 
 ### Tests
 
-Editing is compared with string slicing and insertion, including typing, paste, deletion, selections, Unicode and seeded histories.
-The suites also check public types, events, change-driven rendering and model convergence.
-
 <!-- BEGIN GENERATED:text:tests -->
 
-Latest Vitest run: 2026-10-20T08:46:51.676Z. Status: **passed**.
-Node v24.16.0; win32 x64. 6 test files; 125 passed, 0 failed, 0 skipped.
+2026-10-20 · **failed**
 
-| Test suite                                                   | Passed | Failed | Skipped | Status | Duration (s) |
-| ------------------------------------------------------------ | -----: | -----: | ------: | ------ | -----------: |
-| [benchmark](test/text/benchmark/test.ts)                     |     34 |      0 |       0 | passed |         0.05 |
-| [convergence](test/text/convergence/test.ts)                 |      8 |      0 |       0 | passed |         0.04 |
-| [equivelance/api](test/text/equivelance/api/test.ts)         |      6 |      0 |       0 | passed |         0.02 |
-| [equivelance/editing](test/text/equivelance/editing/test.ts) |     60 |      0 |       0 | passed |         0.36 |
-| [events](test/text/events/test.ts)                           |     16 |      0 |       0 | passed |         0.02 |
-| [types](test/text/types/test.ts)                             |      1 |      0 |       0 | passed |         0.01 |
+| Test suite  | Passed | Failed | Skipped |
+| ----------- | -----: | -----: | ------: |
+| compability |     15 |      4 |       0 |
+| convergence |      8 |      0 |       0 |
+| equivelance |     66 |      0 |       0 |
+| events      |     16 |      0 |       0 |
+| integration |      4 |      2 |       0 |
+| unit        |     35 |      0 |       0 |
 
 | Statements | Branches | Functions | Lines |
 | ---------: | -------: | --------: | ----: |
@@ -312,14 +285,17 @@ Node v24.16.0; win32 x64. 6 test files; 125 passed, 0 failed, 0 skipped.
 
 #### Compatibility
 
-| Runtime                       | Version      | Status | Passed | Failed | Skipped | Checked (UTC)            |
-| ----------------------------- | ------------ | ------ | -----: | -----: | ------: | ------------------------ |
-| Node.js (Vitest source tests) | v24.16.0     | passed |    125 |      0 |       0 | 2026-10-20T08:46:51.676Z |
-| Chromium browser window       | 156.0.8078.4 | passed |      1 |      0 |       0 | 2026-10-20T08:47:21.281Z |
-| Firefox browser window        | 153.0        | passed |      1 |      0 |       0 | 2026-10-20T08:47:21.281Z |
-| WebKit browser window         | 27.2         | passed |      1 |      0 |       0 | 2026-10-20T08:47:21.281Z |
-
-Only executed runtimes are marked as verified. Browser checks import the built ESM package and test editing, events and replication. Counts describe the latest selection; other model sections retain their own latest run.
+| Runtime      | Version      | Status |
+| ------------ | ------------ | ------ |
+| Node.js ESM  | v24.16.0     | passed |
+| Node.js CJS  | v24.16.0     | passed |
+| Bun          | 1.4.3        | passed |
+| Deno         | —            | failed |
+| Edge Runtime | 4.0.1        | failed |
+| workerd      | 1.20261006.1 | passed |
+| Chromium     | 156.0.8078.4 | failed |
+| Firefox      | 153.0        | failed |
+| WebKit       | 27.2         | passed |
 
 <!-- END GENERATED:text:tests -->
 

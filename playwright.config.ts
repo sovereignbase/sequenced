@@ -2,7 +2,7 @@ import { defineConfig } from '@playwright/test'
 
 export default defineConfig({
   testDir: './test',
-  testMatch: '**/{array,text,map}/compatibility/**/*.spec.ts',
+  testMatch: '**/{compability,integration}/*.spec.ts',
   timeout: 30_000,
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),

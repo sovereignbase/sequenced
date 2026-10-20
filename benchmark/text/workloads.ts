@@ -6,7 +6,7 @@ import {
   editText,
   releaseText,
   textSnapshot,
-} from '../../test/text/text.js'
+} from '../../test/.shared/text.js'
 import type { SequencedTextSnapshot } from '../../src/SequencedText/types/type.js'
 
 export const operations = [

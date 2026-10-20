@@ -7,7 +7,7 @@ import type {
   SequencedMapEntry,
   SequencedMapSnapshot,
 } from '../../src/SequencedMap/types/type.js'
-import { mapSnapshot } from '../../test/map/map.js'
+import { mapSnapshot } from '../../test/.shared/map.js'
 
 export const operations = [
   'get.random',

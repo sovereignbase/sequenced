@@ -5,6 +5,14 @@ import { arch, platform } from 'node:os'
 import { format, resolveConfig } from 'prettier'
 
 export const models = ['array', 'map', 'text'] as const
+export const suites = [
+  'compability',
+  'convergence',
+  'equivelance',
+  'events',
+  'integration',
+  'unit',
+] as const
 export type Model = (typeof models)[number]
 export const repository = fileURLToPath(new URL('../', import.meta.url))
 export const metrics = ['statements', 'branches', 'functions', 'lines'] as const
@@ -40,6 +48,7 @@ export interface RuntimeRun extends Counts {
 export interface TestReport {
   vitest?: UnitRun
   compatibility?: Record<string, RuntimeRun>
+  integration?: Record<string, RuntimeRun>
 }
 export interface BenchmarkRow {
   size: number
@@ -71,9 +80,11 @@ export interface BenchmarkReport {
   results: BenchmarkRow[]
 }
 export function modelOf(file: string): Model | undefined {
-  return /(?:^|\/)(?:test|benchmark)\/(array|map|text)(?:\/|$)/.exec(
-    file.replaceAll('\\', '/')
-  )?.[1] as Model | undefined
+  const path = file.replaceAll('\\', '/')
+  return (/(?:^|\/)benchmark\/(array|map|text)\//.exec(path)?.[1] ??
+    /(?:^|\/)test\/(?:compability|convergence|equivelance|events|integration|unit)\/(array|map|text)[.]/.exec(
+      path
+    )?.[1]) as Model | undefined
 }
 export function environment() {
   return { node: process.version, platform: platform(), arch: arch() }
@@ -104,6 +115,7 @@ export function saveTests(
     ...previous,
     ...patch,
     compatibility: { ...previous.compatibility, ...patch.compatibility },
+    integration: { ...previous.integration, ...patch.integration },
   })
 }
 function cell(value: unknown): string {
@@ -128,32 +140,24 @@ const integer = (value: number) => Math.round(value).toLocaleString('en-US')
 const code = (value: string) =>
   String.fromCharCode(96) + value + String.fromCharCode(96)
 function host(value: UnitRun['environment']): string {
-  return 'Node ' + value.node + '; ' + value.platform + ' ' + value.arch
+  return 'Node ' + value.node + ' · ' + value.platform + ' ' + value.arch
 }
 export function renderBenchmarks(report?: BenchmarkReport): string {
-  if (!report) return 'No benchmark run has been recorded.'
+  if (!report) return '—'
+  const status = report.status ?? (report.complete ? 'passed' : 'incomplete')
   const lines = [
-    'Latest run: ' +
-      report.generatedAt +
-      '. Status: **' +
-      (report.status ?? (report.complete ? 'passed' : 'incomplete')) +
-      '**.',
+    report.generatedAt.slice(0, 10) +
+      ' · ops/sec' +
+      (status !== 'passed' || !report.complete
+        ? ' · **' + (status === 'passed' ? 'incomplete' : status) + '**'
+        : ''),
     '',
     host(report.environment) +
-      (report.environment.cpu ? '; ' + report.environment.cpu : '') +
-      '.',
-    'Sequencer ' + (report.environment.sequencer ?? 'not recorded') + '.',
-    '',
-    'Throughput is measured in **ops/sec per API call**. Iterators are consumed completely. Fixture setup, validation and cleanup are outside timing.',
-    'Batch: ' +
-      report.config.batch +
-      '; measurement budget: ' +
-      report.config.time +
-      ' ms per variant/case. Measured selection: ' +
-      (report.complete ? 'complete' : 'incomplete') +
-      '.',
+      (report.environment.cpu ? ' · ' + report.environment.cpu : '') +
+      (report.environment.sequencer
+        ? ' · Sequencer ' + report.environment.sequencer
+        : ''),
   ]
-  if (!report.results.length) lines.push('', 'No measurements were produced.')
   if (report.results.length) {
     lines.push(
       '',
@@ -179,116 +183,104 @@ export function renderBenchmarks(report?: BenchmarkReport): string {
       )
     )
   }
-  lines.push(
-    '',
-    '— means unmeasured or no equivalent API. RME, sample counts and full metadata are saved locally in ' +
-      code('benchmark/.results/') +
-      '.'
-  )
   return lines.join('\n')
 }
 export function renderTests(report?: TestReport): string {
   const lines: string[] = []
   const unit = report?.vitest
+  const groups = new Map<string, Counts>()
+  const add = (suite: string, counts: Counts) => {
+    const total = groups.get(suite) ?? { passed: 0, failed: 0, skipped: 0 }
+    for (const key of ['passed', 'failed', 'skipped'] as const)
+      total[key] += counts[key]
+    groups.set(suite, total)
+  }
+  for (const file of unit?.files ?? []) {
+    const suite = /(?:^|\/)test\/([^/]+)\//.exec(
+      file.file.replaceAll('\\', '/')
+    )?.[1]
+    if (suite && suites.includes(suite as (typeof suites)[number]))
+      add(suite, file)
+  }
+  for (const run of Object.values(report?.compatibility ?? {}))
+    add('compability', run)
+  for (const run of Object.values(report?.integration ?? {}))
+    add('integration', run)
   if (unit) {
     lines.push(
-      'Latest Vitest run: ' +
-        unit.generatedAt +
-        '. Status: **' +
-        unit.status +
-        '**.',
-      host(unit.environment) +
-        '. ' +
-        unit.files.length +
-        ' test files; ' +
-        unit.passed +
-        ' passed, ' +
-        unit.failed +
-        ' failed, ' +
-        unit.skipped +
-        ' skipped.',
-      ...(unit.filter ? ['Test-name filter: ' + code(unit.filter) + '.'] : []),
-      ...(unit.errors ? ['Runner/module errors: ' + unit.errors + '.'] : []),
-      '',
-      table(
-        ['Test suite', 'Passed', 'Failed', 'Skipped', 'Status', 'Duration (s)'],
-        unit.files.map((file) => [
-          '[' +
-            file.file.replace(/^test\/[^/]+\//, '').replace(/\/test\.ts$/, '') +
-            '](' +
-            file.file +
-            ')',
-          file.passed,
-          file.failed,
-          file.skipped,
-          file.status,
-          (file.duration / 1000).toFixed(2),
-        ]),
-        [1, 2, 3, 5]
-      ),
+      unit.generatedAt.slice(0, 10) + ' · **' + unit.status + '**',
+      ...(unit.errors ? ['Errors: ' + unit.errors] : []),
       ''
     )
-    if (unit.coverage)
-      lines.push(
-        table(
-          metrics.map((metric) => metric[0].toUpperCase() + metric.slice(1)),
-          [
-            metrics.map(
-              (metric) =>
-                unit.coverage![metric].pct.toFixed(2).replace(/\.00$/, '') + '%'
-            ),
-          ],
-          [0, 1, 2, 3]
-        )
+  }
+  lines.push(
+    '',
+    table(
+      ['Test suite', 'Passed', 'Failed', 'Skipped'],
+      suites.map((suite) => {
+        const counts = groups.get(suite)
+        return [
+          suite,
+          counts?.passed ?? '—',
+          counts?.failed ?? '—',
+          counts?.skipped ?? '—',
+        ]
+      }),
+      [1, 2, 3]
+    ),
+    ''
+  )
+  if (unit) {
+    lines.push(
+      table(
+        metrics.map((metric) => metric[0].toUpperCase() + metric.slice(1)),
+        [
+          metrics.map((metric) =>
+            unit.coverage
+              ? unit.coverage[metric].pct.toFixed(2).replace(/\.00$/, '') + '%'
+              : '—'
+          ),
+        ],
+        [0, 1, 2, 3]
       )
-    else lines.push('Coverage was not collected in this run.')
-  } else lines.push('No Vitest run has been recorded.')
+    )
+  }
   lines.push('', '#### Compatibility', '')
   const browsers = report?.compatibility ?? {}
   lines.push(
     table(
+      ['Runtime', 'Version', 'Status'],
       [
-        'Runtime',
-        'Version',
-        'Status',
-        'Passed',
-        'Failed',
-        'Skipped',
-        'Checked (UTC)',
-      ],
-      [
-        [
-          'Node.js (Vitest source tests)',
-          unit?.environment.node ?? '—',
-          unit?.status ?? 'not run',
-          unit?.passed ?? '—',
-          unit?.failed ?? '—',
-          unit?.skipped ?? '—',
-          unit?.generatedAt ?? '—',
-        ],
-        ...['chromium', 'firefox', 'webkit'].map((runtime) => {
+        ...[
+          'node.esm',
+          'node.cjs',
+          'bun',
+          'deno',
+          'edge',
+          'workerd',
+          'chromium',
+          'firefox',
+          'webkit',
+        ].map((runtime) => {
           const result = browsers[runtime]
           return [
             {
-              chromium: 'Chromium browser window',
-              firefox: 'Firefox browser window',
-              webkit: 'WebKit browser window',
+              'node.esm': 'Node.js ESM',
+              'node.cjs': 'Node.js CJS',
+              bun: 'Bun',
+              deno: 'Deno',
+              edge: 'Edge Runtime',
+              workerd: 'workerd',
+              chromium: 'Chromium',
+              firefox: 'Firefox',
+              webkit: 'WebKit',
             }[runtime],
             result?.version ?? '—',
             result?.status ?? 'not run',
-            result?.passed ?? '—',
-            result?.failed ?? '—',
-            result?.skipped ?? '—',
-            result?.generatedAt ?? '—',
           ]
         }),
-      ],
-      [3, 4, 5]
+      ]
     )
-  )
-  lines.push(
-    '',
-    'Only executed runtimes are marked as verified. Browser checks import the built ESM package and test editing, events and replication. Counts describe the latest selection; other model sections retain their own latest run.'
   )
   return lines.join('\n')
 }

@@ -5,7 +5,7 @@ import {
   arraySnapshot,
   type ArrayConstructor,
   type ArraySubject,
-} from '../../test/array/array.js'
+} from '../../test/.shared/array.js'
 
 export const operations = [
   'length',

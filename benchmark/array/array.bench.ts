@@ -3,7 +3,7 @@ import { cpus, platform, arch } from 'node:os'
 import { resolve } from 'node:path'
 import { createRequire } from 'node:module'
 import { afterAll, beforeAll, describe, it } from 'vitest'
-import { loadArray, type ArrayConstructor } from '../../test/array/array.js'
+import { loadArray, type ArrayConstructor } from '../../test/.shared/array.js'
 import {
   createWorkload,
   operations,

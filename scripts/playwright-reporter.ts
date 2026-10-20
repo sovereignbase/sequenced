@@ -13,13 +13,19 @@ export default class ReadmeReporter implements Reporter {
   }
   async onEnd(result: FullResult): Promise<void> {
     const reports = new Map<Model, Record<string, RuntimeRun>>()
+    const integrations = new Map<Model, Record<string, RuntimeRun>>()
     for (const test of this.suite?.allTests() ?? []) {
       const model = modelOf(test.location.file)
       if (!model) continue
       const runtime = test.parent.project()?.use.browserName
       if (!runtime) continue
-      let runtimes = reports.get(model)
-      if (!runtimes) reports.set(model, (runtimes = {}))
+      const selected = test.location.file
+        .replaceAll('\\', '/')
+        .includes('/integration/')
+        ? integrations
+        : reports
+      let runtimes = selected.get(model)
+      if (!runtimes) selected.set(model, (runtimes = {}))
       const summary = (runtimes[runtime] ??= {
         generatedAt: new Date().toISOString(),
         status: 'passed',
@@ -44,6 +50,8 @@ export default class ReadmeReporter implements Reporter {
     }
     for (const [model, compatibility] of reports)
       saveTests(model, { compatibility }, this.root)
-    if (reports.size) await updateReadme(this.root)
+    for (const [model, integration] of integrations)
+      saveTests(model, { integration }, this.root)
+    if (reports.size || integrations.size) await updateReadme(this.root)
   }
 }

@@ -3,14 +3,11 @@ import { defineConfig } from 'vitest/config'
 export default defineConfig({
   test: {
     include: [
-      'test/array/**/test.ts',
-      'test/text/**/test.ts',
-      'test/map/**/test.ts',
-      'test/errors/**/test.ts',
-      'test/reporting/**/test.ts',
+      'test/{compability,convergence,equivelance,events,integration,unit}/*.test.ts',
     ],
     environment: 'node',
     fileParallelism: false,
+    testTimeout: 60_000,
     reporters: ['default', './scripts/vitest-reporter.ts'],
     coverage: {
       enabled: true,

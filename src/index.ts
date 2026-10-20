@@ -4,8 +4,6 @@ import { SequencedMap } from './SequencedMap/class.js'
 
 export { SequencedError, type SequencedErrorCode } from './errors/class.js'
 
-export { SequencedArray }
-export { SequencedMap }
 export type {
   SerializableKey,
   SequencedMapEntry,
@@ -29,3 +27,5 @@ export class Sequenced {
   static readonly Array = SequencedArray
   static readonly Map = SequencedMap
 }
+
+export { base64urlToActorID } from './helpers/base64urlToActorID.js'
