@@ -45,7 +45,11 @@
     "test:text": "vitest run test/text --coverage.enabled=false",
     "test:text:watch": "vitest test/text --coverage.enabled=false",
     "typecheck:text": "tsc --project test/text/tsconfig.json",
-    "bench:text": "vitest run --config benchmark/vitest.config.ts benchmark/text"
+    "bench:text": "vitest run --config benchmark/vitest.config.ts benchmark/text",
+    "test:map": "vitest run test/map --coverage.enabled=false",
+    "test:map:watch": "vitest test/map --coverage.enabled=false",
+    "typecheck:map": "tsc --project test/map/tsconfig.json",
+    "bench:map": "vitest run --config benchmark/vitest.config.ts benchmark/map"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.4",

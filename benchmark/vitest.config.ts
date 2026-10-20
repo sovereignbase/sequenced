@@ -6,7 +6,7 @@ export default defineConfig({
     include: [],
     benchmark: {
       enabled: true,
-      include: ['benchmark/{array,text}/**/*.bench.ts'],
+      include: ['benchmark/{array,text,map}/**/*.bench.ts'],
     },
     environment: 'node',
     fileParallelism: false,

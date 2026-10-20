@@ -10,6 +10,7 @@
   "include": [
     "array/**/*.ts",
     "text/**/*.ts",
+    "map/**/*.ts",
     ".shared/**/*.ts",
     "../benchmark/**/*.ts",
     "../playwright.config.ts",

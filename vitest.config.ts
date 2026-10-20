@@ -2,7 +2,11 @@ import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
   test: {
-    include: ['test/array/**/test.ts', 'test/text/**/test.ts'],
+    include: [
+      'test/array/**/test.ts',
+      'test/text/**/test.ts',
+      'test/map/**/test.ts',
+    ],
     environment: 'node',
     fileParallelism: false,
     coverage: {
@@ -11,6 +15,7 @@ export default defineConfig({
       include: [
         'src/SequencedArray/**/*.ts',
         'src/SequencedText/**/*.ts',
+        'src/SequencedMap/**/*.ts',
         'src/index.ts',
       ],
       reporter: ['text', 'lcov'],

@@ -1,294 +1,268 @@
+import { Projection } from '@sovereignbase/sequencer'
+import type { Result } from '@sovereignbase/sequencer'
 import type {
-  SequencedMapAck,
+  SerializableKey,
+  SequencedMapEntry,
+  SequencedMapSnapshot,
   SequencedMapDelta,
+  SequencedMapChange,
   SequencedMapEventMap,
+  SequencedMapEventListener,
 } from './types/type.js'
 
-/**
- * A convergent replicated map for string-keyed state.
- *
- * Reads, iteration, and collection views expose detached copies of the current
- * live projection. Local mutations emit `delta` and `change` events. Merges may
- * emit `change`, `delta`, or both depending on whether the incoming state
- * changes the visible projection or requires a reply delta.
- *
- * @typeParam T - The value type stored in the map.
- */
-export class SequencedMap<T> {
-  declare private readonly state: SequencedMapState<string, T>
-  declare private readonly eventTarget: EventTarget
+function keyOf<K extends SerializableKey>(key: K): K {
+  if (
+    typeof key !== 'string' &&
+    (typeof key !== 'number' || !Number.isFinite(key))
+  )
+    throw new TypeError('Map keys must be strings or finite numbers')
+  return (key === 0 ? 0 : key) as K
+}
 
-  /**
-   * Creates a replicated map from an optional serializable snapshot.
-   *
-   * @param snapshot - A previously emitted SequencedMap snapshot.
-   */
-  constructor(snapshot?: SequencedMapSnapshot<string, T>) {
-    Object.defineProperties(this, {
-      state: {
-        value: __create<T>(snapshot),
-        enumerable: false,
-        configurable: false,
-        writable: false,
-      },
-      eventTarget: {
-        value: new EventTarget(),
-        enumerable: false,
-        configurable: false,
-        writable: false,
-      },
-    })
+function entryKey<K extends SerializableKey, V>(
+  entry: SequencedMapEntry<K, V>
+): K {
+  if (!Array.isArray(entry) || entry.length !== 2)
+    throw new TypeError('Map entries must be [key, value] pairs')
+  return keyOf(entry[0])
+}
+
+// Keep a target prefix already present in order; deleting/reinserting only the
+// remaining keys also preserves native Map iterator behavior for untouched keys.
+function preservedKeys<K>(before: Iterable<K>, after: K[]): Set<K> {
+  let prefix = 0
+  for (const key of before) if (key === after[prefix]) prefix++
+  return new Set(after.slice(0, prefix))
+}
+
+function changesFor<K extends SerializableKey, V>(
+  entries: Iterable<readonly [K, V | undefined]>
+): SequencedMapChange<K, V> {
+  return Object.fromEntries(entries) as SequencedMapChange<K, V>
+}
+
+export class SequencedMap<K extends SerializableKey, V> implements Iterable<
+  [K, V]
+> {
+  private readonly projection: Projection<SequencedMapEntry<K, V>>
+  private readonly index = new Map<K, number>()
+  private duplicates = new Set<K>()
+  private eventTarget?: EventTarget
+
+  constructor(actorID: number, snapshot?: SequencedMapSnapshot<K, V>) {
+    this.projection = new Projection(actorID, snapshot)
+    try {
+      const seen = new Set<K>()
+      const duplicates: number[] = []
+      this.projection.values().forEach((entry, position) => {
+        const key = entryKey(entry)
+        if (seen.has(key)) duplicates.push(position)
+        else seen.add(key)
+      })
+      for (const position of duplicates.reverse())
+        this.projection.remove(position, position)
+      this.refresh()
+    } catch (error) {
+      this.projection.destroy()
+      throw error
+    }
   }
 
-  /**
-   * The current number of live keys.
-   */
   get size(): number {
-    return this.state.values.size
+    return this.index.size
+  }
+  get [Symbol.toStringTag](): string {
+    return 'Map'
   }
 
-  /**
-   * Reads the current visible value for a key.
-   *
-   * @param key - Target key in the live map.
-   * @returns A detached copy of the value, or `undefined` when the key is absent.
-   */
-  get(key: string): T | undefined {
-    return __read<T>(key, this.state)
+  get(key: K): V | undefined {
+    const position = this.index.get(keyOf(key))
+    return position === undefined
+      ? undefined
+      : this.projection.value(position)![1]
   }
 
-  /**
-   * Checks whether a key currently exists in the live projection.
-   *
-   * @param key - Key to check.
-   * @returns `true` when the key is currently visible.
-   */
-  has(key: string): boolean {
-    return this.state.values.has(key)
+  has(key: K): boolean {
+    return this.index.has(keyOf(key))
   }
 
-  /**
-   * Overwrites the visible value for a key.
-   *
-   * @param key - Key to write.
-   * @param value - Next visible value for the key.
-   * @throws {SequencedMapError} Thrown when the key is not a non-empty string.
-   * @throws {SequencedMapError} Thrown when the value is not supported by `structuredClone`.
-   */
-  set(key: string, value: T): void {
-    const result = __update<T>(key, value, this.state)
-    /* c8 ignore next -- __update either throws or returns a result object. */
-    if (!result) return
-    void this.eventTarget.dispatchEvent(
-      new CustomEvent('delta', { detail: result.delta })
-    )
-    void this.eventTarget.dispatchEvent(
-      new CustomEvent('change', { detail: result.change })
-    )
+  set(key: K, value: V): this {
+    key = keyOf(key)
+    const position = this.index.get(key)
+    const entry: SequencedMapEntry<K, V> = [key, value]
+    let delta: SequencedMapDelta<K, V>
+    if (position === undefined) {
+      const at = this.projection.length()
+      delta = this.projection.insert([entry], at)
+      this.index.set(key, at)
+    } else delta = this.projection.replace([entry], position, position)
+    this.dispatchEvent('change', changesFor([[key, value]]))
+    this.dispatchEvent('delta', delta)
+    return this
   }
 
-  /**
-   * Deletes one visible key.
-   *
-   * @param key - Key to remove.
-   * @throws {SequencedMapError} Thrown when the key is not a non-empty string.
-   */
-  delete(key: string): void {
-    const result = __delete(this.state, key)
-    if (!result) return
-    void this.eventTarget.dispatchEvent(
-      new CustomEvent('delta', { detail: result.delta })
-    )
-    void this.eventTarget.dispatchEvent(
-      new CustomEvent('change', { detail: result.change })
-    )
+  delete(key: K): boolean {
+    key = keyOf(key)
+    const position = this.index.get(key)
+    if (position === undefined) return false
+    const deltas: SequencedMapDelta<K, V>[] = []
+    if (this.duplicates.has(key)) {
+      const positions: number[] = []
+      this.projection.values().forEach((entry, at) => {
+        if (entryKey(entry) === key) positions.push(at)
+      })
+      for (const at of positions.reverse())
+        deltas.push(this.projection.remove(at, at))
+      this.refresh()
+    } else {
+      deltas.push(this.projection.remove(position, position))
+      this.index.delete(key)
+      if (position < this.projection.length())
+        for (const [other, at] of this.index)
+          if (at > position) this.index.set(other, at - 1)
+    }
+    this.dispatchEvent('change', changesFor([[key, undefined]]))
+    for (const delta of deltas) this.dispatchEvent('delta', delta)
+    return true
   }
 
-  /**
-   * Deletes every visible key.
-   */
   clear(): void {
-    const result = __delete(this.state)
-    if (!result) return
-    void this.eventTarget.dispatchEvent(
-      new CustomEvent('delta', { detail: result.delta })
+    if (!this.size) return
+    const changes = changesFor<K, V>(
+      Array.from(this.index.keys(), (key) => [key, undefined] as const)
     )
-    void this.eventTarget.dispatchEvent(
-      new CustomEvent('change', { detail: result.change })
-    )
+    const delta = this.projection.remove(0, this.projection.length() - 1)
+    this.index.clear()
+    this.duplicates.clear()
+    this.dispatchEvent('change', changes)
+    this.dispatchEvent('delta', delta)
   }
 
-  /**
-   * Returns the current live keys.
-   *
-   * @returns The current keys in map iteration order.
-   */
-  keys(): Array<string> {
-    return Array.from(this.state.values.keys())
+  keys(): MapIterator<K> {
+    return this.index.keys()
   }
 
-  /**
-   * Returns detached copies of the current live values.
-   *
-   * @returns The current values in map iteration order.
-   */
-  values(): Array<T> {
-    return Array.from(this.state.values.values(), (entry) =>
-      structuredClone(entry.value.value)
-    )
+  *values(): MapIterator<V> {
+    for (const position of this.index.values())
+      yield this.projection.value(position)![1]
   }
 
-  /**
-   * Returns detached key-value entries for the current live projection.
-   *
-   * @returns The current entries in map iteration order.
-   */
-  entries(): Array<[string, T]> {
-    return Array.from(this.state.values.values(), (entry) => [
-      entry.value.key,
-      structuredClone(entry.value.value),
-    ])
+  *entries(): MapIterator<[K, V]> {
+    for (const [key, position] of this.index)
+      yield [key, this.projection.value(position)![1]]
   }
 
-  /**
-   * Applies a remote or local delta to the replica state.
-   *
-   * @param delta - The partial serialized map state to merge.
-   */
-  merge(delta: SequencedMapDelta<string, T>): void {
-    const result = __merge<T>(delta, this.state)
-    if (!result) return
-    if (
-      (result.delta.values?.length ?? 0) +
-        (result.delta.tombstones?.length ?? 0) >
-      0
-    ) {
-      void this.eventTarget.dispatchEvent(
-        new CustomEvent('delta', { detail: result.delta })
-      )
-    }
-    if (Object.keys(result.change).length > 0) {
-      void this.eventTarget.dispatchEvent(
-        new CustomEvent('change', { detail: result.change })
-      )
-    }
+  [Symbol.iterator](): MapIterator<[K, V]> {
+    return this.entries()
   }
 
-  /**
-   * Emits the current acknowledgement frontier.
-   */
-  acknowledge(): void {
-    const ack = __acknowledge<T>(this.state)
-    if (!ack) return
-    void this.eventTarget.dispatchEvent(new CustomEvent('ack', { detail: ack }))
-  }
-
-  /**
-   * Removes tombstones that every provided frontier has acknowledged.
-   *
-   * @param frontiers - Replica acknowledgement frontiers.
-   */
-  garbageCollect(frontiers: Array<SequencedMapAck>): void {
-    void __garbageCollect<T>(frontiers, this.state)
-  }
-
-  /**
-   * Emits the current serializable map snapshot.
-   */
-  snapshot(): void {
-    const snapshot = __snapshot<T>(this.state)
-    void this.eventTarget.dispatchEvent(
-      new CustomEvent('snapshot', { detail: snapshot })
-    )
-  }
-
-  /**
-   * Registers an event listener.
-   *
-   * @param type - The event type to listen for.
-   * @param listener - The listener to register.
-   * @param options - Listener registration options.
-   */
-  addEventListener<K extends keyof SequencedMapEventMap<string, T>>(
-    type: K,
-    listener: EventListenerOrEventListenerObject | null,
-    options?: boolean | AddEventListenerOptions
-  ): void {
-    this.eventTarget.addEventListener(type, listener, options)
-  }
-
-  /**
-   * Removes an event listener.
-   *
-   * @param type - The event type to stop listening for.
-   * @param listener - The listener to remove.
-   * @param options - Listener removal options.
-   */
-  removeEventListener<K extends keyof SequencedMapEventMap<string, T>>(
-    type: K,
-    listener: EventListenerOrEventListenerObject | null,
-    options?: boolean | EventListenerOptions
-  ): void {
-    this.eventTarget.removeEventListener(type, listener, options)
-  }
-
-  /**
-   * Returns a serializable snapshot representation of this map.
-   *
-   * Called automatically by `JSON.stringify`.
-   */
-  toJSON(): SequencedMapSnapshot<string, T> {
-    return __snapshot<T>(this.state)
-  }
-
-  /**
-   * Attempts to return this map as a JSON string.
-   */
-  toString(): string {
-    return JSON.stringify(this)
-  }
-
-  /**
-   * Returns the Node.js console inspection representation.
-   */
-  [Symbol.for('nodejs.util.inspect.custom')](): SequencedMapSnapshot<
-    string,
-    T
-  > {
-    return this.toJSON()
-  }
-
-  /**
-   * Returns the Deno console inspection representation.
-   */
-  [Symbol.for('Deno.customInspect')](): SequencedMapSnapshot<string, T> {
-    return this.toJSON()
-  }
-
-  /**
-   * Iterates over detached copies of the current live entries.
-   */
-  *[Symbol.iterator](): IterableIterator<[string, T]> {
-    for (const entry of this.state.values.values()) {
-      yield [entry.value.key, structuredClone(entry.value.value)]
-    }
-  }
-
-  /**
-   * Calls a function once for each live entry copy in map iteration order.
-   *
-   * Callback values are detached copies, so mutating them does not mutate the
-   * replica.
-   *
-   * @param callback - Function to call for each key-value entry.
-   * @param thisArg - Optional `this` value for the callback.
-   */
   forEach(
-    callback: (value: T, key: string, map: this) => void,
+    callback: (value: V, key: K, map: this) => void,
     thisArg?: unknown
   ): void {
-    for (const [key, value] of this) {
-      callback.call(thisArg, value, key, this)
+    if (typeof callback !== 'function')
+      throw new TypeError('Callback must be a function')
+    for (const [key, value] of this)
+      Reflect.apply(callback, thisArg, [value, key, this])
+  }
+
+  apply(delta: unknown): void {
+    const before = this.eventTarget ? new Map(this) : undefined
+    this.received(this.projection.apply(delta), before)
+  }
+
+  merge(snapshot: SequencedMapSnapshot<K, V>): void {
+    const before = this.eventTarget ? new Map(this) : undefined
+    this.received(this.projection.merge(snapshot), before)
+  }
+
+  private received(
+    result: Result<SequencedMapEntry<K, V>> | undefined,
+    before?: Map<K, V>
+  ): void {
+    // Invalid batches can have a valid applied prefix; refresh even if the engine
+    // returns undefined, without interpreting or inventing replication metadata.
+    if (!result || result[0].length) {
+      this.refresh()
+      if (before) {
+        const after = new Map(this)
+        const keep = preservedKeys(before.keys(), [...after.keys()])
+        const changes = new Map<K, V | undefined>()
+        for (const key of before.keys())
+          if (!keep.has(key)) changes.set(key, undefined)
+        for (const [key, value] of after)
+          if (!keep.has(key) || !Object.is(before.get(key), value))
+            changes.set(key, value)
+        if (changes.size) this.dispatchEvent('change', changesFor(changes))
+      }
     }
+    if (result?.[1]?.length) this.dispatchEvent('delta', result[1])
+  }
+
+  private refresh(): void {
+    const next = new Map<K, number>()
+    this.duplicates.clear()
+    this.projection.values().forEach((entry, position) => {
+      const key = entryKey(entry)
+      if (next.has(key)) this.duplicates.add(key)
+      else next.set(key, position)
+    })
+    const keep = preservedKeys(this.index.keys(), [...next.keys()])
+    for (const key of this.index.keys())
+      if (!keep.has(key)) this.index.delete(key)
+    for (const [key, position] of next) this.index.set(key, position)
+  }
+
+  snapshot(): void {
+    this.dispatchEvent('snapshot', this.toJSON())
+  }
+
+  toJSON(): SequencedMapSnapshot<K, V> {
+    const [words, values] = this.projection.sequence()
+    return [Array.isArray(words) ? words : Array.from(words), values]
+  }
+
+  destroy(): void {
+    this.projection.destroy()
+    this.index.clear()
+    this.duplicates.clear()
+  }
+
+  [Symbol.for('nodejs.util.inspect.custom')](): Map<K, V> {
+    return new Map(this)
+  }
+  [Symbol.for('Deno.customInspect')](): Map<K, V> {
+    return new Map(this)
+  }
+
+  addEventListener<E extends keyof SequencedMapEventMap<K, V>>(
+    type: E,
+    listener: SequencedMapEventListener<K, V, E> | null,
+    options?: boolean | AddEventListenerOptions
+  ): void {
+    ;(this.eventTarget ??= new EventTarget()).addEventListener(
+      type,
+      listener as EventListenerOrEventListenerObject | null,
+      options
+    )
+  }
+
+  removeEventListener<E extends keyof SequencedMapEventMap<K, V>>(
+    type: E,
+    listener: SequencedMapEventListener<K, V, E> | null,
+    options?: boolean | EventListenerOptions
+  ): void {
+    this.eventTarget?.removeEventListener(
+      type,
+      listener as EventListenerOrEventListenerObject | null,
+      options
+    )
+  }
+
+  dispatchEvent<E extends keyof SequencedMapEventMap<K, V>>(
+    type: E,
+    detail: SequencedMapEventMap<K, V>[E]
+  ): void {
+    this.eventTarget?.dispatchEvent(new CustomEvent(type, { detail }))
   }
 }

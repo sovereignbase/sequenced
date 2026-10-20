@@ -1,65 +1,25 @@
-/**
- * Visible replica projections.
- */
+import type { Gossip, Sequence } from '@sovereignbase/sequencer'
 
-/**
- * Represents visible key-value changes from a local operation or merge.
- */
-export type SequencedMapChange<K extends string, V> = Record<K, V | undefined>
-
-/**
- * Partial serialized state exchanged between replicas.
- */
-
-/**
- * Represents a serialized snapshot of the full replica state.
- */
-
-/**
- * Represents a partial serialized replica projection exchanged between replicas.
- */
-export type SequencedMapDelta<K extends string, V> = []
-
-/**
- * Acknowledgement frontier.
- */
-
-/**
- * Represents the current acknowledgement frontier emitted by a replica.
- */
-export type SequencedMapAck = string
-
-/**
- * Maps event names to their payload shapes.
- */
-export type SequencedMapEventMap<K extends string, V> = {
-  /** STATE / PROJECTION */
-  snapshot: SequencedMapSnapshot<K, V>
+export type SerializableKey = string | number
+export type SequencedMapEntry<K extends SerializableKey, V> = readonly [K, V]
+export type SequencedMapSnapshot<K extends SerializableKey, V> = Sequence<
+  SequencedMapEntry<K, V>
+>
+export type SequencedMapDelta<K extends SerializableKey, V> = Gossip<
+  SequencedMapEntry<K, V>
+>
+export type SequencedMapChange<K extends SerializableKey, V> = Readonly<
+  Record<K, Readonly<V> | undefined>
+>
+export type SequencedMapEventMap<K extends SerializableKey, V> = {
   change: SequencedMapChange<K, V>
-
-  /** GOSSIP / PROTOCOL */
   delta: SequencedMapDelta<K, V>
-  ack: SequencedMapAck
+  snapshot: SequencedMapSnapshot<K, V>
 }
-
-/**
- * Represents a strongly typed CR-Map event listener.
- */
 export type SequencedMapEventListener<
-  T,
-  K extends keyof SequencedMapEventMap<string, T>,
+  K extends SerializableKey,
+  V,
+  E extends keyof SequencedMapEventMap<K, V>,
 > =
-  | ((event: CustomEvent<SequencedMapEventMap<string, T>[K]>) => void)
-  | {
-      handleEvent(event: CustomEvent<SequencedMapEventMap<string, T>[K]>): void
-    }
-
-/**
- * Resolves an event name to its corresponding listener type.
- */
-export type SequencedMapEventListenerFor<
-  T,
-  K extends string,
-> = K extends keyof SequencedMapEventMap<string, T>
-  ? SequencedMapEventListener<T, K>
-  : EventListenerOrEventListenerObject
+  | ((event: CustomEvent<SequencedMapEventMap<K, V>[E]>) => void)
+  | { handleEvent(event: CustomEvent<SequencedMapEventMap<K, V>[E]>): void }
