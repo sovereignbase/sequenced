@@ -120,7 +120,6 @@ export function runSuite(
         let changes = 0
         const retained: object[] = []
         try {
-          peers.forEach((peer) => peer.apply([[1], [2]]))
           peers.forEach((peer, index) => {
             peer.addEventListener('delta', ({ detail }: CustomEvent<unknown>) =>
               peers[1 - index].apply(JSON.parse(JSON.stringify(detail)))

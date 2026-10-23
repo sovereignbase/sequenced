@@ -12,6 +12,7 @@ import type {
   SequencedMapEventListener,
 } from './types/type.js'
 
+/** Requires a string or finite number key and normalizes negative zero to zero. */
 function keyOf<K extends SerializableKey>(key: K): K {
   if (
     typeof key !== 'string' &&
@@ -23,6 +24,7 @@ function keyOf<K extends SerializableKey>(key: K): K {
     )
   return (key === 0 ? 0 : key) as K
 }
+/** Reads the validated key of a two-element entry restored from a snapshot. */
 function entryKey<K extends SerializableKey>(entry: unknown): K {
   if (!Array.isArray(entry) || entry.length !== 2)
     throw new SequencedError(
@@ -32,15 +34,29 @@ function entryKey<K extends SerializableKey>(entry: unknown): K {
   return keyOf(entry[0]) as K
 }
 
+/**
+ * A replicated map with native Map-style access and iteration.
+ *
+ * String and numeric keys remain distinct. Keys must be strings or finite numbers.
+ * Concurrent duplicate entries resolve to the first entry in projection order.
+ * Values retain shallow JavaScript references; use `set()` to replicate a changed value.
+ *
+ * @typeParam K The key type.
+ * @typeParam V The value type.
+ */
 export class SequencedMap<K extends SerializableKey, V> implements Iterable<
   [K, V]
 > {
+  /** The sequencer projection that owns the replicated entries. */
   private readonly projection: Projection<SequencedMapEntry<K, V>>
+  /** The first physical position of each visible key. */
   private readonly index = new Map<K, number>()
-  // Only keys are mirrored, so removal patches need no old-value snapshot.
+  /** Physical entry keys, retained so removal patches need no old-value snapshot. */
   private readonly positions: K[] = []
+  /** The event target, allocated when the first listener is registered. */
   private eventTarget?: EventTarget
 
+  /** Reads a projection entry and scopes unexpected failures to this library. */
   #value(at: number): SequencedMapEntry<K, V> {
     try {
       return this.projection.value(at)!
@@ -49,6 +65,12 @@ export class SequencedMap<K extends SerializableKey, V> implements Iterable<
     }
   }
 
+  /**
+   * Creates an empty map or restores a replication snapshot, keeping the first duplicate key.
+   * @param actorID The identifier of the local editing actor.
+   * @param snapshot Optional replication state to restore.
+   * @throws {SequencedError} If initialization fails or a restored entry or key is invalid.
+   */
   constructor(actorID: number, snapshot?: unknown) {
     try {
       this.projection = new Projection<SequencedMapEntry<K, V>>(
@@ -78,20 +100,41 @@ export class SequencedMap<K extends SerializableKey, V> implements Iterable<
     }
   }
 
+  /** Returns the number of visible, distinct keys. */
   get size(): number {
     return this.index.size
   }
+  /** The built-in object tag, `Map`. */
   get [Symbol.toStringTag](): string {
     return 'Map'
   }
+  /**
+   * Returns the value associated with a key.
+   * @param key The key to read.
+   * @returns The stored value, or `undefined` if the key is absent.
+   * @throws {SequencedError} With code `INVALID_MAP_KEY` if the key is invalid.
+   */
   get(key: K): V | undefined {
     const position = this.index.get(keyOf(key))
     return position === undefined ? undefined : this.#value(position)![1]
   }
+  /**
+   * Tests whether the map contains a key, including keys whose value is `undefined`.
+   * @param key The key to test.
+   * @throws {SequencedError} With code `INVALID_MAP_KEY` if the key is invalid.
+   */
   has(key: K): boolean {
     return this.index.has(keyOf(key))
   }
 
+  /**
+   * Adds or replaces a value and emits `change` and `delta` events.
+   * Existing keys retain their local iteration position; new keys are appended.
+   * @param key The key to add or update.
+   * @param value The value to store.
+   * @returns This map.
+   * @throws {SequencedError} With code `INVALID_MAP_KEY` if the key is invalid.
+   */
   set(key: K, value: V): this {
     try {
       key = keyOf(key)
@@ -116,6 +159,12 @@ export class SequencedMap<K extends SerializableKey, V> implements Iterable<
     }
   }
 
+  /**
+   * Removes a key and its retained duplicate entries, emitting the resulting edit.
+   * @param key The key to remove.
+   * @returns Whether the key existed before deletion.
+   * @throws {SequencedError} With code `INVALID_MAP_KEY` if the key is invalid.
+   */
   delete(key: K): boolean {
     try {
       key = keyOf(key)
@@ -165,6 +214,7 @@ export class SequencedMap<K extends SerializableKey, V> implements Iterable<
     }
   }
 
+  /** Removes all entries and emits their deletions; an empty map produces no edit. */
   clear(): void {
     try {
       if (!this.size) return
@@ -183,18 +233,28 @@ export class SequencedMap<K extends SerializableKey, V> implements Iterable<
     }
   }
 
+  /** Returns a live iterator over visible keys in map iteration order. */
   keys(): MapIterator<K> {
     return this.index.keys()
   }
+  /** Returns a live iterator over visible values in map iteration order. */
   *values(): MapIterator<V> {
     for (const at of this.index.values()) yield this.#value(at)![1]
   }
+  /** Returns a live iterator of visible `[key, value]` pairs in map iteration order. */
   *entries(): MapIterator<[K, V]> {
     for (const [key, at] of this.index) yield [key, this.#value(at)![1]]
   }
+  /** Returns the same live entry iterator as `entries()`. */
   [Symbol.iterator](): MapIterator<[K, V]> {
     return this.entries()
   }
+  /**
+   * Calls a function for each visible entry in map iteration order.
+   * @param callback Receives the value, key and this map.
+   * @param thisArg The callback's `this` value.
+   * @throws {SequencedError} With code `INVALID_CALLBACK` if the callback is not callable.
+   */
   forEach(
     callback: (value: V, key: K, map: this) => void,
     thisArg?: unknown
@@ -208,20 +268,36 @@ export class SequencedMap<K extends SerializableKey, V> implements Iterable<
       Reflect.apply(callback, thisArg, [value, key, this])
   }
 
+  /**
+   * Applies incoming gossip and emits visible changes and any reply gossip.
+   * @param delta The received replication data. Sequencer handles transport validation.
+   * @remarks This method does not throw.
+   */
   apply(delta: unknown): void {
     try {
       this.received(this.projection.apply(delta))
     } catch {}
   }
+  /**
+   * Merges another replica's complete sequence and emits the resulting events.
+   * @param snapshot The received replication state. Sequencer handles transport validation.
+   * @remarks This method does not throw.
+   */
   merge(snapshot: unknown): void {
     try {
       this.received(this.projection.merge(snapshot))
     } catch {}
   }
 
+  /** Synchronously emits a `snapshot` event containing the current replication state. */
   snapshot(): void {
     this.dispatchEvent('snapshot', this.toJSON())
   }
+  /**
+   * Returns the complete replication state, including retained entry history.
+   * Used automatically by `JSON.stringify()`.
+   * @returns Structural metadata as a numeric array and the retained entry data.
+   */
   toJSON(): SequencedMapSnapshot<K, V> {
     try {
       const [words, values] = this.projection.sequence()
@@ -230,6 +306,7 @@ export class SequencedMap<K extends SerializableKey, V> implements Iterable<
       throw unknownError(cause, 'SequencedMap.toJSON()')
     }
   }
+  /** Releases the native sequence state and clears the local key index. */
   destroy(): void {
     try {
       this.projection.destroy()
@@ -239,12 +316,20 @@ export class SequencedMap<K extends SerializableKey, V> implements Iterable<
       throw unknownError(cause, 'SequencedMap.destroy()')
     }
   }
+  /** Returns a native Map of visible entries for Node.js console inspection. */
   [Symbol.for('nodejs.util.inspect.custom')](): Map<K, V> {
     return new Map(this)
   }
+  /** Returns a native Map of visible entries for Deno console inspection. */
   [Symbol.for('Deno.customInspect')](): Map<K, V> {
     return new Map(this)
   }
+  /**
+   * Registers a callback or listener object for a typed collection event.
+   * @param type The event name.
+   * @param listener The listener to register; `null` is ignored.
+   * @param options A capture flag or options such as `once` and `signal`.
+   */
   addEventListener<E extends keyof SequencedMapEventMap<K, V>>(
     type: E,
     listener: SequencedMapEventListener<K, V, E> | null,
@@ -260,6 +345,12 @@ export class SequencedMap<K extends SerializableKey, V> implements Iterable<
       throw unknownError(cause, 'SequencedMap.addEventListener()')
     }
   }
+  /**
+   * Removes a listener with the matching event name, identity and capture flag.
+   * @param type The event name.
+   * @param listener The previously registered listener.
+   * @param options The capture flag, directly or within listener options.
+   */
   removeEventListener<E extends keyof SequencedMapEventMap<K, V>>(
     type: E,
     listener: SequencedMapEventListener<K, V, E> | null,
@@ -275,6 +366,11 @@ export class SequencedMap<K extends SerializableKey, V> implements Iterable<
       throw unknownError(cause, 'SequencedMap.removeEventListener()')
     }
   }
+  /**
+   * Synchronously dispatches a typed `CustomEvent` to registered listeners.
+   * @param type The event name.
+   * @param detail The value exposed as `event.detail`.
+   */
   dispatchEvent<E extends keyof SequencedMapEventMap<K, V>>(
     type: E,
     detail: SequencedMapEventMap<K, V>[E]
@@ -286,6 +382,7 @@ export class SequencedMap<K extends SerializableKey, V> implements Iterable<
     }
   }
 
+  /** Updates the key index from projection splices and emits the visible changes and reply. */
   private received(result: Result<SequencedMapEntry<K, V>> | undefined): void {
     if (!result) return
     const patches = result[0]
@@ -338,8 +435,10 @@ export class SequencedMap<K extends SerializableKey, V> implements Iterable<
     if (result[1]?.length) this.dispatchEvent('delta', result[1])
   }
 
-  // HELPERS
-
+  /**
+   * Applies one visible splice to the physical key positions and first-entry index.
+   * @returns The first position whose iteration order needs updating, or `Infinity`.
+   */
   private patch(
     start: number,
     end: number,

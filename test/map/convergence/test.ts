@@ -153,7 +153,6 @@ describe('Map model convergence with registered participants', () => {
 
   it('Map events can reproduce a remote insertion before existing keys', () => {
     const map = new SequencedMap<string, number>(1)
-    map.apply([[1], [2]])
     map.set('a', 1).set('b', 2)
     const view = observe(map)
     const sender = new Projection<SequencedMapEntry<string, number>>(
@@ -220,7 +219,6 @@ describe('Map model convergence with registered participants', () => {
 
   it('keeps synchronous replies and change consumers in local edit order', () => {
     const maps = [1, 2].map((actor) => new SequencedMap<string, number>(actor))
-    maps.forEach((map) => map.apply([[1], [2]]))
     const views = maps.map(observe)
     let responded = false
     maps[1].addEventListener('change', () => {

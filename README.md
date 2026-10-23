@@ -27,8 +27,6 @@ import { Sequenced } from '@sovereignbase/sequenced'
 
 const alice = new Sequenced.Array<string>(1)
 const bob = new Sequenced.Array<string>(2)
-alice.apply([[1], [2]])
-bob.apply([[1], [2]])
 alice.addEventListener('delta', (event) => bob.apply(event.detail))
 bob.addEventListener('delta', (event) => alice.apply(event.detail))
 alice.push('hello', 'world')
@@ -109,7 +107,7 @@ Node v24.16.0 · win32 x64 · Intel(R) Core(TM) i5-10210U CPU @ 1.60GHz · Seque
 | ------------ | ------------ | ------ |
 | Node.js ESM  | v24.16.0     | passed |
 | Node.js CJS  | v24.16.0     | passed |
-| Bun          | 1.4.3        | passed |
+| Bun          | 1.4.4        | passed |
 | Deno         | 2.9.6        | passed |
 | Edge Runtime | 4.0.1        | passed |
 | workerd      | 1.20261019.1 | passed |
@@ -213,7 +211,7 @@ Node v24.16.0 · win32 x64 · Intel(R) Core(TM) i5-10210U CPU @ 1.60GHz · Seque
 | ------------ | ------------ | ------ |
 | Node.js ESM  | v24.16.0     | passed |
 | Node.js CJS  | v24.16.0     | passed |
-| Bun          | 1.4.3        | passed |
+| Bun          | 1.4.4        | passed |
 | Deno         | 2.9.6        | passed |
 | Edge Runtime | 4.0.1        | passed |
 | workerd      | 1.20261019.1 | passed |
@@ -302,7 +300,7 @@ Node v24.16.0 · win32 x64 · Intel(R) Core(TM) i5-10210U CPU @ 1.60GHz · Seque
 | ------------ | ------------ | ------ |
 | Node.js ESM  | v24.16.0     | passed |
 | Node.js CJS  | v24.16.0     | passed |
-| Bun          | 1.4.3        | passed |
+| Bun          | 1.4.4        | passed |
 | Deno         | 2.9.6        | passed |
 | Edge Runtime | 4.0.1        | passed |
 | workerd      | 1.20261019.1 | passed |

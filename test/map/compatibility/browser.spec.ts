@@ -15,7 +15,6 @@ test('Map methods, JSON keys and replication events work in a browser', async ({
       new URL('/dist/index.js', location.href).href
     )
     const maps = [new Sequenced.Map(1), new Sequenced.Map(2)]
-    maps.forEach((map) => map.apply([[1], [2]]))
     maps[0].addEventListener('delta', ({ detail }: CustomEvent<unknown>) =>
       maps[1].apply(detail)
     )

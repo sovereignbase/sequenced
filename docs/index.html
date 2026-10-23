@@ -8,31 +8,941 @@
 <div class="col-content">
 <div class="tsd-page-title">
 <h1>@sovereignbase/sequenced</h1></div>
-<div class="tsd-panel tsd-typography"><p><a href="https://www.npmjs.com/package/@sovereignbase/package-name"><img src="https://img.shields.io/npm/v/@sovereignbase/package-name" alt="npm version"></a>
-<a href="https://jsr.io/@sovereignbase/package-name"><img src="https://jsr.io/badges/@sovereignbase/package-name" alt="JSR"></a>
-<a href="https://github.com/sovereignbase/package-name/actions/workflows/ci.yaml"><img src="https://github.com/sovereignbase/package-name/actions/workflows/ci.yaml/badge.svg?branch=master" alt="CI"></a>
-<a href="https://codecov.io/gh/sovereignbase/package-name"><img src="https://codecov.io/gh/sovereignbase/package-name/branch/master/graph/badge.svg" alt="codecov"></a>
-<a href="LICENSE"><img src="https://img.shields.io/npm/l/@sovereignbase/package-name" alt="license"></a></p>
-<h1 id="package-name" class="tsd-anchor-link">package-name<a href="#package-name" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h1>
-<h2 id="installation" class="tsd-anchor-link">Installation<a href="#installation" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
-<h2 id="usage" class="tsd-anchor-link">Usage<a href="#usage" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
-<pre><code class="typescript"><span class="hl-0">import</span><span class="hl-1"> { </span><span class="hl-2">Sequenced</span><span class="hl-1"> } </span><span class="hl-0">from</span><span class="hl-1"> </span><span class="hl-3">&#39;@sovereignbase/sequenced&#39;</span><br/><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-5">alice</span><span class="hl-1"> = </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-2">Sequenced</span><span class="hl-1">.</span><span class="hl-6">Array</span><span class="hl-1">&lt;</span><span class="hl-7">string</span><span class="hl-1">&gt;(</span><span class="hl-8">1</span><span class="hl-1">)</span><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-5">bob</span><span class="hl-1"> = </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-2">Sequenced</span><span class="hl-1">.</span><span class="hl-6">Array</span><span class="hl-1">&lt;</span><span class="hl-7">string</span><span class="hl-1">&gt;(</span><span class="hl-8">2</span><span class="hl-1">)</span><br/><span class="hl-2">alice</span><span class="hl-1">.</span><span class="hl-6">addEventListener</span><span class="hl-1">(</span><span class="hl-3">&#39;delta&#39;</span><span class="hl-1">, (</span><span class="hl-2">event</span><span class="hl-1">) </span><span class="hl-4">=&gt;</span><span class="hl-1"> </span><span class="hl-2">bob</span><span class="hl-1">.</span><span class="hl-6">apply</span><span class="hl-1">(</span><span class="hl-2">event</span><span class="hl-1">.</span><span class="hl-2">detail</span><span class="hl-1">))</span><br/><span class="hl-2">alice</span><span class="hl-1">.</span><span class="hl-6">push</span><span class="hl-1">(</span><span class="hl-3">&#39;hello&#39;</span><span class="hl-1">, </span><span class="hl-3">&#39;world&#39;</span><span class="hl-1">)</span><br/><span class="hl-2">alice</span><span class="hl-1">.</span><span class="hl-6">set</span><span class="hl-1">(</span><span class="hl-8">1</span><span class="hl-1">, </span><span class="hl-3">&#39;there&#39;</span><span class="hl-1">)</span><br/><span class="hl-2">console</span><span class="hl-1">.</span><span class="hl-6">log</span><span class="hl-1">([...</span><span class="hl-2">bob</span><span class="hl-1">]) </span><span class="hl-9">// [&#39;hello&#39;, &#39;there&#39;]</span><br/><span class="hl-2">alice</span><span class="hl-1">.</span><span class="hl-6">destroy</span><span class="hl-1">()</span><br/><span class="hl-2">bob</span><span class="hl-1">.</span><span class="hl-6">destroy</span><span class="hl-1">()</span>
+<div class="tsd-panel tsd-typography"><p><a href="https://www.npmjs.com/package/@sovereignbase/sequenced"><img src="https://img.shields.io/npm/v/@sovereignbase/sequenced" alt="npm version"></a>
+<a href="https://jsr.io/@sovereignbase/sequenced"><img src="https://jsr.io/badges/@sovereignbase/sequenced" alt="JSR"></a>
+<a href="https://github.com/sovereignbase/sequenced/actions/workflows/ci.yaml"><img src="https://github.com/sovereignbase/sequenced/actions/workflows/ci.yaml/badge.svg?branch=master" alt="CI"></a>
+<a href="https://codecov.io/gh/sovereignbase/sequenced"><img src="https://codecov.io/gh/sovereignbase/sequenced/branch/master/graph/badge.svg" alt="codecov"></a>
+<a href="LICENSE"><img src="https://img.shields.io/npm/l/@sovereignbase/sequenced" alt="license"></a></p>
+<h1 id="sequenced" class="tsd-anchor-link">Sequenced<a href="#sequenced" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h1>
+<p>Replicated Array, Map and Text implementations built on <a href="https://github.com/sovereignbase/sequencer">Sequencer</a>.</p>
+<h2 id="contents" class="tsd-anchor-link">Contents<a href="#contents" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<ul>
+<li><a href="#array">Array</a>
+<ul>
+<li><a href="#usage">Usage</a> · <a href="#errors">Errors</a> · <a href="#benchmarks">Benchmarks</a> · <a href="#tests">Tests</a></li>
+</ul>
+</li>
+<li><a href="#map">Map</a>
+<ul>
+<li><a href="#usage-1">Usage</a> · <a href="#errors-1">Errors</a> · <a href="#benchmarks-1">Benchmarks</a> · <a href="#tests-1">Tests</a></li>
+</ul>
+</li>
+<li><a href="#text">Text</a>
+<ul>
+<li><a href="#usage-2">Usage</a> · <a href="#errors-2">Errors</a> · <a href="#benchmarks-2">Benchmarks</a> · <a href="#tests-2">Tests</a></li>
+</ul>
+</li>
+<li><a href="#license">License</a></li>
+</ul>
+<h2 id="array" class="tsd-anchor-link">Array<a href="#array" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<h3 id="usage" class="tsd-anchor-link">Usage<a href="#usage" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="typescript"><span class="hl-0">import</span><span class="hl-1"> { </span><span class="hl-2">Sequenced</span><span class="hl-1"> } </span><span class="hl-0">from</span><span class="hl-1"> </span><span class="hl-3">&#39;@sovereignbase/sequenced&#39;</span><br/><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-5">alice</span><span class="hl-1"> = </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-2">Sequenced</span><span class="hl-1">.</span><span class="hl-6">Array</span><span class="hl-1">&lt;</span><span class="hl-7">string</span><span class="hl-1">&gt;(</span><span class="hl-8">1</span><span class="hl-1">)</span><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-5">bob</span><span class="hl-1"> = </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-2">Sequenced</span><span class="hl-1">.</span><span class="hl-6">Array</span><span class="hl-1">&lt;</span><span class="hl-7">string</span><span class="hl-1">&gt;(</span><span class="hl-8">2</span><span class="hl-1">)</span><br/><span class="hl-2">alice</span><span class="hl-1">.</span><span class="hl-6">addEventListener</span><span class="hl-1">(</span><span class="hl-3">&#39;delta&#39;</span><span class="hl-1">, (</span><span class="hl-2">event</span><span class="hl-1">) </span><span class="hl-4">=&gt;</span><span class="hl-1"> </span><span class="hl-2">bob</span><span class="hl-1">.</span><span class="hl-6">apply</span><span class="hl-1">(</span><span class="hl-2">event</span><span class="hl-1">.</span><span class="hl-2">detail</span><span class="hl-1">))</span><br/><span class="hl-2">bob</span><span class="hl-1">.</span><span class="hl-6">addEventListener</span><span class="hl-1">(</span><span class="hl-3">&#39;delta&#39;</span><span class="hl-1">, (</span><span class="hl-2">event</span><span class="hl-1">) </span><span class="hl-4">=&gt;</span><span class="hl-1"> </span><span class="hl-2">alice</span><span class="hl-1">.</span><span class="hl-6">apply</span><span class="hl-1">(</span><span class="hl-2">event</span><span class="hl-1">.</span><span class="hl-2">detail</span><span class="hl-1">))</span><br/><span class="hl-2">alice</span><span class="hl-1">.</span><span class="hl-6">push</span><span class="hl-1">(</span><span class="hl-3">&#39;hello&#39;</span><span class="hl-1">, </span><span class="hl-3">&#39;world&#39;</span><span class="hl-1">)</span><br/><span class="hl-2">alice</span><span class="hl-1">.</span><span class="hl-6">set</span><span class="hl-1">(</span><span class="hl-8">1</span><span class="hl-1">, </span><span class="hl-3">&#39;there&#39;</span><span class="hl-1">)</span><br/><span class="hl-2">console</span><span class="hl-1">.</span><span class="hl-6">log</span><span class="hl-1">([...</span><span class="hl-2">bob</span><span class="hl-1">]) </span><span class="hl-9">// [&#39;hello&#39;, &#39;there&#39;]</span><br/><span class="hl-2">alice</span><span class="hl-1">.</span><span class="hl-6">destroy</span><span class="hl-1">()</span><br/><span class="hl-2">bob</span><span class="hl-1">.</span><span class="hl-6">destroy</span><span class="hl-1">()</span>
 </code><button type="button">Copy</button></pre>
 
-<h2 id="api" class="tsd-anchor-link">API<a href="#api" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
-<p><code>Sequenced.Array&lt;T&gt;</code> (also exported as <code>SequencedArray</code>) implements the ES2024
-Array instance methods, plus <code>get</code>, <code>set</code>, <code>delete</code>, <code>apply</code>, <code>merge</code>, <code>snapshot</code>,
-<code>toJSON</code>, typed event listeners and <code>destroy</code>. See <a href="media/README.md">the Array API</a>.</p>
-<h2 id="behavior" class="tsd-anchor-link">Behavior<a href="#behavior" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
-<h2 id="tests" class="tsd-anchor-link">Tests<a href="#tests" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
-<p><a href="test/equivelance/array/README.md">SequencedArray equivalence tests</a> run with
-<code>npm run test:array</code>; check their TypeScript harness with
-<code>npm run typecheck:array</code>.</p>
-<p><a href="media/README-1.md">Array benchmarks</a> run with <code>npm run bench:array</code> and compare
-plain sequencer with the SequencedArray wrapper, including listener overhead.
-The offline-delivery regression currently fails because of
-<a href="https://github.com/sovereignbase/sequencer/issues/2">sequencer issue #2</a>.</p>
+<p>The dense Array method API uses <code>get(index)</code>, <code>set(index, value)</code> and <code>delete(index)</code> for individual positions.</p>
+<p>Copying methods return plain arrays. Callbacks receive the wrapper, and iterators observe subsequent edits.</p>
+<h4 id="errors" class="tsd-anchor-link">Errors<a href="#errors" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>INVALID_ARRAY_LENGTH</code></td>
+<td>The requested length is not a valid array length.</td>
+</tr>
+<tr>
+<td><code>ARRAY_INDEX_OUT_OF_BOUNDS</code></td>
+<td><code>set</code> or <code>delete</code> does not address an existing element.</td>
+</tr>
+<tr>
+<td><code>INVALID_CALLBACK</code></td>
+<td>A callback is not callable.</td>
+</tr>
+<tr>
+<td><code>REDUCE_EMPTY_ARRAY</code></td>
+<td>Reduction of an empty array without an initial value.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="benchmarks" class="tsd-anchor-link">Benchmarks<a href="#benchmarks" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<!-- BEGIN GENERATED:array:benchmarks -->
+<p>2026-10-23 · ops/sec</p>
+<p>Node v24.16.0 · win32 x64 · Intel(R) Core(TM) i5-10210U CPU @ 1.60GHz · Sequencer 1.1.1</p>
+<table>
+<thead>
+<tr>
+<th>Operation</th>
+<th style="text-align:right">100</th>
+<th style="text-align:right">1,000</th>
+<th style="text-align:right">10,000</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>length</code></td>
+<td style="text-align:right">52,159,739</td>
+<td style="text-align:right">51,791,223</td>
+<td style="text-align:right">52,006,140</td>
+</tr>
+<tr>
+<td><code>at.random</code></td>
+<td style="text-align:right">25,066,824</td>
+<td style="text-align:right">27,687,308</td>
+<td style="text-align:right">26,193,890</td>
+</tr>
+<tr>
+<td><code>get.random</code></td>
+<td style="text-align:right">23,882,054</td>
+<td style="text-align:right">27,029,049</td>
+<td style="text-align:right">27,247,864</td>
+</tr>
+<tr>
+<td><code>values</code></td>
+<td style="text-align:right">153,455</td>
+<td style="text-align:right">17,480</td>
+<td style="text-align:right">1,783</td>
+</tr>
+<tr>
+<td><code>slice.all</code></td>
+<td style="text-align:right">5,511,587</td>
+<td style="text-align:right">831,638</td>
+<td style="text-align:right">125,554</td>
+</tr>
+<tr>
+<td><code>slice.random</code></td>
+<td style="text-align:right">6,589,972</td>
+<td style="text-align:right">7,419,687</td>
+<td style="text-align:right">7,580,080</td>
+</tr>
+<tr>
+<td><code>push</code></td>
+<td style="text-align:right">1,486,528</td>
+<td style="text-align:right">1,863,963</td>
+<td style="text-align:right">1,626,297</td>
+</tr>
+<tr>
+<td><code>unshift</code></td>
+<td style="text-align:right">1,227,646</td>
+<td style="text-align:right">1,370,528</td>
+<td style="text-align:right">1,320,933</td>
+</tr>
+<tr>
+<td><code>splice.random</code></td>
+<td style="text-align:right">529,454</td>
+<td style="text-align:right">570,319</td>
+<td style="text-align:right">483,302</td>
+</tr>
+<tr>
+<td><code>set.random</code></td>
+<td style="text-align:right">679,227</td>
+<td style="text-align:right">668,972</td>
+<td style="text-align:right">535,288</td>
+</tr>
+<tr>
+<td><code>delete.random</code></td>
+<td style="text-align:right">896,242</td>
+<td style="text-align:right">874,789</td>
+<td style="text-align:right">680,240</td>
+</tr>
+<tr>
+<td><code>apply.insert.random</code></td>
+<td style="text-align:right">1,243,643</td>
+<td style="text-align:right">1,341,260</td>
+<td style="text-align:right">1,210,456</td>
+</tr>
+<tr>
+<td><code>apply.set.random</code></td>
+<td style="text-align:right">526,872</td>
+<td style="text-align:right">482,917</td>
+<td style="text-align:right">412,581</td>
+</tr>
+<tr>
+<td><code>apply.delete.random</code></td>
+<td style="text-align:right">700,278</td>
+<td style="text-align:right">663,277</td>
+<td style="text-align:right">523,033</td>
+</tr>
+<tr>
+<td><code>merge.insert.random</code></td>
+<td style="text-align:right">135,914</td>
+<td style="text-align:right">141,653</td>
+<td style="text-align:right">110,790</td>
+</tr>
+<tr>
+<td><code>merge.set.random</code></td>
+<td style="text-align:right">65,100</td>
+<td style="text-align:right">59,129</td>
+<td style="text-align:right">49,882</td>
+</tr>
+<tr>
+<td><code>merge.delete.random</code></td>
+<td style="text-align:right">107,786</td>
+<td style="text-align:right">99,822</td>
+<td style="text-align:right">60,349</td>
+</tr>
+<tr>
+<td><code>merge.identical</code></td>
+<td style="text-align:right">1,155,766</td>
+<td style="text-align:right">1,147,882</td>
+<td style="text-align:right">1,053,073</td>
+</tr>
+<tr>
+<td><code>snapshot</code></td>
+<td style="text-align:right">2,168,982</td>
+<td style="text-align:right">2,461,735</td>
+<td style="text-align:right">2,657,725</td>
+</tr>
+<tr>
+<td><code>toJSON</code></td>
+<td style="text-align:right">4,642,527</td>
+<td style="text-align:right">5,149,138</td>
+<td style="text-align:right">5,144,365</td>
+</tr>
+</tbody>
+</table>
+<!-- END GENERATED:array:benchmarks -->
+<h3 id="tests" class="tsd-anchor-link">Tests<a href="#tests" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<!-- BEGIN GENERATED:array:tests -->
+<p>2026-10-23 · <strong>passed</strong></p>
+<table>
+<thead>
+<tr>
+<th>Test suite</th>
+<th style="text-align:right">Passed</th>
+<th style="text-align:right">Failed</th>
+<th style="text-align:right">Skipped</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>compability</td>
+<td style="text-align:right">9</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">0</td>
+</tr>
+<tr>
+<td>convergence</td>
+<td style="text-align:right">8</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">0</td>
+</tr>
+<tr>
+<td>equivelance</td>
+<td style="text-align:right">280</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">0</td>
+</tr>
+<tr>
+<td>events</td>
+<td style="text-align:right">40</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">0</td>
+</tr>
+<tr>
+<td>integration</td>
+<td style="text-align:right">6</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">0</td>
+</tr>
+<tr>
+<td>unit</td>
+<td style="text-align:right">66</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">0</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th style="text-align:right">Statements</th>
+<th style="text-align:right">Branches</th>
+<th style="text-align:right">Functions</th>
+<th style="text-align:right">Lines</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right">100%</td>
+<td style="text-align:right">100%</td>
+<td style="text-align:right">100%</td>
+<td style="text-align:right">100%</td>
+</tr>
+</tbody>
+</table>
+<h4 id="compatibility" class="tsd-anchor-link">Compatibility<a href="#compatibility" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<table>
+<thead>
+<tr>
+<th>Runtime</th>
+<th>Version</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Node.js ESM</td>
+<td>v24.16.0</td>
+<td>passed</td>
+</tr>
+<tr>
+<td>Node.js CJS</td>
+<td>v24.16.0</td>
+<td>passed</td>
+</tr>
+<tr>
+<td>Bun</td>
+<td>1.4.4</td>
+<td>passed</td>
+</tr>
+<tr>
+<td>Deno</td>
+<td>2.9.6</td>
+<td>passed</td>
+</tr>
+<tr>
+<td>Edge Runtime</td>
+<td>4.0.1</td>
+<td>passed</td>
+</tr>
+<tr>
+<td>workerd</td>
+<td>1.20261019.1</td>
+<td>passed</td>
+</tr>
+<tr>
+<td>Chromium</td>
+<td>156.0.8078.4</td>
+<td>passed</td>
+</tr>
+<tr>
+<td>Firefox</td>
+<td>153.0</td>
+<td>passed</td>
+</tr>
+<tr>
+<td>WebKit</td>
+<td>27.2</td>
+<td>passed</td>
+</tr>
+</tbody>
+</table>
+<!-- END GENERATED:array:tests -->
+<h2 id="map" class="tsd-anchor-link">Map<a href="#map" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<h3 id="usage-1" class="tsd-anchor-link">Usage<a href="#usage-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="typescript"><span class="hl-0">import</span><span class="hl-1"> { </span><span class="hl-2">Sequenced</span><span class="hl-1"> } </span><span class="hl-0">from</span><span class="hl-1"> </span><span class="hl-3">&#39;@sovereignbase/sequenced&#39;</span><br/><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-5">map</span><span class="hl-1"> = </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-2">Sequenced</span><span class="hl-1">.</span><span class="hl-6">Map</span><span class="hl-1">&lt;</span><span class="hl-7">string</span><span class="hl-1"> | </span><span class="hl-7">number</span><span class="hl-1">, </span><span class="hl-7">number</span><span class="hl-1">&gt;(</span><span class="hl-8">1</span><span class="hl-1">)</span><br/><span class="hl-2">map</span><span class="hl-1">.</span><span class="hl-6">set</span><span class="hl-1">(</span><span class="hl-3">&#39;apples&#39;</span><span class="hl-1">, </span><span class="hl-8">3</span><span class="hl-1">).</span><span class="hl-6">set</span><span class="hl-1">(</span><span class="hl-8">1</span><span class="hl-1">, </span><span class="hl-8">10</span><span class="hl-1">)</span><br/><span class="hl-2">console</span><span class="hl-1">.</span><span class="hl-6">log</span><span class="hl-1">(</span><span class="hl-2">map</span><span class="hl-1">.</span><span class="hl-6">get</span><span class="hl-1">(</span><span class="hl-3">&#39;apples&#39;</span><span class="hl-1">)) </span><span class="hl-9">// 3</span><br/><span class="hl-2">console</span><span class="hl-1">.</span><span class="hl-6">log</span><span class="hl-1">([...</span><span class="hl-2">map</span><span class="hl-1">]) </span><span class="hl-9">// [[&#39;apples&#39;, 3], [1, 10]]</span><br/><span class="hl-2">map</span><span class="hl-1">.</span><span class="hl-6">delete</span><span class="hl-1">(</span><span class="hl-8">1</span><span class="hl-1">)</span><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-5">snapshot</span><span class="hl-1"> = </span><span class="hl-2">map</span><span class="hl-1">.</span><span class="hl-6">toJSON</span><span class="hl-1">()</span><br/><span class="hl-2">map</span><span class="hl-1">.</span><span class="hl-6">destroy</span><span class="hl-1">()</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Keys are strings or finite numbers. Numeric and string keys remain distinct.
+Concurrent duplicate keys keep the first entry.</p>
+<h4 id="errors-1" class="tsd-anchor-link">Errors<a href="#errors-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>INVALID_MAP_KEY</code></td>
+<td>A key is neither a string nor a finite number.</td>
+</tr>
+<tr>
+<td><code>INVALID_MAP_ENTRY</code></td>
+<td>An entry is not a <code>[key, value]</code> pair.</td>
+</tr>
+<tr>
+<td><code>INVALID_CALLBACK</code></td>
+<td>The <code>forEach</code> callback is not callable.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="benchmarks-1" class="tsd-anchor-link">Benchmarks<a href="#benchmarks-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<!-- BEGIN GENERATED:map:benchmarks -->
+<p>2026-10-23 · ops/sec</p>
+<p>Node v24.16.0 · win32 x64 · Intel(R) Core(TM) i5-10210U CPU @ 1.60GHz · Sequencer 1.1.1</p>
+<table>
+<thead>
+<tr>
+<th>Operation</th>
+<th style="text-align:right">100</th>
+<th style="text-align:right">1,000</th>
+<th style="text-align:right">10,000</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>get.random</code></td>
+<td style="text-align:right">18,237,215</td>
+<td style="text-align:right">13,404,599</td>
+<td style="text-align:right">12,330,029</td>
+</tr>
+<tr>
+<td><code>has.random</code></td>
+<td style="text-align:right">28,291,527</td>
+<td style="text-align:right">19,351,903</td>
+<td style="text-align:right">18,882,161</td>
+</tr>
+<tr>
+<td><code>set.random</code></td>
+<td style="text-align:right">281,080</td>
+<td style="text-align:right">290,387</td>
+<td style="text-align:right">292,144</td>
+</tr>
+<tr>
+<td><code>delete.random</code></td>
+<td style="text-align:right">327,918</td>
+<td style="text-align:right">52,126</td>
+<td style="text-align:right">6,126</td>
+</tr>
+<tr>
+<td><code>apply.set.random</code></td>
+<td style="text-align:right">364,392</td>
+<td style="text-align:right">236,552</td>
+<td style="text-align:right">135,770</td>
+</tr>
+<tr>
+<td><code>apply.delete.random</code></td>
+<td style="text-align:right">165,263</td>
+<td style="text-align:right">18,820</td>
+<td style="text-align:right">2,094</td>
+</tr>
+<tr>
+<td><code>set.new</code></td>
+<td style="text-align:right">863,391</td>
+<td style="text-align:right">587,182</td>
+<td style="text-align:right">556,319</td>
+</tr>
+<tr>
+<td><code>apply.set.new</code></td>
+<td style="text-align:right">800,827</td>
+<td style="text-align:right">544,688</td>
+<td style="text-align:right">422,041</td>
+</tr>
+<tr>
+<td><code>size</code></td>
+<td style="text-align:right">90,797,038</td>
+<td style="text-align:right">81,918,400</td>
+<td style="text-align:right">90,315,445</td>
+</tr>
+<tr>
+<td><code>clear</code></td>
+<td style="text-align:right">199,102</td>
+<td style="text-align:right">47,238</td>
+<td style="text-align:right">4,996</td>
+</tr>
+<tr>
+<td><code>keys</code></td>
+<td style="text-align:right">3,521,512</td>
+<td style="text-align:right">410,603</td>
+<td style="text-align:right">37,447</td>
+</tr>
+<tr>
+<td><code>values</code></td>
+<td style="text-align:right">136,272</td>
+<td style="text-align:right">14,399</td>
+<td style="text-align:right">1,335</td>
+</tr>
+<tr>
+<td><code>entries</code></td>
+<td style="text-align:right">111,787</td>
+<td style="text-align:right">12,035</td>
+<td style="text-align:right">1,094</td>
+</tr>
+<tr>
+<td><code>iterator</code></td>
+<td style="text-align:right">122,528</td>
+<td style="text-align:right">12,184</td>
+<td style="text-align:right">1,107</td>
+</tr>
+<tr>
+<td><code>forEach</code></td>
+<td style="text-align:right">141,619</td>
+<td style="text-align:right">8,073</td>
+<td style="text-align:right">1,265</td>
+</tr>
+<tr>
+<td><code>merge.set.random</code></td>
+<td style="text-align:right">89,359</td>
+<td style="text-align:right">72,386</td>
+<td style="text-align:right">74,544</td>
+</tr>
+<tr>
+<td><code>merge.delete.random</code></td>
+<td style="text-align:right">85,012</td>
+<td style="text-align:right">19,779</td>
+<td style="text-align:right">2,044</td>
+</tr>
+<tr>
+<td><code>merge.set.new</code></td>
+<td style="text-align:right">451,914</td>
+<td style="text-align:right">354,649</td>
+<td style="text-align:right">302,275</td>
+</tr>
+<tr>
+<td><code>merge.identical</code></td>
+<td style="text-align:right">1,455,636</td>
+<td style="text-align:right">1,239,207</td>
+<td style="text-align:right">1,335,927</td>
+</tr>
+<tr>
+<td><code>snapshot</code></td>
+<td style="text-align:right">1,826,342</td>
+<td style="text-align:right">1,720,172</td>
+<td style="text-align:right">1,576,946</td>
+</tr>
+<tr>
+<td><code>toJSON</code></td>
+<td style="text-align:right">4,986,676</td>
+<td style="text-align:right">5,220,800</td>
+<td style="text-align:right">5,095,440</td>
+</tr>
+<tr>
+<td><code>construct</code></td>
+<td style="text-align:right">124,908</td>
+<td style="text-align:right">13,547</td>
+<td style="text-align:right">947</td>
+</tr>
+<tr>
+<td><code>destroy</code></td>
+<td style="text-align:right">2,025,090</td>
+<td style="text-align:right">1,622,026</td>
+<td style="text-align:right">358,701</td>
+</tr>
+<tr>
+<td><code>addEventListener</code></td>
+<td style="text-align:right">6,031,668</td>
+<td style="text-align:right">7,387,655</td>
+<td style="text-align:right">7,401,415</td>
+</tr>
+<tr>
+<td><code>removeEventListener</code></td>
+<td style="text-align:right">13,721,394</td>
+<td style="text-align:right">15,661,930</td>
+<td style="text-align:right">14,717,738</td>
+</tr>
+<tr>
+<td><code>dispatchEvent</code></td>
+<td style="text-align:right">3,321,821</td>
+<td style="text-align:right">3,430,194</td>
+<td style="text-align:right">2,916,698</td>
+</tr>
+<tr>
+<td><code>toStringTag</code></td>
+<td style="text-align:right">37,089,731</td>
+<td style="text-align:right">84,849,503</td>
+<td style="text-align:right">81,143,189</td>
+</tr>
+<tr>
+<td><code>inspect.node</code></td>
+<td style="text-align:right">34,731</td>
+<td style="text-align:right">6,727</td>
+<td style="text-align:right">589</td>
+</tr>
+<tr>
+<td><code>inspect.deno</code></td>
+<td style="text-align:right">14,984</td>
+<td style="text-align:right">7,955</td>
+<td style="text-align:right">586</td>
+</tr>
+</tbody>
+</table>
+<!-- END GENERATED:map:benchmarks -->
+<h3 id="tests-1" class="tsd-anchor-link">Tests<a href="#tests-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<!-- BEGIN GENERATED:map:tests -->
+<p>2026-10-23 · <strong>passed</strong></p>
+<table>
+<thead>
+<tr>
+<th>Test suite</th>
+<th style="text-align:right">Passed</th>
+<th style="text-align:right">Failed</th>
+<th style="text-align:right">Skipped</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>compability</td>
+<td style="text-align:right">9</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">0</td>
+</tr>
+<tr>
+<td>convergence</td>
+<td style="text-align:right">10</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">0</td>
+</tr>
+<tr>
+<td>equivelance</td>
+<td style="text-align:right">135</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">0</td>
+</tr>
+<tr>
+<td>events</td>
+<td style="text-align:right">66</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">0</td>
+</tr>
+<tr>
+<td>integration</td>
+<td style="text-align:right">6</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">0</td>
+</tr>
+<tr>
+<td>unit</td>
+<td style="text-align:right">95</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">0</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th style="text-align:right">Statements</th>
+<th style="text-align:right">Branches</th>
+<th style="text-align:right">Functions</th>
+<th style="text-align:right">Lines</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right">100%</td>
+<td style="text-align:right">100%</td>
+<td style="text-align:right">100%</td>
+<td style="text-align:right">100%</td>
+</tr>
+</tbody>
+</table>
+<h4 id="compatibility-1" class="tsd-anchor-link">Compatibility<a href="#compatibility-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<table>
+<thead>
+<tr>
+<th>Runtime</th>
+<th>Version</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Node.js ESM</td>
+<td>v24.16.0</td>
+<td>passed</td>
+</tr>
+<tr>
+<td>Node.js CJS</td>
+<td>v24.16.0</td>
+<td>passed</td>
+</tr>
+<tr>
+<td>Bun</td>
+<td>1.4.4</td>
+<td>passed</td>
+</tr>
+<tr>
+<td>Deno</td>
+<td>2.9.6</td>
+<td>passed</td>
+</tr>
+<tr>
+<td>Edge Runtime</td>
+<td>4.0.1</td>
+<td>passed</td>
+</tr>
+<tr>
+<td>workerd</td>
+<td>1.20261019.1</td>
+<td>passed</td>
+</tr>
+<tr>
+<td>Chromium</td>
+<td>156.0.8078.4</td>
+<td>passed</td>
+</tr>
+<tr>
+<td>Firefox</td>
+<td>153.0</td>
+<td>passed</td>
+</tr>
+<tr>
+<td>WebKit</td>
+<td>27.2</td>
+<td>passed</td>
+</tr>
+</tbody>
+</table>
+<!-- END GENERATED:map:tests -->
+<h2 id="text" class="tsd-anchor-link">Text<a href="#text" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<h3 id="usage-2" class="tsd-anchor-link">Usage<a href="#usage-2" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="typescript"><span class="hl-0">import</span><span class="hl-1"> { </span><span class="hl-2">Sequenced</span><span class="hl-1"> } </span><span class="hl-0">from</span><span class="hl-1"> </span><span class="hl-3">&#39;@sovereignbase/sequenced&#39;</span><br/><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-5">text</span><span class="hl-1"> = </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-2">Sequenced</span><span class="hl-1">.</span><span class="hl-6">Text</span><span class="hl-1">(</span><span class="hl-8">1</span><span class="hl-1">)</span><br/><span class="hl-2">text</span><span class="hl-1">.</span><span class="hl-6">insert</span><span class="hl-1">(</span><span class="hl-8">0</span><span class="hl-1">, </span><span class="hl-3">&#39;Hello world&#39;</span><span class="hl-1">)</span><br/><span class="hl-2">text</span><span class="hl-1">.</span><span class="hl-6">replace</span><span class="hl-1">(</span><span class="hl-8">6</span><span class="hl-1">, </span><span class="hl-8">11</span><span class="hl-1">, </span><span class="hl-3">&#39;there&#39;</span><span class="hl-1">)</span><br/><span class="hl-2">text</span><span class="hl-1">.</span><span class="hl-6">insert</span><span class="hl-1">(</span><span class="hl-2">text</span><span class="hl-1">.</span><span class="hl-2">length</span><span class="hl-1">, </span><span class="hl-3">&#39;!&#39;</span><span class="hl-1">)</span><br/><span class="hl-2">console</span><span class="hl-1">.</span><span class="hl-6">log</span><span class="hl-1">(</span><span class="hl-2">text</span><span class="hl-1">.</span><span class="hl-6">toString</span><span class="hl-1">()) </span><span class="hl-9">// &#39;Hello there!&#39;</span><br/><span class="hl-2">text</span><span class="hl-1">.</span><span class="hl-6">remove</span><span class="hl-1">(</span><span class="hl-8">5</span><span class="hl-1">, </span><span class="hl-2">text</span><span class="hl-1">.</span><span class="hl-2">length</span><span class="hl-1">)</span><br/><span class="hl-2">console</span><span class="hl-1">.</span><span class="hl-6">log</span><span class="hl-1">(</span><span class="hl-2">text</span><span class="hl-1">.</span><span class="hl-6">toString</span><span class="hl-1">()) </span><span class="hl-9">// &#39;Hello&#39;</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Editing uses UTF-16 offsets and half-open selections: <code>[start, end)</code>.
+<code>toJSON()</code> exports the complete replication snapshot.</p>
+<h4 id="errors-2" class="tsd-anchor-link">Errors<a href="#errors-2" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<p>Sequencer errors are propagated unchanged.</p>
+<h3 id="benchmarks-2" class="tsd-anchor-link">Benchmarks<a href="#benchmarks-2" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<!-- BEGIN GENERATED:text:benchmarks -->
+<p>2026-10-23 · ops/sec</p>
+<p>Node v24.16.0 · win32 x64 · Intel(R) Core(TM) i5-10210U CPU @ 1.60GHz · Sequencer 1.1.1</p>
+<table>
+<thead>
+<tr>
+<th>Operation</th>
+<th style="text-align:right">100</th>
+<th style="text-align:right">1,000</th>
+<th style="text-align:right">10,000</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>length</code></td>
+<td style="text-align:right">63,476,165</td>
+<td style="text-align:right">55,657,043</td>
+<td style="text-align:right">55,861,283</td>
+</tr>
+<tr>
+<td><code>toString</code></td>
+<td style="text-align:right">736,712</td>
+<td style="text-align:right">85,473</td>
+<td style="text-align:right">8,467</td>
+</tr>
+<tr>
+<td><code>iterator</code></td>
+<td style="text-align:right">144,558</td>
+<td style="text-align:right">15,831</td>
+<td style="text-align:right">1,678</td>
+</tr>
+<tr>
+<td><code>insert.head</code></td>
+<td style="text-align:right">754,404</td>
+<td style="text-align:right">984,960</td>
+<td style="text-align:right">921,845</td>
+</tr>
+<tr>
+<td><code>insert.middle</code></td>
+<td style="text-align:right">849,743</td>
+<td style="text-align:right">881,701</td>
+<td style="text-align:right">944,868</td>
+</tr>
+<tr>
+<td><code>insert.tail</code></td>
+<td style="text-align:right">914,610</td>
+<td style="text-align:right">1,141,812</td>
+<td style="text-align:right">1,038,494</td>
+</tr>
+<tr>
+<td><code>insert.random</code></td>
+<td style="text-align:right">696,813</td>
+<td style="text-align:right">880,860</td>
+<td style="text-align:right">883,762</td>
+</tr>
+<tr>
+<td><code>remove.random</code></td>
+<td style="text-align:right">638,355</td>
+<td style="text-align:right">655,129</td>
+<td style="text-align:right">558,785</td>
+</tr>
+<tr>
+<td><code>replace.random</code></td>
+<td style="text-align:right">469,470</td>
+<td style="text-align:right">516,409</td>
+<td style="text-align:right">450,635</td>
+</tr>
+<tr>
+<td><code>apply.insert.random</code></td>
+<td style="text-align:right">751,914</td>
+<td style="text-align:right">839,299</td>
+<td style="text-align:right">857,690</td>
+</tr>
+<tr>
+<td><code>apply.remove.random</code></td>
+<td style="text-align:right">526,775</td>
+<td style="text-align:right">527,607</td>
+<td style="text-align:right">388,369</td>
+</tr>
+<tr>
+<td><code>apply.replace.random</code></td>
+<td style="text-align:right">396,649</td>
+<td style="text-align:right">378,371</td>
+<td style="text-align:right">363,423</td>
+</tr>
+<tr>
+<td><code>merge.insert.random</code></td>
+<td style="text-align:right">97,929</td>
+<td style="text-align:right">65,466</td>
+<td style="text-align:right">11,953</td>
+</tr>
+<tr>
+<td><code>merge.remove.random</code></td>
+<td style="text-align:right">110,202</td>
+<td style="text-align:right">91,304</td>
+<td style="text-align:right">38,619</td>
+</tr>
+<tr>
+<td><code>merge.replace.random</code></td>
+<td style="text-align:right">58,043</td>
+<td style="text-align:right">42,632</td>
+<td style="text-align:right">10,775</td>
+</tr>
+<tr>
+<td><code>merge.identical</code></td>
+<td style="text-align:right">709,456</td>
+<td style="text-align:right">386,970</td>
+<td style="text-align:right">73,332</td>
+</tr>
+<tr>
+<td><code>snapshot</code></td>
+<td style="text-align:right">633,309</td>
+<td style="text-align:right">118,996</td>
+<td style="text-align:right">12,994</td>
+</tr>
+<tr>
+<td><code>toJSON</code></td>
+<td style="text-align:right">839,484</td>
+<td style="text-align:right">125,947</td>
+<td style="text-align:right">12,423</td>
+</tr>
+</tbody>
+</table>
+<!-- END GENERATED:text:benchmarks -->
+<h3 id="tests-2" class="tsd-anchor-link">Tests<a href="#tests-2" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<!-- BEGIN GENERATED:text:tests -->
+<p>2026-10-23 · <strong>passed</strong></p>
+<table>
+<thead>
+<tr>
+<th>Test suite</th>
+<th style="text-align:right">Passed</th>
+<th style="text-align:right">Failed</th>
+<th style="text-align:right">Skipped</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>compability</td>
+<td style="text-align:right">9</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">0</td>
+</tr>
+<tr>
+<td>convergence</td>
+<td style="text-align:right">8</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">0</td>
+</tr>
+<tr>
+<td>equivelance</td>
+<td style="text-align:right">66</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">0</td>
+</tr>
+<tr>
+<td>events</td>
+<td style="text-align:right">34</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">0</td>
+</tr>
+<tr>
+<td>integration</td>
+<td style="text-align:right">6</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">0</td>
+</tr>
+<tr>
+<td>unit</td>
+<td style="text-align:right">59</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">0</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th style="text-align:right">Statements</th>
+<th style="text-align:right">Branches</th>
+<th style="text-align:right">Functions</th>
+<th style="text-align:right">Lines</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right">100%</td>
+<td style="text-align:right">100%</td>
+<td style="text-align:right">100%</td>
+<td style="text-align:right">100%</td>
+</tr>
+</tbody>
+</table>
+<h4 id="compatibility-2" class="tsd-anchor-link">Compatibility<a href="#compatibility-2" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<table>
+<thead>
+<tr>
+<th>Runtime</th>
+<th>Version</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Node.js ESM</td>
+<td>v24.16.0</td>
+<td>passed</td>
+</tr>
+<tr>
+<td>Node.js CJS</td>
+<td>v24.16.0</td>
+<td>passed</td>
+</tr>
+<tr>
+<td>Bun</td>
+<td>1.4.4</td>
+<td>passed</td>
+</tr>
+<tr>
+<td>Deno</td>
+<td>2.9.6</td>
+<td>passed</td>
+</tr>
+<tr>
+<td>Edge Runtime</td>
+<td>4.0.1</td>
+<td>passed</td>
+</tr>
+<tr>
+<td>workerd</td>
+<td>1.20261019.1</td>
+<td>passed</td>
+</tr>
+<tr>
+<td>Chromium</td>
+<td>156.0.8078.4</td>
+<td>passed</td>
+</tr>
+<tr>
+<td>Firefox</td>
+<td>153.0</td>
+<td>passed</td>
+</tr>
+<tr>
+<td>WebKit</td>
+<td>27.2</td>
+<td>passed</td>
+</tr>
+</tbody>
+</table>
+<!-- END GENERATED:text:tests -->
 <h2 id="license" class="tsd-anchor-link">License<a href="#license" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Apache-2.0</p>
 </div></div>
 <div class="col-sidebar">
 <div class="page-menu">
@@ -48,13 +958,45 @@ The offline-delivery regression currently fails because of
 <div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div>
 <details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-chevronDown"></use></svg>
 <h3>On This Page</h3></summary>
-<div class="tsd-accordion-details"><a href="#package-name"><span>package-<wbr/>name</span></a>
+<div class="tsd-accordion-details"><a href="#sequenced"><span>Sequenced</span></a>
 <ul>
-<li><a href="#installation"><span>Installation</span></a></li>
+<li><a href="#contents"><span>Contents</span></a></li>
+<li><a href="#array"><span>Array</span></a></li>
+<li>
+<ul>
 <li><a href="#usage"><span>Usage</span></a></li>
-<li><a href="#api"><span>API</span></a></li>
-<li><a href="#behavior"><span>Behavior</span></a></li>
+<li>
+<ul>
+<li><a href="#errors"><span>Errors</span></a></li></ul></li>
+<li><a href="#benchmarks"><span>Benchmarks</span></a></li>
 <li><a href="#tests"><span>Tests</span></a></li>
+<li>
+<ul>
+<li><a href="#compatibility"><span>Compatibility</span></a></li></ul></li></ul></li>
+<li><a href="#map"><span>Map</span></a></li>
+<li>
+<ul>
+<li><a href="#usage-1"><span>Usage</span></a></li>
+<li>
+<ul>
+<li><a href="#errors-1"><span>Errors</span></a></li></ul></li>
+<li><a href="#benchmarks-1"><span>Benchmarks</span></a></li>
+<li><a href="#tests-1"><span>Tests</span></a></li>
+<li>
+<ul>
+<li><a href="#compatibility-1"><span>Compatibility</span></a></li></ul></li></ul></li>
+<li><a href="#text"><span>Text</span></a></li>
+<li>
+<ul>
+<li><a href="#usage-2"><span>Usage</span></a></li>
+<li>
+<ul>
+<li><a href="#errors-2"><span>Errors</span></a></li></ul></li>
+<li><a href="#benchmarks-2"><span>Benchmarks</span></a></li>
+<li><a href="#tests-2"><span>Tests</span></a></li>
+<li>
+<ul>
+<li><a href="#compatibility-2"><span>Compatibility</span></a></li></ul></li></ul></li>
 <li><a href="#license"><span>License</span></a></li></ul></div></details></div>
 <div class="site-menu">
 <nav class="tsd-navigation"><a href="modules.html">@sovereignbase/sequenced</a>

@@ -10,13 +10,16 @@
 <ul class="tsd-breadcrumb" aria-label="Breadcrumb">
 <li><a href="" aria-current="page">SequencedArrayEventMap</a></li></ul>
 <h1>Type Alias SequencedArrayEventMap&lt;T&gt;</h1></div>
+<section class="tsd-panel tsd-comment">
+<div class="tsd-comment tsd-typography"><p>Maps array event names to their <code>CustomEvent.detail</code> payloads.</p>
+</div></section>
 <div class="tsd-signature"><span class="tsd-signature-keyword">type</span> <span class="tsd-kind-type-alias">SequencedArrayEventMap</span><span class="tsd-signature-symbol">&lt;</span><a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">&gt;</span> <span class="tsd-signature-symbol">=</span> <span class="tsd-signature-symbol">{</span><br/>    <a class="tsd-kind-property" href="#change">change</a><span class="tsd-signature-symbol">:</span> <a href="SequencedArrayChange.html" class="tsd-signature-type tsd-kind-type-alias">SequencedArrayChange</a><span class="tsd-signature-symbol">&lt;</span><a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#delta">delta</a><span class="tsd-signature-symbol">:</span> <a href="SequencedArrayDelta.html" class="tsd-signature-type tsd-kind-type-alias">SequencedArrayDelta</a><span class="tsd-signature-symbol">&lt;</span><a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#snapshot">snapshot</a><span class="tsd-signature-symbol">:</span> <a href="SequencedArraySnapshot.html" class="tsd-signature-type tsd-kind-type-alias">SequencedArraySnapshot</a><span class="tsd-signature-symbol">&lt;</span><a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div>
 <section class="tsd-panel">
 <h4>Type Parameters</h4>
 <ul class="tsd-type-parameter-list">
 <li><span id="t"><span class="tsd-kind-type-parameter">T</span></span></li></ul></section><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/sovereignbase/crdt/blob/047cc3091d84254751148dad5c61c4129cd4e7c0/src/SequencedArray/types/type.ts#L10">SequencedArray/types/type.ts:10</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/sovereignbase/crdt/blob/fa7ba179dc37c1f1d35372adaa0b9953bf151e96/src/SequencedArray/types/type.ts#L11">src/SequencedArray/types/type.ts:11</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -33,19 +36,25 @@
 <section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="change"><span>change</span><a href="#change" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
-<div class="tsd-signature"><span class="tsd-kind-property">change</span><span class="tsd-signature-symbol">:</span> <a href="SequencedArrayChange.html" class="tsd-signature-type tsd-kind-type-alias">SequencedArrayChange</a><span class="tsd-signature-symbol">&lt;</span><a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">&gt;</span></div><aside class="tsd-sources">
+<div class="tsd-signature"><span class="tsd-kind-property">change</span><span class="tsd-signature-symbol">:</span> <a href="SequencedArrayChange.html" class="tsd-signature-type tsd-kind-type-alias">SequencedArrayChange</a><span class="tsd-signature-symbol">&lt;</span><a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">&gt;</span></div>
+<div class="tsd-comment tsd-typography"><p>Ordered edits to apply to the current visible array.</p>
+</div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/sovereignbase/crdt/blob/047cc3091d84254751148dad5c61c4129cd4e7c0/src/SequencedArray/types/type.ts#L11">SequencedArray/types/type.ts:11</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/sovereignbase/crdt/blob/fa7ba179dc37c1f1d35372adaa0b9953bf151e96/src/SequencedArray/types/type.ts#L13">src/SequencedArray/types/type.ts:13</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="delta"><span>delta</span><a href="#delta" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
-<div class="tsd-signature"><span class="tsd-kind-property">delta</span><span class="tsd-signature-symbol">:</span> <a href="SequencedArrayDelta.html" class="tsd-signature-type tsd-kind-type-alias">SequencedArrayDelta</a><span class="tsd-signature-symbol">&lt;</span><a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">&gt;</span></div><aside class="tsd-sources">
+<div class="tsd-signature"><span class="tsd-kind-property">delta</span><span class="tsd-signature-symbol">:</span> <a href="SequencedArrayDelta.html" class="tsd-signature-type tsd-kind-type-alias">SequencedArrayDelta</a><span class="tsd-signature-symbol">&lt;</span><a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">&gt;</span></div>
+<div class="tsd-comment tsd-typography"><p>Gossip produced by a local edit or a reply to incoming replication data.</p>
+</div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/sovereignbase/crdt/blob/047cc3091d84254751148dad5c61c4129cd4e7c0/src/SequencedArray/types/type.ts#L12">SequencedArray/types/type.ts:12</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/sovereignbase/crdt/blob/fa7ba179dc37c1f1d35372adaa0b9953bf151e96/src/SequencedArray/types/type.ts#L15">src/SequencedArray/types/type.ts:15</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="snapshot"><span>snapshot</span><a href="#snapshot" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
-<div class="tsd-signature"><span class="tsd-kind-property">snapshot</span><span class="tsd-signature-symbol">:</span> <a href="SequencedArraySnapshot.html" class="tsd-signature-type tsd-kind-type-alias">SequencedArraySnapshot</a><span class="tsd-signature-symbol">&lt;</span><a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">&gt;</span></div><aside class="tsd-sources">
+<div class="tsd-signature"><span class="tsd-kind-property">snapshot</span><span class="tsd-signature-symbol">:</span> <a href="SequencedArraySnapshot.html" class="tsd-signature-type tsd-kind-type-alias">SequencedArraySnapshot</a><span class="tsd-signature-symbol">&lt;</span><a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">&gt;</span></div>
+<div class="tsd-comment tsd-typography"><p>Full replication state emitted by <code>snapshot()</code>.</p>
+</div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/sovereignbase/crdt/blob/047cc3091d84254751148dad5c61c4129cd4e7c0/src/SequencedArray/types/type.ts#L13">SequencedArray/types/type.ts:13</a></li></ul></aside></section></section></details></div>
+<li>Defined in <a href="https://github.com/sovereignbase/crdt/blob/fa7ba179dc37c1f1d35372adaa0b9953bf151e96/src/SequencedArray/types/type.ts#L17">src/SequencedArray/types/type.ts:17</a></li></ul></aside></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

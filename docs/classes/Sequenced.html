@@ -9,9 +9,12 @@
 <div class="tsd-page-title">
 <ul class="tsd-breadcrumb" aria-label="Breadcrumb">
 <li><a href="" aria-current="page">Sequenced</a></li></ul>
-<h1>Class Sequenced</h1></div><aside class="tsd-sources">
+<h1>Class Sequenced</h1></div>
+<section class="tsd-panel tsd-comment">
+<div class="tsd-comment tsd-typography"><p>Provides constructors for replicated text, array and map collections.</p>
+</div></section><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/sovereignbase/crdt/blob/047cc3091d84254751148dad5c61c4129cd4e7c0/src/index.ts#L14">index.ts:14</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/sovereignbase/crdt/blob/fa7ba179dc37c1f1d35372adaa0b9953bf151e96/src/index.ts#L34">src/index.ts:34</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -24,6 +27,7 @@
 <section class="tsd-index-section">
 <h3 class="tsd-index-heading tsd-anchor-link" id="properties">Properties<a href="#properties" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-index-list"><a href="#array" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>Array</span></a>
+<a href="#map" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>Map</span></a>
 <a href="#text" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>Text</span></a>
 </div></section></div></details></section></section>
 <details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Constructors"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -41,14 +45,25 @@
 <section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="array"><code class="tsd-tag">Static</code> <code class="tsd-tag">Readonly</code><span>Array</span><a href="#array" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
-<div class="tsd-signature"><span class="tsd-kind-property">Array</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-keyword">typeof</span> <a href="SequencedArray.html" class="tsd-signature-type tsd-kind-class">SequencedArray</a><span class="tsd-signature-symbol"> = SequencedArray</span></div><aside class="tsd-sources">
+<div class="tsd-signature"><span class="tsd-kind-property">Array</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-keyword">typeof</span> <a href="../interfaces/SequencedArray.html" class="tsd-signature-type tsd-kind-interface">SequencedArray</a><span class="tsd-signature-symbol"> = SequencedArray</span></div>
+<div class="tsd-comment tsd-typography"><p>Creates a dense array with Array instance methods and replication events.</p>
+</div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/sovereignbase/crdt/blob/047cc3091d84254751148dad5c61c4129cd4e7c0/src/index.ts#L16">index.ts:16</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/sovereignbase/crdt/blob/fa7ba179dc37c1f1d35372adaa0b9953bf151e96/src/index.ts#L38">src/index.ts:38</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="map"><code class="tsd-tag">Static</code> <code class="tsd-tag">Readonly</code><span>Map</span><a href="#map" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">Map</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-keyword">typeof</span> <a href="../interfaces/SequencedMap.html" class="tsd-signature-type tsd-kind-interface">SequencedMap</a><span class="tsd-signature-symbol"> = SequencedMap</span></div>
+<div class="tsd-comment tsd-typography"><p>Creates a map whose keys are strings or finite numbers.</p>
+</div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/sovereignbase/crdt/blob/fa7ba179dc37c1f1d35372adaa0b9953bf151e96/src/index.ts#L40">src/index.ts:40</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="text"><code class="tsd-tag">Static</code> <code class="tsd-tag">Readonly</code><span>Text</span><a href="#text" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
-<div class="tsd-signature"><span class="tsd-kind-property">Text</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-keyword">typeof</span> <span class="tsd-signature-type">SequencedText</span><span class="tsd-signature-symbol"> = SequencedText</span></div><aside class="tsd-sources">
+<div class="tsd-signature"><span class="tsd-kind-property">Text</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-keyword">typeof</span> <a href="../interfaces/SequencedText.html" class="tsd-signature-type tsd-kind-interface">SequencedText</a><span class="tsd-signature-symbol"> = SequencedText</span></div>
+<div class="tsd-comment tsd-typography"><p>Creates a text document whose positions are UTF-16 code unit offsets.</p>
+</div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/sovereignbase/crdt/blob/047cc3091d84254751148dad5c61c4129cd4e7c0/src/index.ts#L15">index.ts:15</a></li></ul></aside></section></section></details></div>
+<li>Defined in <a href="https://github.com/sovereignbase/crdt/blob/fa7ba179dc37c1f1d35372adaa0b9953bf151e96/src/index.ts#L36">src/index.ts:36</a></li></ul></aside></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
@@ -67,7 +82,7 @@
 <details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-Constructors"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>Constructors</summary>
 <div><a href="#constructor"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Constructor"><use href="../assets/icons.svg#icon-512"></use></svg><span>constructor</span></a></div></details>
 <details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-Properties"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>Properties</summary>
-<div><a href="#array"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>Array</span></a><a href="#text"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>Text</span></a></div></details></div></details></div>
+<div><a href="#array"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>Array</span></a><a href="#map"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>Map</span></a><a href="#text"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>Text</span></a></div></details></div></details></div>
 <div class="site-menu">
 <nav class="tsd-navigation"><a href="../modules.html">@sovereignbase/sequenced</a>
 <ul class="tsd-small-nested-navigation" id="tsd-nav-container">

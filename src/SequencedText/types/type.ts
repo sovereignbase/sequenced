@@ -1,15 +1,13 @@
 import type { Gossip, Sequence } from '@sovereignbase/sequencer'
 
 /**
- * Represents a text document's replication state as structural metadata and
- * concatenated UTF-16 content. The metadata preserves ordering and causality.
- *
- * Snapshots returned by `toJSON()` use a numeric array for the metadata.
+ * Full text replication state: structural metadata and retained UTF-16 content.
+ * `toJSON()` returns the metadata as a numeric array.
  */
 export type SequencedTextSnapshot = Sequence<string, true>
 
 /**
- * Represents an ordered list of edits to the visible text.
+ * Ordered edits to the visible text.
  *
  * Each edit replaces the half-open range `[selectionStart, selectionEnd)` with
  * `characters`, or removes the range when `characters` is omitted. Equal start
@@ -21,11 +19,11 @@ export type SequencedTextChange = ReadonlyArray<
 >
 
 /**
- * Maps document event names to their `CustomEvent.detail` payloads.
+ * Maps text event names to their `CustomEvent.detail` payloads.
  */
 export type SequencedTextEventMap = {
   /**
-   * Dispatched by `snapshot()` with the document's replication state.
+   * Full replication state emitted by `snapshot()`.
    */
   snapshot: SequencedTextSnapshot
 
@@ -43,7 +41,7 @@ export type SequencedTextEventMap = {
 }
 
 /**
- * Represents a callback or listener object for the specified document event.
+ * A callback or listener object for a text event.
  *
  * @typeParam K The event name that determines the event's `detail` type.
  */

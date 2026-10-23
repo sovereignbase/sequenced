@@ -16,8 +16,6 @@ test('Text editing and change-driven rendering work in a browser', async ({
     )
     const alice = new Sequenced.Text(1)
     const bob = new Sequenced.Text(2)
-    alice.apply([[1], [2]])
-    bob.apply([[1], [2]])
     let rendered = ''
     bob.addEventListener(
       'change',

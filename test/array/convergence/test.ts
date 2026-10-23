@@ -5,7 +5,6 @@ import { replication } from '../../.shared/replication.js'
 describe('Array model convergence', () => {
   it('keeps synchronous transport and a reentrant remote edit in view order', () => {
     const peers = [1, 2].map((actor) => new SequencedArray<string>(actor))
-    for (const peer of peers) peer.apply([[1], [2]])
     const views = [[], []] as string[][]
     peers.forEach((peer, i) =>
       peer.addEventListener('change', ({ detail }) => {

@@ -8,15 +8,18 @@ import type {
 } from './types/type.js'
 
 /**
- * Represents a replicated text document with synchronous editing and change events.
+ * A replicated text document with synchronous editing and typed events.
  *
  * Positions and lengths are measured in UTF-16 code units. Editing ranges include
  * the start position and exclude the end position.
  */
 export class SequencedText {
+  /** The sequencer projection that owns the document's UTF-16 content. */
   declare private readonly projection: Projection<string>
+  /** The event target, allocated when the first listener is registered. */
   declare private eventTarget: EventTarget
 
+  /** Reads one projection value and scopes unexpected failures to this library. */
   #value(at: number): string | undefined {
     try {
       return this.projection.value(at)
@@ -26,10 +29,10 @@ export class SequencedText {
   }
 
   /**
-   * Creates a text document from an optional replication snapshot.
-   *
-   * @param actorID The identifier of the local replica's actor.
-   * @param snapshot The replication state to restore. If omitted, the document is empty.
+   * Creates an empty text document or restores a replication snapshot.
+   * @param actorID The identifier of the local editing actor.
+   * @param snapshot Optional replication state to restore.
+   * @throws {SequencedError} If the underlying projection cannot be created.
    */
   constructor(actorID: number, snapshot?: unknown) {
     try {
@@ -39,12 +42,9 @@ export class SequencedText {
     }
   }
   /**
-   * Applies sequencer gossip to the document's replication state.
-   *
-   * Dispatches a `change` event with the resulting text edits and a `delta` event
-   * if the sequencer produces reply gossip.
-   *
-   * @param delta The gossip received from another replica.
+   * Applies incoming gossip and emits visible text edits and any reply gossip.
+   * @param delta The received replication data. Sequencer handles transport validation.
+   * @remarks This method does not throw.
    */
   apply(delta: unknown): void {
     try {
@@ -66,6 +66,7 @@ export class SequencedText {
    *
    * @param at The insertion position, measured in UTF-16 code units.
    * @param characters The text to insert.
+   * @throws {SequencedError} If the underlying projection cannot perform the insertion.
    */
   insert(at: number, characters: string): void {
     try {
@@ -90,12 +91,9 @@ export class SequencedText {
   }
 
   /**
-   * Merges a replication snapshot into the document's current state.
-   *
-   * Dispatches `delta` and `change` events for any reply gossip and text edits
-   * produced by the sequencer.
-   *
-   * @param snapshot The replication state to merge.
+   * Merges another replica's complete sequence and emits the resulting events.
+   * @param snapshot The received replication state. Sequencer handles transport validation.
+   * @remarks This method does not throw.
    */
   merge(snapshot: unknown): void {
     try {
@@ -120,6 +118,7 @@ export class SequencedText {
    *
    * @param selectionStart The inclusive start position in UTF-16 code units. Defaults to zero.
    * @param selecectionEnd The exclusive end position in UTF-16 code units. Defaults to `length`.
+   * @throws {SequencedError} If the underlying projection cannot perform the removal.
    */
   remove(
     selectionStart: number = 0,
@@ -142,6 +141,7 @@ export class SequencedText {
    * @param selectionStart The inclusive start position in UTF-16 code units. Defaults to zero.
    * @param selecectionEnd The exclusive end position in UTF-16 code units. Defaults to `length`.
    * @param characters The replacement text. Defaults to an empty string.
+   * @throws {SequencedError} If the underlying projection cannot perform the replacement.
    */
   replace(
     selectionStart: number = 0,
@@ -166,17 +166,17 @@ export class SequencedText {
   }
 
   /**
-   * Dispatches a `snapshot` event containing the document's replication state.
+   * Synchronously emits a `snapshot` event containing the current replication state.
    */
   snapshot(): void {
     void this.dispatchEvent('snapshot', this.toJSON())
   }
   /**
-   * Returns a JSON-compatible snapshot of the document's replication state.
+   * Returns the complete replication state, including retained text history.
    *
    * Called automatically by `JSON.stringify()`.
    *
-   * @returns The structural metadata as a numeric array and the retained text content.
+   * @returns Structural metadata as a numeric array and the retained UTF-16 content.
    */
   toJSON(): SequencedTextSnapshot {
     try {
@@ -226,7 +226,7 @@ export class SequencedText {
   }
 
   /**
-   * Returns an iterator over the visible UTF-16 code units in document order.
+   * Returns a live iterator over visible UTF-16 code units in document order.
    */
   *[Symbol.iterator](): IterableIterator<string> {
     for (let index = 0; index < this.length; index++) {
@@ -236,6 +236,12 @@ export class SequencedText {
     }
   }
 
+  /**
+   * Registers a callback or listener object for a typed document event.
+   * @param type The event name.
+   * @param listener The listener to register; `null` is ignored.
+   * @param options A capture flag or options such as `once` and `signal`.
+   */
   addEventListener<K extends keyof SequencedTextEventMap>(
     type: K,
     listener: SequencedTextEventListenerFor<K> | null,
@@ -252,6 +258,12 @@ export class SequencedText {
     }
   }
 
+  /**
+   * Removes a listener with the matching event name, identity and capture flag.
+   * @param type The event name.
+   * @param listener The previously registered listener.
+   * @param options The capture flag, directly or within listener options.
+   */
   removeEventListener<K extends keyof SequencedTextEventMap>(
     type: K,
     listener: SequencedTextEventListenerFor<K> | null,
@@ -268,6 +280,11 @@ export class SequencedText {
     }
   }
 
+  /**
+   * Synchronously dispatches a typed `CustomEvent` to registered listeners.
+   * @param type The event name.
+   * @param detail The value exposed as `event.detail`.
+   */
   dispatchEvent<K extends keyof SequencedTextEventMap>(
     type: K,
     detail: SequencedTextEventMap[K]

@@ -125,9 +125,6 @@ describe('Text model convergence', () => {
   it('keeps synchronous transport and a reentrant remote edit in render order', () => {
     const alice = new SequencedText(1)
     const bob = new SequencedText(2)
-    // Membership is established on both documents before transport starts.
-    alice.apply([[1], [2]])
-    bob.apply([[1], [2]])
     const views = ['', '']
     const peers = [alice, bob]
     peers.forEach((peer, i) =>

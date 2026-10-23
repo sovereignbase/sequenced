@@ -16,8 +16,6 @@ test('Array methods and typed events work in a browser', async ({
     )
     const alice = new Sequenced.Array(1)
     const bob = new Sequenced.Array(2)
-    alice.apply([[1], [2]])
-    bob.apply([[1], [2]])
     alice.addEventListener('delta', ({ detail }: CustomEvent<unknown>) =>
       bob.apply(detail)
     )

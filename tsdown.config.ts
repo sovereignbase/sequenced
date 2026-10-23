@@ -26,6 +26,7 @@ export default defineConfig({
   target: 'es2024',
   dts: true,
   sourcemap: true,
+  outputOptions: { comments: { jsdoc: false } },
   clean: true,
   banner: {
     js: `${apache2Banner}\n`,

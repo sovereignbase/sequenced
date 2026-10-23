@@ -22,10 +22,21 @@ export type {
   SequencedArrayEventListener,
   SequencedArrayEventListenerFor,
 } from './SequencedArray/types/type.js'
+export type {
+  SequencedTextChange,
+  SequencedTextSnapshot,
+  SequencedTextEventMap,
+  SequencedTextEventListener,
+  SequencedTextEventListenerFor,
+} from './SequencedText/types/type.js'
 
+/** Provides constructors for replicated text, array and map collections. */
 export class Sequenced {
+  /** Creates a text document whose positions are UTF-16 code unit offsets. */
   static readonly Text = SequencedText
+  /** Creates a dense array with Array instance methods and replication events. */
   static readonly Array = SequencedArray
+  /** Creates a map whose keys are strings or finite numbers. */
   static readonly Map = SequencedMap
 }
 
