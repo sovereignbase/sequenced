@@ -7,92 +7,125 @@ import {
   type ArraySubject,
 } from '../../test/array/array.js'
 
+import { random } from '../random.js'
+import type { Implementation } from '../runner.js'
+export type { Implementation } from '../runner.js'
+
 export const operations = [
   'length',
-  'at.middle',
-  'get.middle',
+  'at.random',
+  'get.random',
   'values',
   'slice.all',
-  'slice.middle',
+  'slice.random',
   'push',
   'unshift',
-  'splice.middle',
-  'set.middle',
-  'delete.middle',
-  'apply.insert',
-  'merge.insert',
+  'splice.random',
+  'set.random',
+  'delete.random',
+  'apply.insert.random',
+  'apply.set.random',
+  'apply.delete.random',
+  'merge.insert.random',
+  'merge.set.random',
+  'merge.delete.random',
+  'merge.identical',
   'snapshot',
+  'toJSON',
 ] as const
 export type Operation = (typeof operations)[number]
-export type Implementation = 'plain' | 'wrapper' | 'wrapper+listeners'
-
-/** Keep API results observable without formatting or assertions in the timer. */
 export let resultSink: unknown
 let eventSink: unknown
 
-export interface Fixture {
-  snapshot: Sequence<number>
-  values: number[]
-  payloads: number[][]
-  deltas: Gossip<number>[]
-  snapshots: Sequence<number>[]
-  expected: number[]
-  batch: number
-  middle: number
-  operation: Operation
+export function isReadOnly(operation: Operation): boolean {
+  return [
+    'length',
+    'at.random',
+    'get.random',
+    'values',
+    'slice.all',
+    'slice.random',
+    'merge.identical',
+    'snapshot',
+    'toJSON',
+  ].includes(operation)
+}
+export function isTraversal(operation: Operation): boolean {
+  return operation === 'values'
 }
 
-/** Deterministic inputs and distinct remote updates are authored outside timing. */
 export function prepareFixture(
   operation: Operation,
   size: number,
-  batch: number
-): Fixture {
+  batch: number,
+  seed = 0xc0ffee
+) {
   if (
     !Number.isInteger(size) ||
-    size < 1 ||
     !Number.isInteger(batch) ||
     batch < 1 ||
-    batch > size
+    size < batch
   )
     throw new RangeError('Fixture requires integers 1 <= batch <= size')
   const values = Array.from({ length: size }, (_, i) => i)
   const snapshot = arraySnapshot(values)
   const payloads = Array.from({ length: batch }, (_, i) => [-i - 1])
-  const middle = Math.floor(size / 2)
   const expected = values.slice()
+  const positions: number[] = []
   const deltas: Gossip<number>[] = []
-  const snapshots: Sequence<number>[] = []
-  if (operation === 'apply.insert' || operation === 'merge.insert') {
-    const sender = new Projection<number>(200, snapshot)
+  const states: Sequence<number>[] = []
+  const next = random(seed)
+  const remote =
+    operation.startsWith('apply.') || operation.startsWith('merge.')
+  const action = remote
+    ? operation.slice(operation.indexOf('.') + 1)
+    : operation
+  const pointRead = operation === 'at.random' || operation === 'get.random'
+  if (pointRead) {
+    for (let i = 0; i < size; i++) positions.push(Math.floor(next() * size))
+  } else if (operation === 'merge.identical') {
+    const identical = new Projection<number>(1, snapshot)
     try {
-      for (const payload of payloads) {
-        deltas.push(sender.insert(payload.slice(), middle))
-        if (operation === 'merge.insert') snapshots.push(sender.sequence())
-        expected.splice(middle, 0, ...payload)
-      }
+      states.push(identical.sequence())
     } finally {
-      sender.destroy()
+      identical.destroy()
     }
   } else {
-    for (const payload of payloads) {
-      switch (operation) {
-        case 'push':
-          expected.push(...payload)
-          break
-        case 'unshift':
-          expected.unshift(...payload)
-          break
-        case 'splice.middle':
-          expected.splice(middle, 1, ...payload)
-          break
-        case 'set.middle':
-          expected[middle] = payload[0]
-          break
-        case 'delete.middle':
-          expected.splice(Math.floor(expected.length / 2), 1)
-          break
+    const sender = remote ? new Projection<number>(200, snapshot) : undefined
+    try {
+      sender?.apply([[1]])
+      for (let i = 0; i < batch; i++) {
+        const at = Math.floor(
+          next() * (expected.length + (action === 'insert.random' ? 1 : 0))
+        )
+        positions.push(at)
+        let delta: Gossip<number> | undefined
+        switch (action) {
+          case 'push':
+            expected.push(...payloads[i])
+            break
+          case 'unshift':
+            expected.unshift(...payloads[i])
+            break
+          case 'insert.random':
+            expected.splice(at, 0, ...payloads[i])
+            delta = sender!.insert(payloads[i], at)
+            break
+          case 'splice.random':
+          case 'set.random':
+            expected[at] = payloads[i][0]
+            if (sender) delta = sender.replace(payloads[i], at, at)
+            break
+          case 'delete.random':
+            expected.splice(at, 1)
+            if (sender) delta = sender.remove(at, at)
+            break
+        }
+        if (delta) deltas.push(delta)
+        if (operation.startsWith('merge.')) states.push(sender!.sequence())
       }
+    } finally {
+      sender?.destroy()
     }
   }
   return {
@@ -100,13 +133,15 @@ export function prepareFixture(
     snapshot,
     values,
     payloads,
+    positions,
     deltas,
-    snapshots,
+    states,
     expected,
     batch,
-    middle,
+    seed,
   }
 }
+type Fixture = ReturnType<typeof prepareFixture>
 
 /** Public calls differ only where Array and Projection use different range conventions. */
 interface Subject {
@@ -120,9 +155,10 @@ interface Subject {
   splice(index: number, values: number[]): unknown
   set(index: number, value: number): unknown
   delete(index: number): unknown
-  apply(gossip: Gossip<number>): unknown
-  merge(snapshot: Sequence<number>): unknown
-  snapshot(): Sequence<number>
+  apply(gossip: unknown): unknown
+  merge(snapshot: unknown): unknown
+  snapshot(): unknown
+  toJSON(): Sequence<number>
   dispose(): void
 }
 
@@ -142,6 +178,7 @@ function plain(snapshot: Sequence<number>): Subject {
     apply: (gossip) => projection.apply(gossip),
     merge: (state) => projection.merge(state),
     snapshot: () => projection.sequence(),
+    toJSON: () => projection.sequence(),
     dispose: () => projection.destroy(),
   }
 }
@@ -161,6 +198,7 @@ function wrapped(
   if (listeners) {
     replica.addEventListener('delta', onDelta)
     replica.addEventListener('change', onChange)
+    replica.addEventListener('snapshot', onChange)
   }
   return {
     length: () => replica!.length,
@@ -175,11 +213,13 @@ function wrapped(
     delete: (i) => replica!.delete(i),
     apply: (gossip) => replica!.apply(gossip),
     merge: (state) => replica!.merge(state),
-    snapshot: () => replica!.toJSON(),
+    snapshot: () => replica!.snapshot(),
+    toJSON: () => replica!.toJSON(),
     dispose: () => {
       if (listeners) {
         replica!.removeEventListener('delta', onDelta)
         replica!.removeEventListener('change', onChange)
+        replica!.removeEventListener('snapshot', onChange)
       }
       replica!.destroy()
       replica = undefined
@@ -205,82 +245,109 @@ export function createWorkload(
           Constructor!,
           implementation === 'wrapper+listeners'
         )
-  // Engines can retain supplied Footage; each timed batch owns its inputs.
   const payloads = fixture.payloads.map((values) => values.slice())
   const deltas = structuredClone(fixture.deltas)
-  const snapshots = structuredClone(fixture.snapshots)
-  const { operation, batch, middle } = fixture
-  const calls: Record<Operation, () => void> = {
-    length: () => {
-      for (let i = 0; i < batch; i++) resultSink = subject.length()
-    },
-    'at.middle': () => {
-      for (let i = 0; i < batch; i++) resultSink = subject.at(middle)
-    },
-    'get.middle': () => {
-      for (let i = 0; i < batch; i++) resultSink = subject.get(middle)
-    },
-    values: () => {
-      for (let i = 0; i < batch; i++) resultSink = subject.values()
-    },
-    'slice.all': () => {
-      for (let i = 0; i < batch; i++)
-        resultSink = subject.slice(0, fixture.values.length)
-    },
-    'slice.middle': () => {
-      for (let i = 0; i < batch; i++)
-        resultSink = subject.slice(
-          middle,
-          Math.min(middle + 16, fixture.values.length)
+  const states = structuredClone(fixture.states)
+  const { operation, batch, positions } = fixture
+  let call: (i: number) => unknown
+  switch (operation) {
+    case 'length':
+      call = () => subject.length()
+      break
+    case 'at.random':
+      call = (i) => subject.at(positions[i])
+      break
+    case 'get.random':
+      call = (i) => subject.get(positions[i])
+      break
+    case 'values':
+      call = () => subject.values()
+      break
+    case 'slice.all':
+      call = () => subject.slice(0, fixture.values.length)
+      break
+    case 'slice.random':
+      call = (i) =>
+        subject.slice(
+          positions[i],
+          Math.min(positions[i] + 16, fixture.values.length)
         )
-    },
-    push: () => {
-      for (const values of payloads) resultSink = subject.push(values)
-    },
-    unshift: () => {
-      for (const values of payloads) resultSink = subject.unshift(values)
-    },
-    'splice.middle': () => {
-      for (const values of payloads) resultSink = subject.splice(middle, values)
-    },
-    'set.middle': () => {
-      for (const [value] of payloads) resultSink = subject.set(middle, value)
-    },
-    'delete.middle': () => {
-      for (let i = 0; i < batch; i++)
-        resultSink = subject.delete(Math.floor(subject.length() / 2))
-    },
-    'apply.insert': () => {
-      for (const delta of deltas) resultSink = subject.apply(delta)
-    },
-    'merge.insert': () => {
-      for (const snapshot of snapshots) resultSink = subject.merge(snapshot)
-    },
-    snapshot: () => {
-      for (let i = 0; i < batch; i++) resultSink = subject.snapshot()
-    },
+      break
+    case 'push':
+      call = (i) => subject.push(payloads[i])
+      break
+    case 'unshift':
+      call = (i) => subject.unshift(payloads[i])
+      break
+    case 'splice.random':
+      call = (i) => subject.splice(positions[i], payloads[i])
+      break
+    case 'set.random':
+      call = (i) => subject.set(positions[i], payloads[i][0])
+      break
+    case 'delete.random':
+      call = (i) => subject.delete(positions[i])
+      break
+    case 'apply.insert.random':
+    case 'apply.set.random':
+    case 'apply.delete.random':
+      call = (i) => subject.apply(deltas[i])
+      break
+    case 'merge.insert.random':
+    case 'merge.set.random':
+    case 'merge.delete.random':
+      call = (i) => subject.merge(states[i])
+      break
+    case 'merge.identical':
+      call = () => subject.merge(states[0])
+      break
+    case 'snapshot':
+      call = () => subject.snapshot()
+      break
+    case 'toJSON':
+      call = () => subject.toJSON()
+      break
   }
+  const pointRead = operation === 'at.random' || operation === 'get.random'
+  let cursor = 0
+  let last = 0
   return {
-    run: calls[operation],
+    run() {
+      for (let i = 0; i < batch; i++) {
+        last = pointRead ? cursor : i
+        resultSink = call(last)
+        if (pointRead && ++cursor === positions.length) cursor = 0
+      }
+    },
     verify() {
       deepStrictEqual(subject.values(), fixture.expected)
       switch (operation) {
         case 'length':
           deepStrictEqual(resultSink, fixture.values.length)
           break
-        case 'at.middle':
-        case 'get.middle':
-          deepStrictEqual(resultSink, fixture.values[middle])
+        case 'at.random':
+        case 'get.random':
+          deepStrictEqual(resultSink, fixture.values[positions[last]])
           break
         case 'values':
         case 'slice.all':
           deepStrictEqual(resultSink, fixture.values)
           break
-        case 'slice.middle':
-          deepStrictEqual(resultSink, fixture.values.slice(middle, middle + 16))
+        case 'slice.random':
+          deepStrictEqual(
+            resultSink,
+            fixture.values.slice(positions[last], positions[last] + 16)
+          )
           break
-        case 'snapshot': {
-          const restored = new Projection<number>(300, resultSink)
+        case 'snapshot':
+        case 'toJSON': {
+          if (operation === 'snapshot' && implementation === 'wrapper') break
+          const restored = new Projection<number>(
+            300,
+            operation === 'snapshot' && implementation === 'wrapper+listeners'
+              ? eventSink
+              : resultSink
+          )
           try {
             deepStrictEqual(restored.values(), fixture.expected)
           } finally {

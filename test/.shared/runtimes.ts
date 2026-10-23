@@ -6,7 +6,7 @@ import { promisify } from 'node:util'
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { build } from 'tsdown'
 import { EdgeRuntime } from 'edge-runtime'
-import { Miniflare } from 'miniflare'
+import { createTestHarness } from 'wrangler'
 import type { Outcome } from './portable.ts'
 
 export interface RuntimeResult {
@@ -102,34 +102,36 @@ export const runtimes: Record<string, () => Promise<RuntimeResult>> = {
     }).evaluate('Compatibility.runSuite()'),
   }),
   workerd: async () => {
-    const runtime = new Miniflare({
+    const main = fileURLToPath(
+      new URL('../.results/compatibility-worker.mjs', import.meta.url)
+    )
+    mkdirSync(dirname(main), { recursive: true })
+    writeFileSync(
+      main,
+      `${await runtimeBundle()}\nexport default {fetch() {return Response.json(Compatibility.runSuite())}}`
+    )
+    const runtime = createTestHarness({
       workers: [
         {
           config: {
             name: 'compability',
-            compatibilityDate: '2026-10-06',
-            manifest: {
-              mainModule: 'worker.js',
-              modules: {
-                'worker.js': {
-                  type: 'esm',
-                  contents: `${await runtimeBundle()}\nexport default {fetch() {return Response.json(Compatibility.runSuite())}}`,
-                },
-              },
-            },
+            main,
+            compatibility_date: '2026-10-23',
+            no_bundle: true,
           },
         },
       ],
     })
     try {
-      const response = await runtime.dispatchFetch('http://localhost/')
+      await runtime.listen()
+      const response = await runtime.fetch('/')
       if (!response.ok) throw new Error(await response.text())
       return {
         version: require('workerd/package.json').version,
         outcomes: (await response.json()) as Outcome[],
       }
     } finally {
-      await runtime.dispose()
+      await runtime.close()
     }
   },
 }

@@ -11,6 +11,9 @@ it('exports Map key/value generics, native returns and typed events', () => {
   const map = new Sequenced.Map<string | number, boolean>(1)
   try {
     expectTypeOf(map).toEqualTypeOf<SequencedMap<string | number, boolean>>()
+    expectTypeOf<ConstructorParameters<typeof Sequenced.Map>[1]>().toBeUnknown()
+    expectTypeOf<Parameters<typeof map.apply>[0]>().toBeUnknown()
+    expectTypeOf<Parameters<typeof map.merge>[0]>().toBeUnknown()
     expectTypeOf(map.set('a', true)).toEqualTypeOf<typeof map>()
     expectTypeOf(map.get('a')).toEqualTypeOf<boolean | undefined>()
     expectTypeOf(map.delete('a')).toEqualTypeOf<boolean>()

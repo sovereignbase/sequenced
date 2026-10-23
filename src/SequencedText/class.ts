@@ -31,7 +31,7 @@ export class SequencedText {
    * @param actorID The identifier of the local replica's actor.
    * @param snapshot The replication state to restore. If omitted, the document is empty.
    */
-  constructor(actorID: number, snapshot?: SequencedTextSnapshot) {
+  constructor(actorID: number, snapshot?: unknown) {
     try {
       this.projection = new Projection<string>(actorID, snapshot)
     } catch (cause) {
@@ -97,7 +97,7 @@ export class SequencedText {
    *
    * @param snapshot The replication state to merge.
    */
-  merge(snapshot: SequencedTextSnapshot): void {
+  merge(snapshot: unknown): void {
     try {
       const result = this.projection.merge(snapshot)
       if (!result) return

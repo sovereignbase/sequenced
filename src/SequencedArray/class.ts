@@ -52,8 +52,8 @@ export class SequencedArray<T> implements Iterable<T> {
     }
   }
 
-  /** Hydrates an optional trusted sequencer snapshot for the supplied actor. */
-  constructor(actorID: number, snapshot?: SequencedArraySnapshot<T>) {
+  /** Restores an optional sequencer snapshot for the supplied actor. */
+  constructor(actorID: number, snapshot?: unknown) {
     try {
       this.projection = new Projection<T>(actorID, snapshot)
     } catch (cause) {
@@ -555,7 +555,7 @@ export class SequencedArray<T> implements Iterable<T> {
   }
 
   /** Delegates snapshot merging to the sequencer. */
-  merge(snapshot: SequencedArraySnapshot<T>): void {
+  merge(snapshot: unknown): void {
     try {
       this.received(this.projection.merge(snapshot))
     } catch {}

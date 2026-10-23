@@ -8,6 +8,9 @@ import type {
   SequencedMapSnapshot,
 } from '../../src/SequencedMap/types/type.js'
 import { mapSnapshot } from '../../test/map/map.js'
+import { random } from '../random.js'
+import type { Implementation } from '../runner.js'
+export type { Implementation } from '../runner.js'
 
 export const operations = [
   'get.random',
@@ -41,7 +44,6 @@ export const operations = [
   'inspect.deno',
 ] as const
 export type Operation = (typeof operations)[number]
-export type Implementation = 'plain' | 'wrapper' | 'wrapper+listeners'
 
 type Entry = SequencedMapEntry<SerializableKey, number>
 type Snapshot = SequencedMapSnapshot<SerializableKey, number>
@@ -93,15 +95,6 @@ export function isTraversal(operation: Operation): boolean {
     'inspect.node',
     'inspect.deno',
   ].includes(operation)
-}
-
-function random(seed: number) {
-  return () => {
-    let word = (seed += 0x6d2b79f5)
-    word = Math.imul(word ^ (word >>> 15), word | 1)
-    word ^= word + Math.imul(word ^ (word >>> 7), word | 61)
-    return ((word ^ (word >>> 14)) >>> 0) / 0x100000000
-  }
 }
 
 export function prepareFixture(

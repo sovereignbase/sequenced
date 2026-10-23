@@ -10,6 +10,11 @@ import { releaseText } from '../text.js'
 it('types the existing Text edits, snapshots, iterator and event payloads', () => {
   const text = new Sequenced.Text(1)
   try {
+    expectTypeOf<
+      ConstructorParameters<typeof Sequenced.Text>[1]
+    >().toBeUnknown()
+    expectTypeOf<Parameters<typeof text.apply>[0]>().toBeUnknown()
+    expectTypeOf<Parameters<typeof text.merge>[0]>().toBeUnknown()
     expectTypeOf(text.insert(0, 'a')).toEqualTypeOf<void>()
     expectTypeOf(text.replace(0, 1, 'b')).toEqualTypeOf<void>()
     expectTypeOf(text.remove(0, 1)).toEqualTypeOf<void>()
@@ -34,8 +39,6 @@ it('types the existing Text edits, snapshots, iterator and event payloads', () =
     if (false) {
       // @ts-expect-error Text input must be a string.
       text.insert(0, ['a'])
-      // @ts-expect-error Snapshot content is text, not raw Footage.
-      text.merge([[], ['a']])
       // @ts-expect-error No extra String instance methods are required.
       text.toUpperCase()
     }

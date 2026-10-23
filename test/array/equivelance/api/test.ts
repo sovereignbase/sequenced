@@ -43,13 +43,13 @@ describe('SequencedArray API surface', () => {
     const empty = new ArrayReplica<number>(1)
     expect(empty.length).toBe(0)
     expect([...empty]).toEqual([])
-    const populated = new ArrayReplica(2, arraySnapshot([1, 2, 3]))
+    const populated = new ArrayReplica<number>(2, arraySnapshot([1, 2, 3]))
     expect(populated.length).toBe(3)
     expect([...populated]).toEqual([1, 2, 3])
   })
 
   it('exposes a writable length and default value iterator', () => {
-    const replica = new ArrayReplica(1, arraySnapshot([1, 2, 3]))
+    const replica = new ArrayReplica<number>(1, arraySnapshot([1, 2, 3]))
     expect(replica[Symbol.iterator]).toBeTypeOf('function')
     replica.length = 1
     expect([...replica]).toEqual([1])

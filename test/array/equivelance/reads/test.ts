@@ -102,7 +102,10 @@ describe('SequencedArray read equivalence', () => {
     '%s returns the native result without mutating the source',
     (_, read) => {
       const values = [3, 2, 10, 2, 1]
-      const replica = new ArrayReplica(1, arraySnapshot(values))
+      const replica = new ArrayReplica<(typeof values)[number]>(
+        1,
+        arraySnapshot(values)
+      )
       expect(read(replica)).toEqual(read(values.slice()))
       expect([...replica]).toEqual(values)
     }
@@ -112,7 +115,10 @@ describe('SequencedArray read equivalence', () => {
     'matches search fromIndex=%s including NaN and signed zero',
     (from) => {
       const values = [NaN, 0, -0, 2, 2]
-      const replica = new ArrayReplica(1, arraySnapshot(values))
+      const replica = new ArrayReplica<(typeof values)[number]>(
+        1,
+        arraySnapshot(values)
+      )
       for (const needle of [NaN, 0, -0, 2, 99]) {
         expect(replica.includes(needle, from)).toBe(
           values.includes(needle, from)
@@ -153,27 +159,36 @@ describe('SequencedArray read equivalence', () => {
   it.each([-6, 5, Infinity, -Infinity])(
     'with(%s) throws RangeError',
     (index) => {
-      const replica = new ArrayReplica(1, arraySnapshot([1, 2, 3, 4, 5]))
+      const replica = new ArrayReplica<number>(
+        1,
+        arraySnapshot([1, 2, 3, 4, 5])
+      )
       expect(() => replica.with(index, 0)).toThrow(RangeError)
     }
   )
 
   it('flattens nested arrays at the same depths', () => {
     const values = [1, [2, [3, [4]]], [], 5]
-    const replica = new ArrayReplica(1, arraySnapshot(values))
+    const replica = new ArrayReplica<(typeof values)[number]>(
+      1,
+      arraySnapshot(values)
+    )
     for (const depth of [undefined, 0, 1, 2, Infinity, -1, NaN])
       expect(replica.flat(depth)).toEqual(values.flat(depth))
   })
 
   it('matches joins for null, undefined and nested arrays', () => {
     const values = [null, undefined, [1, 2], 'x']
-    const replica = new ArrayReplica(1, arraySnapshot(values))
+    const replica = new ArrayReplica<(typeof values)[number]>(
+      1,
+      arraySnapshot(values)
+    )
     expect(replica.join('|')).toBe(values.join('|'))
     expect(replica.toString()).toBe(values.toString())
   })
 
   it('returns independent plain arrays from copying methods', () => {
-    const replica = new ArrayReplica(1, arraySnapshot([1, 2, 3]))
+    const replica = new ArrayReplica<number>(1, arraySnapshot([1, 2, 3]))
     const copies = [
       replica.slice(),
       replica.map((x) => x),

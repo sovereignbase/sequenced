@@ -14,6 +14,11 @@ describe('SequencedArray public declarations', () => {
     const array = new Sequenced.Array<number>(1)
     try {
       expectTypeOf(array).toEqualTypeOf<SequencedArray<number>>()
+      expectTypeOf<
+        ConstructorParameters<typeof Sequenced.Array>[1]
+      >().toBeUnknown()
+      expectTypeOf<Parameters<typeof array.apply>[0]>().toBeUnknown()
+      expectTypeOf<Parameters<typeof array.merge>[0]>().toBeUnknown()
       expectTypeOf(array.at(0)).toEqualTypeOf<number | undefined>()
       expectTypeOf(array.get(0)).toEqualTypeOf<number | undefined>()
       expectTypeOf(

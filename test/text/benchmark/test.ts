@@ -35,3 +35,21 @@ it('does not substitute plain sequencer for a missing Text wrapper', () => {
   const fixture = prepareFixture('insert.tail', 64, 8)
   expect(() => createWorkload(fixture, 'wrapper')).toThrow(TypeError)
 })
+
+it.each(['insert', 'remove', 'replace'] as const)(
+  '%s uses the same seeded edit trace locally, through apply and through merge',
+  (method) => {
+    const local = prepareFixture(`${method}.random`, 64, 8, 17)
+    for (const transport of ['apply', 'merge'] as const) {
+      const remote = prepareFixture(`${transport}.${method}.random`, 64, 8, 17)
+      expect(remote.positions).toEqual(local.positions)
+      expect(remote.expected).toEqual(local.expected)
+      expect(remote.deltas).toHaveLength(8)
+      expect(remote.states).toHaveLength(transport === 'merge' ? 8 : 0)
+    }
+    expect(new Set(local.positions).size).toBeGreaterThan(1)
+    expect(prepareFixture(`${method}.random`, 64, 8, 18).positions).not.toEqual(
+      local.positions
+    )
+  }
+)

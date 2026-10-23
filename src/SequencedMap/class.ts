@@ -32,23 +32,6 @@ function entryKey<K extends SerializableKey>(entry: unknown): K {
   return keyOf(entry[0]) as K
 }
 
-function validEntries(
-  values: readonly unknown[],
-  allowMissing = false
-): boolean {
-  for (const entry of values) {
-    if (allowMissing && entry === undefined) continue
-    if (!Array.isArray(entry) || entry.length !== 2) return false
-    const key: unknown = entry[0]
-    if (
-      typeof key !== 'string' &&
-      (typeof key !== 'number' || !Number.isFinite(key))
-    )
-      return false
-  }
-  return true
-}
-
 export class SequencedMap<K extends SerializableKey, V> implements Iterable<
   [K, V]
 > {
@@ -56,7 +39,6 @@ export class SequencedMap<K extends SerializableKey, V> implements Iterable<
   private readonly index = new Map<K, number>()
   // Only keys are mirrored, so removal patches need no old-value snapshot.
   private readonly positions: K[] = []
-  private duplicates?: Map<K, number>
   private eventTarget?: EventTarget
 
   #value(at: number): SequencedMapEntry<K, V> {
@@ -67,9 +49,12 @@ export class SequencedMap<K extends SerializableKey, V> implements Iterable<
     }
   }
 
-  constructor(actorID: number, snapshot?: SequencedMapSnapshot<K, V>) {
+  constructor(actorID: number, snapshot?: unknown) {
     try {
-      this.projection = new Projection(actorID, snapshot)
+      this.projection = new Projection<SequencedMapEntry<K, V>>(
+        actorID,
+        snapshot
+      )
       try {
         let duplicates: number[] | undefined
         const entries = this.projection.values()
@@ -136,32 +121,44 @@ export class SequencedMap<K extends SerializableKey, V> implements Iterable<
       key = keyOf(key)
       const position = this.index.get(key)
       if (position === undefined) return false
-      let delta: SequencedMapDelta<K, V>
-      if (this.duplicates?.has(key)) {
-        const replies: Array<SequencedMapDelta<K, V>[number]> = []
-        for (let at = this.positions.length - 1; at >= position; at--)
-          if (this.positions[at] === key)
-            for (const tuple of this.projection.remove(at, at))
-              replies.push(tuple)
-        delta = replies
-        this.duplicates.delete(key)
-      } else delta = this.projection.remove(position, position)
-      this.index.delete(key)
+      const positions = this.positions
+      const index = this.index
+      const length = positions.length
+      const hasDuplicates = length > index.size
+      const delta = this.projection.remove(position, position)
+      let combined: Array<SequencedMapDelta<K, V>[number]> | undefined
+      if (hasDuplicates) {
+        let removed = 1
+        for (
+          let at = positions.indexOf(key, position + 1);
+          at !== -1;
+          at = positions.indexOf(key, at + 1)
+        ) {
+          combined ??= Array.from(delta)
+          for (const tuple of this.projection.remove(
+            at - removed,
+            at - removed
+          ))
+            combined.push(tuple)
+          removed++
+        }
+      }
+      index.delete(key)
       let write = position
-      for (let read = position + 1; read < this.positions.length; read++) {
-        const other = this.positions[read]
+      for (let read = position + 1; read < length; read++) {
+        const other = positions[read]
         if (other === key) continue
-        this.positions[write] = other
-        if (this.index.get(other) === read) this.index.set(other, write)
+        positions[write] = other
+        if (index.get(other) === read) index.set(other, write)
         write++
       }
-      this.positions.length = write
+      positions.length = write
       if (this.eventTarget)
         this.dispatchEvent('change', { [key]: undefined } as SequencedMapChange<
           K,
           V
         >)
-      this.dispatchEvent('delta', delta)
+      this.dispatchEvent('delta', combined ?? delta)
       return true
     } catch (cause) {
       throw unknownError(cause, 'SequencedMap.delete()')
@@ -179,7 +176,6 @@ export class SequencedMap<K extends SerializableKey, V> implements Iterable<
       const delta = this.projection.remove(0, this.positions.length - 1)
       this.positions.length = 0
       this.index.clear()
-      this.duplicates?.clear()
       if (changes) this.dispatchEvent('change', changes)
       this.dispatchEvent('delta', delta)
     } catch (cause) {
@@ -214,28 +210,11 @@ export class SequencedMap<K extends SerializableKey, V> implements Iterable<
 
   apply(delta: unknown): void {
     try {
-      if (Array.isArray(delta)) {
-        for (const tuple of delta) {
-          if (!Array.isArray(tuple) || typeof tuple[0] === 'number') continue
-          const words = tuple[0]
-          const count = words?.[5]
-          if (
-            count > 0 &&
-            count < 0x80000000 &&
-            (!Array.isArray(tuple[1]) ||
-              tuple[1].length < count ||
-              !validEntries(tuple[1]))
-          )
-            return
-        }
-      }
       this.received(this.projection.apply(delta))
     } catch {}
   }
-  merge(snapshot: SequencedMapSnapshot<K, V>): void {
+  merge(snapshot: unknown): void {
     try {
-      if (Array.isArray(snapshot?.[1]) && !validEntries(snapshot[1], true))
-        return
       this.received(this.projection.merge(snapshot))
     } catch {}
   }
@@ -256,7 +235,6 @@ export class SequencedMap<K extends SerializableKey, V> implements Iterable<
       this.projection.destroy()
       this.index.clear()
       this.positions.length = 0
-      this.duplicates?.clear()
     } catch (cause) {
       throw unknownError(cause, 'SequencedMap.destroy()')
     }
@@ -379,49 +357,55 @@ export class SequencedMap<K extends SerializableKey, V> implements Iterable<
       return Infinity
     }
     const oldLength = this.positions.length
+    const hasDuplicates = oldLength > this.index.size
     const shift = added - (end - start)
     let pending = 0
     let orderFrom = Infinity
     for (let at = start; at < end; at++) {
       const key = this.positions[at]
-      const first = this.index.get(key)!
-      const count = this.duplicates?.get(key) ?? 1
-      if (first === at) changed?.add(key)
-      if (count === 1) {
-        this.index.delete(key)
-        if (first === -1) pending--
-      } else {
-        if (count === 2) this.duplicates!.delete(key)
-        else this.duplicates!.set(key, count - 1)
-        if (first === at) {
+      const first = this.index.get(key)
+      if (first === at) {
+        changed?.add(key)
+        if (hasDuplicates) {
           this.index.set(key, -1)
           pending++
+        } else this.index.delete(key)
+      }
+    }
+    if (shift) {
+      const step = shift > 0 ? -1 : 1
+      const stop = shift > 0 ? end - 1 : oldLength
+      for (let at = shift > 0 ? oldLength - 1 : end; at !== stop; at += step) {
+        const key = this.positions[at]
+        const first = this.index.get(key)!
+        const next = at + shift
+        if (first !== at) {
+          if (first !== -1 && next >= first) continue
+          if (first === -1) pending--
           orderFrom = start
+        }
+        this.index.set(key, next)
+      }
+    } else if (pending) {
+      for (let at = end; pending && at < oldLength; at++) {
+        const key = this.positions[at]
+        if (this.index.get(key) === -1) {
+          this.index.set(key, at)
+          orderFrom = start
+          pending--
         }
       }
     }
-    // Move integer positions in the direction that cannot mistake a shifted
-    // winner for a later duplicate of the same key.
-    if (shift > 0)
-      for (let at = oldLength - 1; at >= end; at--) {
-        const key = this.positions[at]
-        if (this.index.get(key) === at) this.index.set(key, at + shift)
-      }
-    else if (shift < 0)
-      for (let at = end; at < oldLength; at++) {
-        const key = this.positions[at]
-        if (this.index.get(key) === at) this.index.set(key, at + shift)
-      }
-    if (shift > 0) this.positions.length = oldLength + shift
-    if (shift !== 0) this.positions.copyWithin(start + added, end, oldLength)
-    if (shift < 0) this.positions.length = oldLength + shift
-    for (let at = start + added; pending && at < this.positions.length; at++) {
+    for (let at = start; pending && at < end; at++) {
       const key = this.positions[at]
       if (this.index.get(key) === -1) {
-        this.index.set(key, at)
+        this.index.delete(key)
         pending--
       }
     }
+    if (shift > 0) this.positions.length = oldLength + shift
+    if (shift !== 0) this.positions.copyWithin(start + added, end, oldLength)
+    if (shift < 0) this.positions.length = oldLength + shift
     for (let i = 0; i < added; i++) {
       const at = start + i
       const key = values![i]![0]
@@ -432,10 +416,6 @@ export class SequencedMap<K extends SerializableKey, V> implements Iterable<
         changed?.add(key)
         if (end < oldLength) orderFrom = Math.min(orderFrom, at)
       } else {
-        ;(this.duplicates ??= new Map()).set(
-          key,
-          (this.duplicates?.get(key) ?? 1) + 1
-        )
         if (at < first) {
           this.index.set(key, at)
           changed?.add(key)

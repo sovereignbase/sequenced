@@ -1,6 +1,7 @@
 import { SequencedText } from './SequencedText/class.js'
 import { SequencedArray } from './SequencedArray/class.js'
 import { SequencedMap } from './SequencedMap/class.js'
+export type { SequencedArray, SequencedMap, SequencedText }
 
 export { SequencedError, type SequencedErrorCode } from './errors/class.js'
 

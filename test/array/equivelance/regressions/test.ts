@@ -6,7 +6,7 @@ import { inspect } from 'node:util'
 
 describe('SequencedArray implementation regressions', () => {
   it('flatMap skips holes in returned native arrays', () => {
-    const replica = new SequencedArray(1, arraySnapshot([1, 2]))
+    const replica = new SequencedArray<number>(1, arraySnapshot([1, 2]))
     const flatten = (value: number) => [value, , value + 1]
     try {
       expect(replica.flatMap(flatten)).toEqual([1, 2].flatMap(flatten))
@@ -16,7 +16,7 @@ describe('SequencedArray implementation regressions', () => {
   })
 
   it('console inspection exposes visible values', () => {
-    const replica = new SequencedArray(1, arraySnapshot([1, 2]))
+    const replica = new SequencedArray<number>(1, arraySnapshot([1, 2]))
     try {
       expect(inspect(replica)).toBe(inspect([1, 2]))
       expect(
@@ -31,7 +31,7 @@ describe('SequencedArray implementation regressions', () => {
     }
   })
   it('invokes callable callbacks even when their call property is shadowed', () => {
-    const replica = new SequencedArray(1, arraySnapshot([1, 2]))
+    const replica = new SequencedArray<number>(1, arraySnapshot([1, 2]))
     const callback = Object.assign((value: number) => value * 2, { call: null })
     try {
       expect(replica.map(callback)).toEqual([2, 4])
@@ -49,7 +49,7 @@ describe('SequencedArray implementation regressions', () => {
     }
   })
   it('find returns the visited value even if the predicate replaces it', () => {
-    const replica = new SequencedArray(1, arraySnapshot([1, 2, 3]))
+    const replica = new SequencedArray<number>(1, arraySnapshot([1, 2, 3]))
     try {
       expect(
         replica.find((value, index) => {
@@ -95,7 +95,7 @@ describe('SequencedArray implementation regressions', () => {
   })
 
   it('findLast callbacks can edit pending values without changing visited values', () => {
-    const replica = new SequencedArray(1, arraySnapshot([1, 2, 3]))
+    const replica = new SequencedArray<number>(1, arraySnapshot([1, 2, 3]))
     try {
       expect(
         replica.findLast((value, index) => {
@@ -109,7 +109,7 @@ describe('SequencedArray implementation regressions', () => {
   })
 
   it('flatMap flattens each returned array before invoking the next callback', () => {
-    const replica = new SequencedArray(1, arraySnapshot([1, 2, 3]))
+    const replica = new SequencedArray<number>(1, arraySnapshot([1, 2, 3]))
     const shared: number[] = []
     try {
       expect(
@@ -125,7 +125,10 @@ describe('SequencedArray implementation regressions', () => {
 
   it('uses shallow value references in local reads and plain-array copies', () => {
     const object = { count: 1 }
-    const replica = new SequencedArray(1, arraySnapshot([object]))
+    const replica = new SequencedArray<typeof object>(
+      1,
+      arraySnapshot([object])
+    )
     try {
       expect(replica.get(0)).toBe(object)
       expect(replica.slice()[0]).toBe(object)

@@ -74,6 +74,7 @@
     "typedoc": "^0.28.20",
     "typescript": "^6.0.3",
     "vitest": "^5.0.5",
+    "wrangler": "^4.151.3",
     "ws": "^8.22.0"
   },
   "repository": {

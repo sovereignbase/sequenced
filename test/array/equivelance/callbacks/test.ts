@@ -30,7 +30,7 @@ describe('SequencedArray callbacks and iterators', () => {
     '%s passes value, index, receiver and thisArg in native order',
     (method) => {
       const values = [1, 2, 3, 4]
-      const replica = new ArrayReplica(1, arraySnapshot(values))
+      const replica = new ArrayReplica<number>(1, arraySnapshot(values))
       const context = { threshold: 3 }
       const observe = (array: ArraySubject<number> | number[]) => {
         const calls: unknown[] = []
@@ -53,7 +53,7 @@ describe('SequencedArray callbacks and iterators', () => {
   )
 
   it.each(methods)('%s propagates callback exceptions', (method) => {
-    const replica = new ArrayReplica(1, arraySnapshot([1, 2]))
+    const replica = new ArrayReplica<number>(1, arraySnapshot([1, 2]))
     const failure = new Error('callback failed')
     expect(() =>
       Reflect.apply(replica[method], replica, [
@@ -65,7 +65,7 @@ describe('SequencedArray callbacks and iterators', () => {
   })
 
   it.each(methods)('%s rejects a non-callable callback', (method) => {
-    const replica = new ArrayReplica(1, arraySnapshot([1]))
+    const replica = new ArrayReplica<number>(1, arraySnapshot([1]))
     expect(() => Reflect.apply(replica[method], replica, [null])).toThrow(
       SequencedError
     )
@@ -75,7 +75,7 @@ describe('SequencedArray callbacks and iterators', () => {
     '%s passes the accumulator and receiver',
     (method) => {
       const values = [1, 2, 3]
-      const replica = new ArrayReplica(1, arraySnapshot(values))
+      const replica = new ArrayReplica<number>(1, arraySnapshot(values))
       const observe = (array: ArraySubject<number> | number[]) => {
         const calls: unknown[] = []
         const callback = (
@@ -106,9 +106,9 @@ describe('SequencedArray callbacks and iterators', () => {
       })
       return { visited, values: [...array] }
     }
-    expect(observe(new ArrayReplica(1, arraySnapshot([1, 2, 3])))).toEqual(
-      observe([1, 2, 3])
-    )
+    expect(
+      observe(new ArrayReplica<number>(1, arraySnapshot([1, 2, 3])))
+    ).toEqual(observe([1, 2, 3]))
   })
 
   it('map observes truncation during a callback', () => {
@@ -117,9 +117,9 @@ describe('SequencedArray callbacks and iterators', () => {
         if (index === 0) array.length = 1
         return value * 2
       })
-    expect(observe(new ArrayReplica(1, arraySnapshot([1, 2, 3])))).toEqual(
-      observe([1, 2, 3])
-    )
+    expect(
+      observe(new ArrayReplica<number>(1, arraySnapshot([1, 2, 3])))
+    ).toEqual(observe([1, 2, 3]))
   })
 
   it.each(['entries', 'keys', 'values', Symbol.iterator] as const)(
@@ -132,9 +132,9 @@ describe('SequencedArray callbacks and iterators', () => {
         array.push(4)
         return [first, [...iterator], iterator.next()]
       }
-      expect(observe(new ArrayReplica(1, arraySnapshot([1, 2, 3])))).toEqual(
-        observe([1, 2, 3])
-      )
+      expect(
+        observe(new ArrayReplica<number>(1, arraySnapshot([1, 2, 3])))
+      ).toEqual(observe([1, 2, 3]))
     }
   )
 })

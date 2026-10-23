@@ -58,7 +58,7 @@ describe('SequencedArray mutation equivalence', () => {
   ])('initial values $initial', ({ initial }) => {
     it.each(cases)('%s matches native values and return value', (_, mutate) => {
       const native = initial.slice()
-      const replica = new ArrayReplica(1, arraySnapshot(initial))
+      const replica = new ArrayReplica<number>(1, arraySnapshot(initial))
       const expected = mutate(native)
       const actual = mutate(replica)
       if (expected === native) expect(actual).toBe(replica)
@@ -72,7 +72,7 @@ describe('SequencedArray mutation equivalence', () => {
     'length=%s matches native visible values',
     (length) => {
       const native = [1, 2, 3, 4, 5]
-      const replica = new ArrayReplica(1, arraySnapshot(native))
+      const replica = new ArrayReplica<number>(1, arraySnapshot(native))
       native.length = length
       replica.length = length
       // Iteration observes grown slots as undefined; sparse descriptors are out of scope.
@@ -84,7 +84,7 @@ describe('SequencedArray mutation equivalence', () => {
   it.each([-1, 1.5, NaN, Infinity, 2 ** 32])(
     'rejects invalid length %s',
     (length) => {
-      const replica = new ArrayReplica(1, arraySnapshot([1, 2, 3]))
+      const replica = new ArrayReplica<number>(1, arraySnapshot([1, 2, 3]))
       expect(() => {
         replica.length = length
       }).toThrow(SequencedError)
@@ -99,7 +99,10 @@ describe('SequencedArray mutation equivalence', () => {
       { group: 2, id: 'c' },
       { group: 1, id: 'd' },
     ]
-    const replica = new ArrayReplica(1, arraySnapshot(native))
+    const replica = new ArrayReplica<(typeof native)[number]>(
+      1,
+      arraySnapshot(native)
+    )
     const comparator = (
       a: (typeof native)[number],
       b: (typeof native)[number]

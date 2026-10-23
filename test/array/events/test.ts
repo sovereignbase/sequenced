@@ -6,7 +6,7 @@ import { arraySnapshot } from '../array.js'
 
 const replicas: SequencedArray<number>[] = []
 function create(values: number[] = []) {
-  const replica = new SequencedArray(1, arraySnapshot(values))
+  const replica = new SequencedArray<number>(1, arraySnapshot(values))
   replicas.push(replica)
   return replica
 }

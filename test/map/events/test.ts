@@ -2,10 +2,7 @@ import { Projection } from '@sovereignbase/sequencer'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { SequencedError } from '../../../src/index.js'
 import { SequencedMap } from '../../../src/SequencedMap/class.js'
-import type {
-  SequencedMapEntry,
-  SequencedMapSnapshot,
-} from '../../../src/index.js'
+import type { SequencedMapEntry } from '../../../src/index.js'
 import { mapSnapshot } from '../map.js'
 
 type Entry = SequencedMapEntry<string | number, unknown>
@@ -149,31 +146,20 @@ describe('Map entries, index and events', () => {
       [null, ['a'], ['a', 1, 2], [{}, 1], [NaN, 1], [Infinity, 1]].map(
         (entry) => ({ entry })
       )
-    )(
-      'rejects a malformed Map entry without throwing or changing state: %j',
-      ({ entry }) => {
-        const map = create([['existing', 1]])
-        const sender = new Projection<unknown>(2)
-        try {
-          const delta = sender.insert([['valid', 2], entry], 0)
-          const input = method === 'apply' ? delta : sender.sequence()
-          const engine = vi.spyOn(Projection.prototype, method)
-          const change = vi.fn()
-          map.addEventListener('change', change)
-          expect(() => Reflect.apply(map[method], map, [input])).not.toThrow()
-          expect(engine).not.toHaveBeenCalled()
-          expect(change).not.toHaveBeenCalled()
-          expect([...map]).toEqual([['existing', 1]])
-          map.set('after', 3)
-          expect([...map]).toEqual([
-            ['existing', 1],
-            ['after', 3],
-          ])
-        } finally {
-          sender.destroy()
-        }
+    )('forwards entry footage unchanged without throwing: %j', ({ entry }) => {
+      const map = create([['existing', 1]])
+      const sender = new Projection<unknown>(2)
+      try {
+        const delta = sender.insert([['valid', 2], entry], 0)
+        const input = method === 'apply' ? delta : sender.sequence()
+        const engine = vi.spyOn(Projection.prototype, method)
+        expect(() => map[method](input)).not.toThrow()
+        expect(engine).toHaveBeenCalledExactlyOnceWith(input)
+        expect(engine.mock.calls[0][0]).toBe(input)
+      } finally {
+        sender.destroy()
       }
-    )
+    })
 
     it.each(
       [undefined, null, 0, false, 'invalid', [], [null], [[], null]].map(
@@ -181,7 +167,7 @@ describe('Map entries, index and events', () => {
       )
     )('does not throw for malformed transport input %j', ({ input }) => {
       const map = create([['a', 1]])
-      expect(() => Reflect.apply(map[method], map, [input])).not.toThrow()
+      expect(() => map[method](input)).not.toThrow()
       expect([...map]).toEqual([['a', 1]])
     })
 
@@ -222,8 +208,7 @@ describe('Map entries, index and events', () => {
       const delta = vi.fn()
       map.addEventListener('change', changes)
       map.addEventListener('delta', delta)
-      if (method === 'apply') map.apply(input)
-      else map.merge(input as SequencedMapSnapshot<string | number, unknown>)
+      map[method](input)
       expect(engine).toHaveBeenCalledExactlyOnceWith(input)
       expect(engine.mock.calls[0][0]).toBe(input)
       expect(delta.mock.calls[0][0].detail).toBe(reply)
@@ -250,7 +235,7 @@ describe('Map entries, index and events', () => {
     })
   })
 
-  it('rejects insertion footage with missing Map entries without throwing', () => {
+  it('forwards missing insertion footage without throwing', () => {
     const map = create([['existing', 1]])
     const sender = new Projection<Entry>(2)
     try {
@@ -263,10 +248,13 @@ describe('Map entries, index and events', () => {
       )
       const tuple = insertion.find((item) => Array.isArray(item[0]))!
       const words = tuple[0]
+      const engine = vi.spyOn(Projection.prototype, 'apply')
       for (const footage of [undefined, [], [['a', 1]]]) {
-        expect(() => map.apply([[words, footage]])).not.toThrow()
-        expect([...map]).toEqual([['existing', 1]])
+        const input: unknown = [[words, footage]]
+        expect(() => map.apply(input)).not.toThrow()
+        expect(engine).toHaveBeenLastCalledWith(input)
       }
+      expect(engine).toHaveBeenCalledTimes(3)
     } finally {
       sender.destroy()
     }

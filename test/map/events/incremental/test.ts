@@ -1,5 +1,5 @@
 import { Projection } from '@sovereignbase/sequencer'
-import type { Gossip, Sequence } from '@sovereignbase/sequencer'
+import type { Gossip } from '@sovereignbase/sequencer'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { SequencedMap } from '../../../../src/SequencedMap/class.js'
 import type { SequencedMapEntry } from '../../../../src/index.js'
@@ -188,7 +188,7 @@ describe('incremental Map patches', () => {
         })
       try {
         if (method === 'apply') map.apply(input)
-        else map.merge(input as Sequence<Entry>)
+        else map.merge(input)
         expect(read).toHaveBeenCalledExactlyOnceWith(500)
         expect(changes.mock.calls.map(([event]) => event.detail)).toEqual([
           { 500: -1 },
