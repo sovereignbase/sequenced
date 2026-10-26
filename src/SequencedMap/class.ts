@@ -95,7 +95,7 @@ export class SequencedMap<K extends SerializableKey, V> implements Iterable<
   get size(): number {
     return this.index.size
   }
-  /** The built-in object tag, `Map`. */
+  /** The built-in object tag, `SequencedMap`. */
   get [Symbol.toStringTag](): string {
     return 'SequencedMap'
   }

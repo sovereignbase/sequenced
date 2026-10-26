@@ -776,6 +776,11 @@ export class SequencedArray<T> implements Iterable<T> {
     return this.#values()
   }
 
+  /** The built-in object tag, `SequencedArray`. */
+  get [Symbol.toStringTag](): string {
+    return 'SequencedArray'
+  }
+
   /**
    * Registers a callback or listener object for a typed collection event.
    * @param type The event name.

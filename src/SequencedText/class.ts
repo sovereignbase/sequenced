@@ -225,6 +225,11 @@ export class SequencedText {
     return this.valueOf()
   }
 
+  /** The built-in object tag, `SequencedText`. */
+  get [Symbol.toStringTag](): string {
+    return 'SequencedText'
+  }
+
   /**
    * Returns a live iterator over visible UTF-16 code units in document order.
    */
