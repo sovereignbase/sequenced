@@ -24,15 +24,6 @@ function keyOf<K extends SerializableKey>(key: K): K {
     )
   return (key === 0 ? 0 : key) as K
 }
-/** Reads the validated key of a two-element entry restored from a snapshot. */
-function entryKey<K extends SerializableKey>(entry: unknown): K {
-  if (!Array.isArray(entry) || entry.length !== 2)
-    throw new SequencedError(
-      'INVALID_MAP_ENTRY',
-      'Map entries must be [key, value] pairs'
-    )
-  return keyOf(entry[0]) as K
-}
 
 /**
  * A replicated map with native Map-style access and iteration.
@@ -68,20 +59,20 @@ export class SequencedMap<K extends SerializableKey, V> implements Iterable<
   /**
    * Creates an empty map or restores a replication snapshot, keeping the first duplicate key.
    * @param actorID The identifier of the local editing actor.
-   * @param snapshot Optional replication state to restore.
+   * @param trustedSnaphot Optional replication state to restore.
    * @throws {SequencedError} If initialization fails or a restored entry or key is invalid.
    */
-  constructor(actorID: number, snapshot?: unknown) {
+  constructor(actorID: number, trustedSnaphot?: unknown) {
     try {
       this.projection = new Projection<SequencedMapEntry<K, V>>(
         actorID,
-        snapshot
+        trustedSnaphot
       )
       try {
         let duplicates: number[] | undefined
         const entries = this.projection.values()
         for (let at = 0; at < entries.length; at++) {
-          const key = entryKey<K>(entries[at])
+          const key = entries[at][0] as K
           if (this.index.has(key)) (duplicates ??= []).push(at)
           else {
             this.index.set(key, this.positions.length)
@@ -106,7 +97,7 @@ export class SequencedMap<K extends SerializableKey, V> implements Iterable<
   }
   /** The built-in object tag, `Map`. */
   get [Symbol.toStringTag](): string {
-    return 'Map'
+    return 'SequencedMap'
   }
   /**
    * Returns the value associated with a key.
@@ -115,7 +106,7 @@ export class SequencedMap<K extends SerializableKey, V> implements Iterable<
    * @throws {SequencedError} With code `INVALID_MAP_KEY` if the key is invalid.
    */
   get(key: K): V | undefined {
-    const position = this.index.get(keyOf(key))
+    const position = this.index.get(key)
     return position === undefined ? undefined : this.#value(position)![1]
   }
   /**

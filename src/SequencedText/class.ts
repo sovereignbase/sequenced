@@ -31,12 +31,12 @@ export class SequencedText {
   /**
    * Creates an empty text document or restores a replication snapshot.
    * @param actorID The identifier of the local editing actor.
-   * @param snapshot Optional replication state to restore.
+   * @param trustedSnapshot Optional replication state to restore.
    * @throws {SequencedError} If the underlying projection cannot be created.
    */
-  constructor(actorID: number, snapshot?: unknown) {
+  constructor(actorID: number, trustedSnapshot?: unknown) {
     try {
-      this.projection = new Projection<string>(actorID, snapshot)
+      this.projection = new Projection<string>(actorID, trustedSnapshot)
     } catch (cause) {
       throw unknownError(cause, 'SequencedText.constructor()')
     }
@@ -147,7 +147,7 @@ export class SequencedText {
     selectionStart: number = 0,
     selecectionEnd: number = this.length,
     characters: string = ''
-  ) {
+  ): void {
     try {
       if (selectionStart === selecectionEnd)
         return this.insert(selectionStart, characters)

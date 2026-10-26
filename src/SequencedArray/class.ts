@@ -63,12 +63,12 @@ export class SequencedArray<T> implements Iterable<T> {
   /**
    * Creates an empty array or restores a replication snapshot.
    * @param actorID The identifier of the local editing actor.
-   * @param snapshot Optional replication state to restore.
+   * @param trustedSnapshot Optional replication state to restore.
    * @throws {SequencedError} If the underlying projection cannot be created.
    */
-  constructor(actorID: number, snapshot?: unknown) {
+  constructor(actorID: number, trustedSnapshot?: unknown) {
     try {
-      this.projection = new Projection<T>(actorID, snapshot)
+      this.projection = new Projection<T>(actorID, trustedSnapshot)
     } catch (cause) {
       throw unknownError(cause, 'SequencedArray.constructor()')
     }
@@ -143,37 +143,6 @@ export class SequencedArray<T> implements Iterable<T> {
   delete(index: number): void {
     this.checkIndex(index)
     this.edit(index, 1, [])
-  }
-
-  /** Requires an absolute index that addresses an existing element. */
-  private checkIndex(index: number): void {
-    if (!Number.isInteger(index) || index < 0 || index >= this.length)
-      throw new SequencedError(
-        'ARRAY_INDEX_OUT_OF_BOUNDS',
-        'Index must address an existing element'
-      )
-  }
-
-  /** Converts a half-open edit to the sequencer's inclusive removal range. */
-  private edit(start: number, count: number, items: T[]): void {
-    try {
-      if (count === 0 && items.length === 0) return
-      const delta =
-        count === 0
-          ? this.projection.insert(items, start)
-          : items.length === 0
-            ? this.projection.remove(start, start + count - 1)
-            : this.projection.replace(items, start, start + count - 1)
-      if (this.eventTarget) {
-        const change = items.length
-          ? ([[start, start + count, items]] as const)
-          : ([[start, start + count]] as const)
-        this.dispatchEvent('change', change)
-        this.dispatchEvent('delta', delta)
-      }
-    } catch (cause) {
-      throw unknownError(cause, 'SequencedArray.edit()')
-    }
   }
 
   /**
@@ -414,20 +383,6 @@ export class SequencedArray<T> implements Iterable<T> {
     return this.#values().with(index, value)
   }
 
-  /** Captures length once; pending values stay live during callback edits. */
-  private visit(
-    callback: (value: T, index: number) => boolean | void,
-    backwards = false,
-    missing = false
-  ): void {
-    const length = this.length
-    for (let step = 0; step < length; step++) {
-      const index = backwards ? length - step - 1 : step
-      if (!missing && index >= this.length) continue
-      if (callback(this.get(index) as T, index) === false) break
-    }
-  }
-
   /**
    * Tests whether every visited element satisfies a type-guard predicate.
    * @param predicate Receives the value, index and this replica; stops at the first false result.
@@ -575,27 +530,6 @@ export class SequencedArray<T> implements Iterable<T> {
     })
   }
 
-  /** Finds a matching index in either direction, including positions removed during visitation. */
-  private findPosition(
-    predicate: (value: T, index: number, array: this) => unknown,
-    thisArg: unknown,
-    backwards: boolean
-  ): number {
-    callable(predicate)
-    let result = -1
-    this.visit(
-      (value, index) => {
-        if (Reflect.apply(predicate, thisArg, [value, index, this])) {
-          result = index
-          return false
-        }
-      },
-      backwards,
-      true
-    )
-    return result
-  }
-
   /**
    * Returns the first matching index, or `-1` if the predicate never succeeds.
    * @param predicate Receives the value, index and this replica in ascending index order.
@@ -697,30 +631,6 @@ export class SequencedArray<T> implements Iterable<T> {
       true,
       true
     )
-    return result
-  }
-
-  /** Reduces visited values in the chosen direction and handles an omitted initial value. */
-  private fold<U>(
-    callback: (previous: U, value: T, index: number, array: this) => U,
-    initial: U,
-    supplied: boolean,
-    backwards: boolean
-  ): U {
-    callable(callback)
-    let result = initial
-    let initialized = supplied
-    this.visit((value, index) => {
-      if (!initialized) {
-        result = value as unknown as U
-        initialized = true
-      } else result = callback(result, value, index, this)
-    }, backwards)
-    if (!initialized)
-      throw new SequencedError(
-        'REDUCE_EMPTY_ARRAY',
-        'Reduce of empty array with no initial value'
-      )
     return result
   }
 
@@ -924,5 +834,95 @@ export class SequencedArray<T> implements Iterable<T> {
     } catch (cause) {
       throw unknownError(cause, 'SequencedArray.dispatchEvent()')
     }
+  }
+
+  /** Requires an absolute index that addresses an existing element. */
+  private checkIndex(index: number): void {
+    if (!Number.isInteger(index) || index < 0 || index >= this.length)
+      throw new SequencedError(
+        'ARRAY_INDEX_OUT_OF_BOUNDS',
+        'Index must address an existing element'
+      )
+  }
+
+  /** Converts a half-open edit to the sequencer's inclusive removal range. */
+  private edit(start: number, count: number, items: T[]): void {
+    try {
+      if (count === 0 && items.length === 0) return
+      const delta =
+        count === 0
+          ? this.projection.insert(items, start)
+          : items.length === 0
+            ? this.projection.remove(start, start + count - 1)
+            : this.projection.replace(items, start, start + count - 1)
+      if (this.eventTarget) {
+        const change = items.length
+          ? ([[start, start + count, items]] as const)
+          : ([[start, start + count]] as const)
+        this.dispatchEvent('change', change)
+        this.dispatchEvent('delta', delta)
+      }
+    } catch (cause) {
+      throw unknownError(cause, 'SequencedArray.edit()')
+    }
+  }
+
+  /** Captures length once; pending values stay live during callback edits. */
+  private visit(
+    callback: (value: T, index: number) => boolean | void,
+    backwards = false,
+    missing = false
+  ): void {
+    const length = this.length
+    for (let step = 0; step < length; step++) {
+      const index = backwards ? length - step - 1 : step
+      if (!missing && index >= this.length) continue
+      if (callback(this.get(index) as T, index) === false) break
+    }
+  }
+
+  /** Finds a matching index in either direction, including positions removed during visitation. */
+  private findPosition(
+    predicate: (value: T, index: number, array: this) => unknown,
+    thisArg: unknown,
+    backwards: boolean
+  ): number {
+    callable(predicate)
+    let result = -1
+    this.visit(
+      (value, index) => {
+        if (Reflect.apply(predicate, thisArg, [value, index, this])) {
+          result = index
+          return false
+        }
+      },
+      backwards,
+      true
+    )
+    return result
+  }
+
+  /** Reduces visited values in the chosen direction and handles an omitted initial value. */
+  private fold<U>(
+    callback: (previous: U, value: T, index: number, array: this) => U,
+    initial: U,
+    supplied: boolean,
+    backwards: boolean
+  ): U {
+    callable(callback)
+    let result = initial
+    let initialized = supplied
+    this.visit((value, index) => {
+      if (!initialized) {
+        result = value as unknown as U
+        initialized = true
+      } else result = callback(result, value, index, this)
+    }, backwards)
+    if (!initialized)
+      throw new SequencedError(
+        'REDUCE_EMPTY_ARRAY',
+        'Reduce of empty array with no initial value'
+      )
+    return result
   }
 }
