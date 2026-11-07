@@ -1,24 +1,24 @@
 import { Projection } from '@sovereignbase/sequencer'
 import type {
-  SequencedVariableEventMap,
-  SequencedVariableEventListenerFor,
+  SequencedRegisterEventMap,
+  SequencedRegisterEventListenerFor,
 } from './types/type.js'
 import { unknownError } from '../errors/unknown.js'
 
-export class SequencedVariable<T> {
+export class SequencedRegister<T> {
   private readonly projection: Projection<T>
   private eventTarget?: EventTarget
   constructor(actorID: number, trustedSnapshot?: unknown) {
     this.projection = new Projection(actorID, trustedSnapshot)
   }
-  get(): Readonly<T | undefined> {
+  read(): Readonly<T | undefined> {
     try {
       return this.projection.value(0)
     } catch (cause) {
-      throw unknownError(cause, 'SequencedVariable.get()')
+      throw unknownError(cause, 'SequencedRegister.read()')
     }
   }
-  set(value: T) {
+  write(value: T) {
     try {
       const delta = this.projection.replace([value])
       if (this.eventTarget) {
@@ -26,7 +26,7 @@ export class SequencedVariable<T> {
         void this.dispatchEvent('delta', delta)
       }
     } catch (cause) {
-      throw unknownError(cause, 'SequencedVariable.set()')
+      throw unknownError(cause, 'SequencedRegister.write()')
     }
   }
   delete() {
@@ -37,7 +37,7 @@ export class SequencedVariable<T> {
         void this.dispatchEvent('delta', delta)
       }
     } catch (cause) {
-      throw unknownError(cause, 'SequencedVariable.delete()')
+      throw unknownError(cause, 'SequencedRegister.delete()')
     }
   }
 
@@ -47,9 +47,9 @@ export class SequencedVariable<T> {
    * @param listener The listener to register; `null` is ignored.
    * @param options A capture flag or options such as `once` and `signal`.
    */
-  addEventListener<K extends keyof SequencedVariableEventMap<T>>(
+  addEventListener<K extends keyof SequencedRegisterEventMap<T>>(
     type: K,
-    listener: SequencedVariableEventListenerFor<T, K> | null,
+    listener: SequencedRegisterEventListenerFor<T, K> | null,
     options?: boolean | AddEventListenerOptions
   ): void {
     try {
@@ -59,7 +59,7 @@ export class SequencedVariable<T> {
         options
       )
     } catch (cause) {
-      throw unknownError(cause, 'SequencedVariable.addEventListener()')
+      throw unknownError(cause, 'SequencedRegister.addEventListener()')
     }
   }
 
@@ -69,9 +69,9 @@ export class SequencedVariable<T> {
    * @param listener The previously registered listener.
    * @param options The capture flag, directly or within listener options.
    */
-  removeEventListener<K extends keyof SequencedVariableEventMap<T>>(
+  removeEventListener<K extends keyof SequencedRegisterEventMap<T>>(
     type: K,
-    listener: SequencedVariableEventListenerFor<T, K> | null,
+    listener: SequencedRegisterEventListenerFor<T, K> | null,
     options?: boolean | EventListenerOptions
   ): void {
     try {
@@ -81,7 +81,7 @@ export class SequencedVariable<T> {
         options
       )
     } catch (cause) {
-      throw unknownError(cause, 'SequencedVariable.removeEventListener()')
+      throw unknownError(cause, 'SequencedRegister.removeEventListener()')
     }
   }
 
@@ -90,14 +90,14 @@ export class SequencedVariable<T> {
    * @param type The event name.
    * @param detail The value exposed as `event.detail`.
    */
-  dispatchEvent<K extends keyof SequencedVariableEventMap<T>>(
+  dispatchEvent<K extends keyof SequencedRegisterEventMap<T>>(
     type: K,
-    detail: SequencedVariableEventMap<T>[K]
+    detail: SequencedRegisterEventMap<T>[K]
   ): void {
     try {
       this.eventTarget?.dispatchEvent(new CustomEvent(type, { detail }))
     } catch (cause) {
-      throw unknownError(cause, 'SequencedVariable.dispatchEvent()')
+      throw unknownError(cause, 'SequencedRegister.dispatchEvent()')
     }
   }
 }
