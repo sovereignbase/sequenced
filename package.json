@@ -60,22 +60,22 @@
   "devDependencies": {
     "@commitlint/cli": "^21.2.4",
     "@commitlint/config-conventional": "^21.2.4",
-    "@playwright/test": "^1.64.1",
-    "@types/node": "^26.6.5",
+    "@playwright/test": "^1.65.0",
+    "@types/node": "^26.6.6",
     "@types/ws": "^8.18.2",
-    "@vitest/coverage-v8": "^5.0.5",
+    "@vitest/coverage-v8": "^5.1.0",
     "bun": "^1.4.4",
     "deno": "^2.9.6",
     "edge-runtime": "^4.0.1",
     "husky": "^9.1.7",
-    "playwright": "^1.64.1",
+    "playwright": "^1.65.0",
     "prettier": "^3.9.10",
-    "tsdown": "^0.23.2",
+    "tsdown": "^0.23.7",
     "typedoc": "^0.28.20",
     "typescript": "^6.0.3",
-    "vitest": "^5.0.5",
-    "wrangler": "^4.152.0",
-    "ws": "^8.22.0"
+    "vitest": "^5.1.0",
+    "wrangler": "^4.159.0",
+    "ws": "^8.22.2"
   },
   "repository": {
     "type": "git",
@@ -88,5 +88,11 @@
   "dependencies": {
     "@sovereignbase/bytecodec": "^2.0.1",
     "@sovereignbase/sequencer": "1.1.1"
+  },
+  "allowScripts": {
+    "workerd@1.20261109.1": true,
+    "bun@1.4.4": true,
+    "deno@2.9.6": true,
+    "esbuild@0.28.2": true
   }
 }

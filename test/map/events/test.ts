@@ -21,6 +21,26 @@ afterEach(() => {
 })
 
 describe('Map entries, index and events', () => {
+  it('releases the projection and scopes a constructor cleanup failure', () => {
+    const source = new Projection<Entry | null>(100)
+    source.insert([null, ['a', 1]], 0)
+    const snapshot = source.sequence()
+    source.destroy()
+    const cause = new Error('cleanup')
+    vi.spyOn(Projection.prototype, 'remove').mockImplementationOnce(() => {
+      throw cause
+    })
+    const destroy = vi.spyOn(Projection.prototype, 'destroy')
+    expect(() => new SequencedMap(1, snapshot)).toThrow(
+      expect.objectContaining({
+        constructor: SequencedError,
+        code: 'UNKNOWN_ERROR',
+        cause,
+      })
+    )
+    expect(destroy).toHaveBeenCalledOnce()
+  })
+
   it('constructor keeps the first duplicate key and removes later physical entries', () => {
     const map = create([
       ['a', 1],
@@ -53,17 +73,34 @@ describe('Map entries, index and events', () => {
     ])
   })
 
-  it.each([
-    null,
-    undefined,
-    ['a'],
-    ['a', 1, 2],
-    [{}, 1],
-    [NaN, 1],
-    [Infinity, 1],
-  ])('rejects an invalid snapshot entry %j', (entry) => {
-    const snapshot = mapSnapshot([entry as unknown as Entry])
-    expect(() => new SequencedMap(1, snapshot)).toThrow(SequencedError)
+  it('compacts null slots and later duplicate keys while restoring trusted state', () => {
+    const source = new Projection<Entry | null>(100)
+    source.insert([null, ['a', 1], null, ['a', 2], ['b', 3], null], 0)
+    try {
+      const map = new SequencedMap<string | number, unknown>(
+        1,
+        source.sequence()
+      )
+      maps.push(map)
+      expect([...map]).toEqual([
+        ['a', 1],
+        ['b', 3],
+      ])
+      const raw = new Projection<Entry | null>(2, map.toJSON())
+      try {
+        expect(raw.values()).toEqual([
+          ['a', 1],
+          ['b', 3],
+        ])
+      } finally {
+        raw.destroy()
+      }
+      map.set('b', 4)
+      expect(map.get('b')).toBe(4)
+      expect([...map.keys()]).toEqual(['a', 'b'])
+    } finally {
+      source.destroy()
+    }
   })
 
   it('uses Projection positions for reads and replaces existing keys in place', () => {
@@ -82,9 +119,9 @@ describe('Map entries, index and events', () => {
     expect(insert).not.toHaveBeenCalled()
     map.delete('a')
     expect(map.get('c')).toBe(3)
-    expect(read).toHaveBeenLastCalledWith(1)
+    expect(read).toHaveBeenLastCalledWith(2)
     map.set('d', 4)
-    expect(insert).toHaveBeenLastCalledWith([['d', 4]], 2)
+    expect(insert).toHaveBeenLastCalledWith([['d', 4]], 3)
     map.delete('d')
     expect(map.get('b')).toBe(20)
   })

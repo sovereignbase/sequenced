@@ -1,4 +1,4 @@
-import type { Gossip, Sequence } from '@sovereignbase/sequencer'
+import type { Gossip, Sequence, Change } from '@sovereignbase/sequencer'
 
 export type SequencedRegisterSnapshot<T> = Sequence<T>
 

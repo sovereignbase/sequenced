@@ -38,7 +38,7 @@ it('does not benchmark a substitute when the Map constructor is missing', () => 
   ).toThrow(TypeError)
 })
 
-it('uses reproducible random keys across the collection and adjusts deletion positions', () => {
+it('uses reproducible random keys across the collection and stable null-slot positions', () => {
   const fixture = prepareFixture('delete.random', 1024, 32, 17)
   expect(prepareFixture('delete.random', 1024, 32, 17).selected).toEqual(
     fixture.selected
@@ -49,11 +49,13 @@ it('uses reproducible random keys across the collection and adjusts deletion pos
   expect(new Set(fixture.keys).size).toBe(32)
   expect(Math.min(...fixture.selected)).toBeLessThan(256)
   expect(Math.max(...fixture.selected)).toBeGreaterThan(768)
-  const remaining = fixture.entries.slice()
-  fixture.positions.forEach((at, i) => {
-    expect(remaining.splice(at, 1)[0][0]).toBe(fixture.keys[i])
+  const remaining: Array<(typeof fixture.entries)[number] | null> =
+    fixture.entries.slice()
+  fixture.selected.forEach((at, i) => {
+    expect(remaining[at]![0]).toBe(fixture.keys[i])
+    remaining[at] = null
   })
-  expect(remaining).toEqual(fixture.expected)
+  expect(remaining.filter((entry) => entry !== null)).toEqual(fixture.expected)
 })
 
 it.each(['get.random', 'has.random'] as const)(
@@ -147,7 +149,9 @@ it.each([
         expected.delete(fixture.keys[i])
       const hydrated = new Projection(300, snapshot)
       try {
-        expect(hydrated.values()).toEqual([...expected])
+        expect(hydrated.values().filter((entry) => entry !== null)).toEqual([
+          ...expected,
+        ])
       } finally {
         hydrated.destroy()
       }

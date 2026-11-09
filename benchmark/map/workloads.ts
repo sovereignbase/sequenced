@@ -1,11 +1,10 @@
 import { deepStrictEqual, throws } from 'node:assert'
 import { Projection } from '@sovereignbase/sequencer'
-import type { Gossip } from '@sovereignbase/sequencer'
+import type { Gossip, Sequence } from '@sovereignbase/sequencer'
 import { SequencedMap } from '../../src/SequencedMap/class.js'
 import type {
   SerializableKey,
   SequencedMapEntry,
-  SequencedMapSnapshot,
 } from '../../src/SequencedMap/types/type.js'
 import { mapSnapshot } from '../../test/map/map.js'
 import { random } from '../random.js'
@@ -46,7 +45,8 @@ export const operations = [
 export type Operation = (typeof operations)[number]
 
 type Entry = SequencedMapEntry<SerializableKey, number>
-type Snapshot = SequencedMapSnapshot<SerializableKey, number>
+type Slot = Entry | null
+type Snapshot = Sequence<Slot>
 type MapReplica = SequencedMap<SerializableKey, number>
 export let resultSink: unknown
 let eventSink: unknown
@@ -129,19 +129,12 @@ export function prepareFixture(
   }
   const keys = selected.map((at) => entries[at][0])
   const deletion = operation.includes('delete')
-  const positions = selected.map((at, i) => {
-    let position = at
-    if (deletion)
-      for (let previous = 0; previous < i; previous++)
-        if (selected[previous] < at) position--
-    return position
-  })
   const payloads = Array.from({ length: batch }, (_, i): Entry => [
     operation.endsWith('.new') ? 'new-' + i : entries[selected[i]][0],
     -i - 1,
   ])
   const expected = new Map(entries)
-  const deltas: Gossip<Entry>[] = []
+  const deltas: Gossip<Slot>[] = []
   const states: Snapshot[] = []
   if (operation === 'merge.identical') {
     const identical = new Projection<Entry>(1, snapshot)
@@ -151,21 +144,22 @@ export function prepareFixture(
       identical.destroy()
     }
   } else if (operation.startsWith('apply.') || operation.startsWith('merge.')) {
-    const sender = new Projection<Entry>(200, snapshot)
+    const sender = new SequencedMap<SerializableKey, number>(200, snapshot)
     try {
       sender.apply([[1]])
+      sender.addEventListener('delta', ({ detail }) => deltas.push(detail))
       for (let i = 0; i < batch; i++) {
         if (deletion) {
-          deltas.push(sender.remove(positions[i], positions[i]))
+          sender.delete(keys[i])
           expected.delete(keys[i])
         } else if (operation.endsWith('.new')) {
-          deltas.push(sender.insert([payloads[i]], sender.length()))
+          sender.set(...payloads[i])
           expected.set(...payloads[i])
         } else {
-          deltas.push(sender.replace([payloads[i]], positions[i], positions[i]))
+          sender.set(...payloads[i])
           expected.set(...payloads[i])
         }
-        if (operation.startsWith('merge.')) states.push(sender.sequence())
+        if (operation.startsWith('merge.')) states.push(sender.toJSON())
       }
     } finally {
       sender.destroy()
@@ -184,7 +178,6 @@ export function prepareFixture(
     snapshot,
     keys,
     selected,
-    positions,
     payloads,
     expected: [...expected],
     deltas,
@@ -219,15 +212,14 @@ export function createWorkload(
     snapshot,
     keys,
     selected,
-    positions,
     payloads,
     deltas,
     states,
   } = fixture
-  let raw: Projection<Entry> | undefined
+  let raw: Projection<Slot> | undefined
   let map: MapReplica | undefined
   const create = () => {
-    if (implementation === 'plain') raw = new Projection<Entry>(1, snapshot)
+    if (implementation === 'plain') raw = new Projection<Slot>(1, snapshot)
     else {
       map = new Constructor!<SerializableKey, number>(1, snapshot)
       if (implementation === 'wrapper+listeners') listen(map)
@@ -257,22 +249,22 @@ export function createWorkload(
   switch (operation) {
     case 'get.random':
       call = raw
-        ? (i) => raw!.value(positions[i])?.[1]
+        ? (i) => raw!.value(selected[i])?.[1]
         : (i) => map!.get(keys[i])
       break
     case 'has.random':
       call = raw
-        ? (i) => raw!.value(positions[i]) !== undefined
+        ? (i) => raw!.value(selected[i]) !== undefined
         : (i) => map!.has(keys[i])
       break
     case 'set.random':
       call = raw
-        ? (i) => raw!.replace([payloads[i]], positions[i], positions[i])
+        ? (i) => raw!.replace([payloads[i]], selected[i], selected[i])
         : (i) => map!.set(...payloads[i])
       break
     case 'delete.random':
       call = raw
-        ? (i) => raw!.remove(positions[i], positions[i])
+        ? (i) => raw!.replace([null], selected[i], selected[i])
         : (i) => map!.delete(keys[i])
       break
     case 'set.new':
@@ -301,12 +293,12 @@ export function createWorkload(
       break
     case 'keys':
       call = raw
-        ? () => raw!.values().map(([key]) => key)
+        ? () => raw!.values().map((entry) => entry![0])
         : () => Array.from(map!.keys())
       break
     case 'values':
       call = raw
-        ? () => raw!.values().map(([, value]) => value)
+        ? () => raw!.values().map((entry) => entry![1])
         : () => Array.from(map!.values())
       break
     case 'entries':
@@ -319,7 +311,7 @@ export function createWorkload(
       break
     case 'forEach':
       call = raw
-        ? () => raw!.values().forEach(visitEntry)
+        ? () => (raw!.values() as Entry[]).forEach(visitEntry)
         : () => map!.forEach(visit)
       break
     case 'snapshot':
@@ -357,7 +349,7 @@ export function createWorkload(
           : 'Deno.customInspect'
       )
       call = raw
-        ? () => new Map(raw!.values())
+        ? () => new Map(raw!.values() as Entry[])
         : () => Reflect.apply(Reflect.get(map!, symbol), map, [])
       break
     }
@@ -398,7 +390,10 @@ export function createWorkload(
         else deepStrictEqual(map!.size, 0)
         return
       }
-      deepStrictEqual(raw ? raw.values() : Array.from(map!), fixture.expected)
+      deepStrictEqual(
+        raw ? raw.values().filter((entry) => entry !== null) : Array.from(map!),
+        fixture.expected
+      )
       if (operation === 'get.random') {
         let expected = 0
         for (let i = 0; i < batch; i++)
@@ -427,7 +422,8 @@ export function createWorkload(
         )
       if (operation === 'inspect.node' || operation === 'inspect.deno')
         deepStrictEqual(resultSink, new Map(entries))
-      if (operation === 'toStringTag') deepStrictEqual(resultSink, 'Map')
+      if (operation === 'toStringTag')
+        deepStrictEqual(resultSink, 'SequencedMap')
       if (
         operation === 'toJSON' ||
         (operation === 'snapshot' &&

@@ -63,11 +63,14 @@ const cases: Array<[string, (map: Subject) => unknown]> = [
       return { result, visited }
     },
   ],
-  ['String', (map) => String(map)],
-  ['Object toString', (map) => Object.prototype.toString.call(map)],
 ]
 
 describe('Map native equivalence for JSON keys', () => {
+  it('identifies the wrapper as SequencedMap', () => {
+    const map = create()
+    expect(String(map)).toBe('[object SequencedMap]')
+    expect(Object.prototype.toString.call(map)).toBe('[object SequencedMap]')
+  })
   it('exposes all native Map instance methods', () => {
     expect(Sequenced.Map).toBe(SequencedMap)
     const map = create()
@@ -254,7 +257,8 @@ describe('Map native equivalence for JSON keys', () => {
     -Infinity,
   ])('rejects non-JSON key %s without changing state', (key) => {
     const map = create(initial)
-    for (const method of ['get', 'has', 'delete', 'set'] as const)
+    expect(Reflect.apply(map.get, map, [key])).toBeUndefined()
+    for (const method of ['has', 'delete', 'set'] as const)
       expect(() => Reflect.apply(map[method], map, [key, 99])).toThrow(
         SequencedError
       )

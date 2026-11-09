@@ -8,7 +8,7 @@ type Entry = SequencedMapEntry<string | number, number>
 afterEach(() => vi.restoreAllMocks())
 
 describe('incremental Map patches', () => {
-  it('removes an entire duplicate group and shifts past hidden entries on local deletion', () => {
+  it('removes a remote duplicate group and preserves remaining keys after local deletion', () => {
     const source = new Projection<Entry>(2)
     const map = new SequencedMap<string | number, number>(1)
     source.apply([[1], [2]])
@@ -99,7 +99,7 @@ describe('incremental Map patches', () => {
     'matches first-entry Map semantics across batches of %i edits',
     (batch) => {
       for (let seed of [1, 17, 0xc0ffee, 0xffffffff]) {
-        const source = new Projection<Entry>(2)
+        const source = new Projection<Entry | null>(2)
         const map = new SequencedMap<string | number, number>(1)
         source.apply([[1], [2]])
         map.apply([[1], [2]])
@@ -120,7 +120,7 @@ describe('incremental Map patches', () => {
           })
         const next = () =>
           (seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0)
-        let pending: Gossip<Entry>[number][] = []
+        let pending: Gossip<Entry | null>[number][] = []
         try {
           for (let step = 0; step < 400; step++) {
             const length = source.length()
@@ -128,7 +128,10 @@ describe('incremental Map patches', () => {
             const at = next() % (length + (operation === 0 || !length ? 1 : 0))
             const entries = Array.from(
               { length: (next() % 4) + 1 },
-              (): Entry => [`key-${next() % 12}`, step]
+              (): Entry | null => {
+                const value = next()
+                return value % 7 === 0 ? null : [`key-${value % 12}`, step]
+              }
             )
             const delta =
               !length || operation === 0
@@ -145,8 +148,9 @@ describe('incremental Map patches', () => {
             map.apply(pending)
             pending = []
             const expected = new Map<string | number, number>()
-            for (const [key, value] of source.values())
-              if (!expected.has(key)) expected.set(key, value)
+            for (const entry of source.values())
+              if (entry !== null && !expected.has(entry[0]))
+                expected.set(...entry)
             expect([...map]).toEqual([...expected])
             expect(map.size).toBe(expected.size)
             expect([...map.keys()]).toEqual([...expected.keys()])

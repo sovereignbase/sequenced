@@ -2,12 +2,23 @@ import { Projection } from '@sovereignbase/sequencer'
 import type {
   SequencedRegisterEventMap,
   SequencedRegisterEventListenerFor,
+  SequencedRegisterSnapshot,
 } from './types/type.js'
 import { unknownError } from '../errors/unknown.js'
 
 export class SequencedRegister<T> {
   private readonly projection: Projection<T>
   private eventTarget?: EventTarget
+
+  /**
+   *  ██████╗██████╗ ██╗   ██╗██████╗
+   * ██╔════╝██╔══██╗██║   ██║██╔══██╗
+   * ██║     ██████╔╝██║   ██║██║  ██║
+   * ██║     ██╔══██╗██║   ██║██║  ██║
+   * ╚██████╗██║  ██║╚██████╔╝██████╔╝
+   *  ╚═════╝╚═╝  ╚═╝ ╚═════╝ ╚═════╝
+   */
+
   constructor(actorID: number, trustedSnapshot?: unknown) {
     this.projection = new Projection(actorID, trustedSnapshot)
   }
@@ -16,6 +27,13 @@ export class SequencedRegister<T> {
       return this.projection.value(0)
     } catch (cause) {
       throw unknownError(cause, 'SequencedRegister.read()')
+    }
+  }
+  occupied(): boolean {
+    try {
+      return this.projection.length() > 0
+    } catch (cause) {
+      throw unknownError(cause, 'SequencedRegister.occupied()')
     }
   }
   write(value: T) {
@@ -40,6 +58,123 @@ export class SequencedRegister<T> {
       throw unknownError(cause, 'SequencedRegister.delete()')
     }
   }
+
+  /**
+   * ██████╗ ███████╗██████╗ ██╗     ██╗ ██████╗ █████╗ ████████╗██╗ ██████╗ ███╗   ██╗
+   * ██╔══██╗██╔════╝██╔══██╗██║     ██║██╔════╝██╔══██╗╚══██╔══╝██║██╔═══██╗████╗  ██║
+   * ██████╔╝█████╗  ██████╔╝██║     ██║██║     ███████║   ██║   ██║██║   ██║██╔██╗ ██║
+   * ██╔══██╗██╔══╝  ██╔═══╝ ██║     ██║██║     ██╔══██║   ██║   ██║██║   ██║██║╚██╗██║
+   * ██║  ██║███████╗██║     ███████╗██║╚██████╗██║  ██║   ██║   ██║╚██████╔╝██║ ╚████║
+   * ╚═╝  ╚═╝╚══════╝╚═╝     ╚══════╝╚═╝ ╚═════╝╚═╝  ╚═╝   ╚═╝   ╚═╝ ╚═════╝ ╚═╝  ╚═══╝
+   */
+
+  /**
+   * Applies incoming gossip and emits visible changes and any reply gossip.
+   * @param delta The received replication data. Sequencer handles transport validation.
+   * @remarks This method does not throw.
+   */
+  apply(delta: unknown): void {
+    try {
+      const result = this.projection.apply(delta)
+      if (!result) return
+      if (result[0])
+        void this.dispatchEvent('change', result[0][2]?.[0] as T | undefined)
+      if (result[1]) void this.dispatchEvent('delta', result[1])
+    } catch {}
+  }
+
+  /**
+   * Merges another replica's complete sequence and emits the resulting events.
+   * @param snapshot The received replication state. Sequencer handles transport validation.
+   * @remarks This method does not throw.
+   */
+  merge(snapshot: unknown): void {
+    try {
+      const result = this.projection.merge(snapshot)
+      if (!result) return
+      if (result[0])
+        void this.dispatchEvent('change', result[0][2]?.[0] as T | undefined)
+      if (result[1]) void this.dispatchEvent('delta', result[1])
+    } catch {}
+  }
+
+  /**
+   * ██████╗ ███████╗██████╗ ███████╗██╗███████╗████████╗███████╗███╗   ██╗ ██████╗███████╗
+   * ██╔══██╗██╔════╝██╔══██╗██╔════╝██║██╔════╝╚══██╔══╝██╔════╝████╗  ██║██╔════╝██╔════╝
+   * ██████╔╝█████╗  ██████╔╝███████╗██║███████╗   ██║   █████╗  ██╔██╗ ██║██║     █████╗
+   * ██╔═══╝ ██╔══╝  ██╔══██╗╚════██║██║╚════██║   ██║   ██╔══╝  ██║╚██╗██║██║     ██╔══╝
+   * ██║     ███████╗██║  ██║███████║██║███████║   ██║   ███████╗██║ ╚████║╚██████╗███████╗
+   * ╚═╝     ╚══════╝╚═╝  ╚═╝╚══════╝╚═╝╚══════╝   ╚═╝   ╚══════╝╚═╝  ╚═══╝ ╚═════╝╚══════╝
+   */
+
+  /** Synchronously emits a `snapshot` event containing the current replication state. */
+  snapshot(): void {
+    void this.dispatchEvent('snapshot', this.toJSON())
+  }
+
+  /**
+   * Returns the complete replication state, including retained history.
+   * @returns Structural metadata as a numeric array and the retained element data.
+   * Used automatically by `JSON.stringify()`.
+   */
+  toJSON(): SequencedRegisterSnapshot<T> {
+    try {
+      const [meta, values] = this.projection.sequence()
+      return [Array.isArray(meta) ? meta : Array.from(meta), values]
+    } catch (cause) {
+      throw unknownError(cause, 'SequencedArray.toJSON()')
+    }
+  }
+
+  /**
+   * ██╗     ██╗███████╗███████╗ ██████╗██╗   ██╗ ██████╗██╗     ███████╗
+   * ██║     ██║██╔════╝██╔════╝██╔════╝╚██╗ ██╔╝██╔════╝██║     ██╔════╝
+   * ██║     ██║█████╗  █████╗  ██║      ╚████╔╝ ██║     ██║     █████╗
+   * ██║     ██║██╔══╝  ██╔══╝  ██║       ╚██╔╝  ██║     ██║     ██╔══╝
+   * ███████╗██║██║     ███████╗╚██████╗   ██║   ╚██████╗███████╗███████╗
+   * ╚══════╝╚═╝╚═╝     ╚══════╝ ╚═════╝   ╚═╝    ╚═════╝╚══════╝╚══════╝
+   */
+
+  retire(actorID: number) {}
+
+  /** Releases the replica's native sequence state. */
+  destroy(): void {
+    try {
+      this.projection.destroy()
+    } catch (cause) {
+      throw unknownError(cause, 'SequencedArray.destroy()')
+    }
+  }
+
+  /**
+   * ██╗   ██╗████████╗██╗██╗     ██╗████████╗██╗███████╗███████╗
+   * ██║   ██║╚══██╔══╝██║██║     ██║╚══██╔══╝██║██╔════╝██╔════╝
+   * ██║   ██║   ██║   ██║██║     ██║   ██║   ██║█████╗  ███████╗
+   * ██║   ██║   ██║   ██║██║     ██║   ██║   ██║██╔══╝  ╚════██║
+   * ╚██████╔╝   ██║   ██║███████╗██║   ██║   ██║███████╗███████║
+   *  ╚═════╝    ╚═╝   ╚═╝╚══════╝╚═╝   ╚═╝   ╚═╝╚══════╝╚══════╝
+   */
+
+  [Symbol.for('nodejs.util.inspect.custom')](): T | undefined {
+    return this.read()
+  }
+  [Symbol.for('Deno.customInspect')](): T | undefined {
+    return this.read()
+  }
+
+  /** The built-in object tag, `SequencedRegister`. */
+  get [Symbol.toStringTag](): string {
+    return 'SequencedRegister'
+  }
+
+  /**
+   * ███████╗██╗   ██╗███████╗███╗   ██╗████████╗    ████████╗ █████╗ ██████╗  ██████╗ ███████╗████████╗
+   * ██╔════╝██║   ██║██╔════╝████╗  ██║╚══██╔══╝    ╚══██╔══╝██╔══██╗██╔══██╗██╔════╝ ██╔════╝╚══██╔══╝
+   * █████╗  ██║   ██║█████╗  ██╔██╗ ██║   ██║          ██║   ███████║██████╔╝██║  ███╗█████╗     ██║
+   * ██╔══╝  ╚██╗ ██╔╝██╔══╝  ██║╚██╗██║   ██║          ██║   ██╔══██║██╔══██╗██║   ██║██╔══╝     ██║
+   * ███████╗ ╚████╔╝ ███████╗██║ ╚████║   ██║          ██║   ██║  ██║██║  ██║╚██████╔╝███████╗   ██║
+   * ╚══════╝  ╚═══╝  ╚══════╝╚═╝  ╚═══╝   ╚═╝          ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝   ╚═╝
+   */
 
   /**
    * Registers a callback or listener object for a typed document event.

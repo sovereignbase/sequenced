@@ -102,7 +102,7 @@ describe.each(['Array', 'Map', 'Text'] as const)(
           ? [
               ['#value()', 'value', (subject) => subject.get('a')],
               ['set()', 'replace', (subject) => subject.set('a', 2)],
-              ['delete()', 'remove', (subject) => subject.delete('a')],
+              ['delete()', 'replace', (subject) => subject.delete('a')],
               ['clear()', 'remove', (subject) => subject.clear()],
               ['toJSON()', 'sequence', (subject) => subject.toJSON()],
               ['destroy()', 'destroy', (subject) => subject.destroy()],
