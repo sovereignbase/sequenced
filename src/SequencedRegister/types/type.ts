@@ -1,15 +1,16 @@
-import type { Gossip, Sequence, Change } from '@sovereignbase/sequencer'
+import type { Gossip, Sequence } from '@sovereignbase/sequencer'
 
-export type SequencedRegisterSnapshot<T> = Sequence<T>
-
-export type SequencedRegisterChange<T> = Readonly<T | undefined>
-
+/** Maps register event names to their detail types. */
 export type SequencedRegisterEventMap<T> = {
-  snapshot: SequencedRegisterSnapshot<T>
-  change: SequencedRegisterChange<T>
+  /** The complete replication state. */
+  snapshot: Sequence<T>
+  /** The current value after a visible change. */
+  change: Readonly<T | undefined>
+  /** Replication data to send to other replicas. */
   delta: Gossip<T>
 }
 
+/** A callback or event listener object for a register event. */
 export type SequencedRegisterEventListener<
   T,
   K extends keyof SequencedRegisterEventMap<T>,
@@ -17,6 +18,7 @@ export type SequencedRegisterEventListener<
   | ((event: CustomEvent<SequencedRegisterEventMap<T>[K]>) => void)
   | { handleEvent(event: CustomEvent<SequencedRegisterEventMap<T>[K]>): void }
 
+/** Resolves the listener type for a register event name. */
 export type SequencedRegisterEventListenerFor<
   T,
   K extends string,

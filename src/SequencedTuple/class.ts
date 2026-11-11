@@ -3,11 +3,20 @@ import type {
   SequencedTupleEventMap,
   SequencedTupleEventListenerFor,
   SequencedTupleSnapshot,
+  TupleIndex,
 } from './types/type.js'
 import { unknownError } from '../errors/unknown.js'
 
-export class SequencedTuple<T> {
-  private readonly projection: Projection<T>
+/**
+ * A replicated tuple with fixed indices and independently mutable values.
+ *
+ * Each index retains its declared value type. Changes can be synchronized
+ * between replicas without shifting other indices.
+ *
+ * @typeParam T The tuple's value types.
+ */
+export class SequencedTuple<T extends unknown[]> {
+  private readonly projection: Projection<T[number]>
   private eventTarget?: EventTarget
 
   /**
@@ -19,46 +28,63 @@ export class SequencedTuple<T> {
    *  ╚═════╝╚═╝  ╚═╝ ╚═════╝ ╚═════╝
    */
 
-  constructor(actorID: number, trustedSnapshot?: unknown) {
+  /**
+   * Creates a replicated tuple from initial values or a trusted snapshot.
+   *
+   * @param actorID The unique identifier of the local actor.
+   * @param defaults The initial values, determining the tuple's length and types.
+   * @param trustedSnapshot An optional snapshot used to restore replication state.
+   */
+  constructor(actorID: number, defaults: [...T], trustedSnapshot?: unknown) {
     this.projection = new Projection(actorID, trustedSnapshot, {
       enabled: 1,
-      maxLength: 1,
+      maxLength: defaults.length,
     })
-  }
 
-  read(): Readonly<T | undefined> {
-    try {
-      return this.projection.value(0)
-    } catch (cause) {
-      throw unknownError(cause, 'SequencedTuple.read()')
+    if (!trustedSnapshot) {
+      void this.projection.insert(defaults, 0)
     }
   }
 
-  occupied(): boolean {
+  /**
+   * Returns the value at the specified index.
+   * @param index The index to read.
+   * @returns The value, or `undefined` if the index is empty.
+   */
+  get<I extends TupleIndex<T>>(index: I): Readonly<T[I]> | undefined {
     try {
-      return this.projection.length() > 0
+      return this.projection.value(index) as Readonly<T[I]> | undefined
     } catch (cause) {
-      throw unknownError(cause, 'SequencedTuple.occupied()')
+      throw unknownError(cause, 'SequencedTuple.get()')
     }
   }
 
-  write(value: T) {
+  /**
+   * Assigns a value to the specified index.
+   * @param index The index to update.
+   * @param value The new value.
+   */
+  set<I extends TupleIndex<T>>(index: I, value: T[I]): void {
     try {
-      const delta = this.projection.replace([value], 0, 0)
+      const delta = this.projection.replace([value], index, index)
       if (this.eventTarget) {
-        void this.dispatchEvent('change', value)
+        void this.dispatchEvent('change', [[index, index + 1, [value]]])
         void this.dispatchEvent('delta', delta)
       }
     } catch (cause) {
-      throw unknownError(cause, 'SequencedTuple.write()')
+      throw unknownError(cause, 'SequencedTuple.set()')
     }
   }
 
-  delete() {
+  /**
+   * Removes the value at the specified index without shifting other indices.
+   * @param index The index to clear.
+   */
+  delete<I extends TupleIndex<T>>(index: I): void {
     try {
-      const delta = this.projection.remove(0, 0)
+      const delta = this.projection.remove(index, index)
       if (this.eventTarget) {
-        void this.dispatchEvent('change', undefined)
+        void this.dispatchEvent('change', [[index, index + 1, [undefined]]])
         void this.dispatchEvent('delta', delta)
       }
     } catch (cause) {
@@ -72,35 +98,39 @@ export class SequencedTuple<T> {
    * ██████╔╝█████╗  ██████╔╝██║     ██║██║     ███████║   ██║   ██║██║   ██║██╔██╗ ██║
    * ██╔══██╗██╔══╝  ██╔═══╝ ██║     ██║██║     ██╔══██║   ██║   ██║██║   ██║██║╚██╗██║
    * ██║  ██║███████╗██║     ███████╗██║╚██████╗██║  ██║   ██║   ██║╚██████╔╝██║ ╚████║
-   * ╚═╝  ╚═╝╚══════╝╚═╝     ╚══════╝╚═╝ ╚═════╝╚═╝  ╚═╝   ╚═╝   ╚═╝ ╚═════╝ ╚═╝  ╚═══╝
+   * ╚═╝  ╚═╝╚══════╝╚═╝     ╚══════╝╚═╝ ╚═════╝╚═╝  ╚═╝   ╚═╝   ╚═╝ ╚═════╝ ╚═════╝
    */
 
   /**
-   * Applies incoming gossip and emits visible changes and any reply gossip.
-   * @param delta The received replication data. Sequencer handles transport validation.
+   * Applies received replication data to the tuple.
+   *
+   * Emits `change` for visible changes and `delta` for any reply gossip.
+   *
+   * @param delta The received replication data.
    * @remarks This method does not throw.
    */
   apply(delta: unknown): void {
     try {
       const result = this.projection.apply(delta)
       if (!result) return
-      if (result[0])
-        void this.dispatchEvent('change', result[0][2]?.[0] as T | undefined)
+      if (result[0]) void this.dispatchEvent('change', result[0])
       if (result[1]) void this.dispatchEvent('delta', result[1])
     } catch {}
   }
 
   /**
-   * Merges another replica's complete sequence and emits the resulting events.
-   * @param snapshot The received replication state. Sequencer handles transport validation.
+   * Merges another replica's snapshot into the tuple.
+   *
+   * Emits `change` for visible changes and `delta` for any reply gossip.
+   *
+   * @param snapshot The replication state to merge.
    * @remarks This method does not throw.
    */
   merge(snapshot: unknown): void {
     try {
       const result = this.projection.merge(snapshot)
       if (!result) return
-      if (result[0])
-        void this.dispatchEvent('change', result[0][2]?.[0] as T | undefined)
+      if (result[0]) void this.dispatchEvent('change', result[0])
       if (result[1]) void this.dispatchEvent('delta', result[1])
     } catch {}
   }
@@ -111,18 +141,21 @@ export class SequencedTuple<T> {
    * ██████╔╝█████╗  ██████╔╝███████╗██║███████╗   ██║   █████╗  ██╔██╗ ██║██║     █████╗
    * ██╔═══╝ ██╔══╝  ██╔══██╗╚════██║██║╚════██║   ██║   ██╔══╝  ██║╚██╗██║██║     ██╔══╝
    * ██║     ███████╗██║  ██║███████║██║███████║   ██║   ███████╗██║ ╚████║╚██████╗███████╗
-   * ╚═╝     ╚══════╝╚═╝  ╚═╝╚══════╝╚═╝╚══════╝   ╚═╝   ╚══════╝╚═╝  ╚═══╝ ╚═════╝╚══════╝
+   * ╚═╝     ╚══════╝╚═╝  ╚═╝╚══════╝╚═╝╚═════╝   ╚═╝   ╚══════╝╚═╝  ╚═══╝ ╚═════╝╚══════╝
    */
 
-  /** Synchronously emits a `snapshot` event containing the current replication state. */
+  /** Dispatches a `snapshot` event containing the current replication state. */
   snapshot(): void {
     void this.dispatchEvent('snapshot', this.toJSON())
   }
 
   /**
-   * Returns the complete replication state, including retained history.
-   * @returns Structural metadata as a numeric array and the retained element data.
-   * Used automatically by `JSON.stringify()`.
+   * Returns a snapshot of the tuple's complete replication state.
+   *
+   * Includes the history required to restore or synchronize a replica.
+   * Called automatically by `JSON.stringify()`.
+   *
+   * @returns The tuple's replication snapshot.
    */
   toJSON(): SequencedTupleSnapshot<T> {
     try {
@@ -138,10 +171,10 @@ export class SequencedTuple<T> {
    * ██║     ██║█████╗  █████╗  ██║      ╚████╔╝ ██║     ██║     █████╗
    * ██║     ██║██╔══╝  ██╔══╝  ██║       ╚██╔╝  ██║     ██║     ██╔══╝
    * ███████╗██║██║     ███████╗╚██████╗   ██║   ╚██████╗███████╗███████╗
-   * ╚══════╝╚═╝╚═╝     ╚══════╝ ╚═════╝   ╚═╝    ╚═════╝╚══════╝╚══════╝
+   * ╚══════╝╚═╝╚══════╝╚═════╝╚═════╝    ╚════╝╚═════╝╚══════╝╚══════╝
    */
 
-  /** Releases resources held by the map. */
+  /** Releases the resources associated with this tuple. */
   destroy(): void {
     try {
       void this.projection.destroy()
@@ -151,10 +184,12 @@ export class SequencedTuple<T> {
   }
 
   /**
-   * Retires an actor so its acknowledgements are no longer required for compaction.
-   * The retirement decision must be applied separately to each replica.
-   * @param actorID The actor to retire.
-   * @throws {SequencedError} If retirement fails.
+   * Retires an actor from replication acknowledgements.
+   *
+   * Retired actors are no longer required to acknowledge history for compaction.
+   * The retirement must be applied separately to each replica.
+   *
+   * @param actorID The identifier of the actor to retire.
    */
   retire(actorID: number): void {
     try {
@@ -173,14 +208,17 @@ export class SequencedTuple<T> {
    *  ╚═════╝    ╚═╝   ╚═╝╚══════╝╚═╝   ╚═╝   ╚═╝╚══════╝╚══════╝
    */
 
-  [Symbol.for('nodejs.util.inspect.custom')](): T | undefined {
-    return this.read()
-  }
-  [Symbol.for('Deno.customInspect')](): T | undefined {
-    return this.read()
+  /** Returns the tuple's visible values for Node.js inspection. */
+  [Symbol.for('nodejs.util.inspect.custom')](): Array<T[number] | undefined> {
+    return this.projection.values()
   }
 
-  /** The built-in object tag, `SequencedTuple`. */
+  /** Returns the tuple's visible values for Deno inspection. */
+  [Symbol.for('Deno.customInspect')](): Array<T[number] | undefined> {
+    return this.projection.values()
+  }
+
+  /** A string identifying this object as a `SequencedTuple`. */
   get [Symbol.toStringTag](): string {
     return 'SequencedTuple'
   }
@@ -195,10 +233,11 @@ export class SequencedTuple<T> {
    */
 
   /**
-   * Registers a callback or listener object for a typed document event.
-   * @param type The event name.
-   * @param listener The listener to register; `null` is ignored.
-   * @param options A capture flag or options such as `once` and `signal`.
+   * Registers an event listener for the specified event type.
+   *
+   * @param type The event type.
+   * @param listener The callback or listener object to register.
+   * @param options An optional capture flag or event listener options.
    */
   addEventListener<K extends keyof SequencedTupleEventMap<T>>(
     type: K,
@@ -217,10 +256,11 @@ export class SequencedTuple<T> {
   }
 
   /**
-   * Removes a listener with the matching event name, identity and capture flag.
-   * @param type The event name.
-   * @param listener The previously registered listener.
-   * @param options The capture flag, directly or within listener options.
+   * Removes a previously registered event listener.
+   *
+   * @param type The event type.
+   * @param listener The callback or listener object to remove.
+   * @param options An optional capture flag or event listener options.
    */
   removeEventListener<K extends keyof SequencedTupleEventMap<T>>(
     type: K,
@@ -239,9 +279,10 @@ export class SequencedTuple<T> {
   }
 
   /**
-   * Synchronously dispatches a typed `CustomEvent` to registered listeners.
-   * @param type The event name.
-   * @param detail The value exposed as `event.detail`.
+   * Dispatches a synchronous `CustomEvent` of the specified type.
+   *
+   * @param type The event type.
+   * @param detail The data associated with the event.
    */
   dispatchEvent<K extends keyof SequencedTupleEventMap<T>>(
     type: K,
