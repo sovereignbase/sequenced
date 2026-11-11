@@ -74,7 +74,7 @@
     "typedoc": "^0.28.20",
     "typescript": "^6.0.3",
     "vitest": "^5.1.0",
-    "wrangler": "^4.159.0",
+    "wrangler": "^4.160.0",
     "ws": "^8.22.2"
   },
   "repository": {
@@ -87,12 +87,12 @@
   "homepage": "https://sovereignbase.dev/sequenced",
   "dependencies": {
     "@sovereignbase/bytecodec": "^2.0.1",
-    "@sovereignbase/sequencer": "1.1.1"
+    "@sovereignbase/sequencer": "1.2.3"
   },
   "allowScripts": {
-    "workerd@1.20261109.1": true,
     "bun@1.4.4": true,
     "deno@2.9.6": true,
-    "esbuild@0.28.2": true
+    "esbuild@0.28.2": true,
+    "workerd@1.20261110.1": true
   }
 }

@@ -20,8 +20,12 @@ export class SequencedRegister<T> {
    */
 
   constructor(actorID: number, trustedSnapshot?: unknown) {
-    this.projection = new Projection(actorID, trustedSnapshot)
+    this.projection = new Projection(actorID, trustedSnapshot, {
+      enabled: 1,
+      maxLength: 1,
+    })
   }
+
   read(): Readonly<T | undefined> {
     try {
       return this.projection.value(0)
@@ -29,6 +33,7 @@ export class SequencedRegister<T> {
       throw unknownError(cause, 'SequencedRegister.read()')
     }
   }
+
   occupied(): boolean {
     try {
       return this.projection.length() > 0
@@ -36,9 +41,10 @@ export class SequencedRegister<T> {
       throw unknownError(cause, 'SequencedRegister.occupied()')
     }
   }
+
   write(value: T) {
     try {
-      const delta = this.projection.replace([value])
+      const delta = this.projection.replace([value], 0, 0)
       if (this.eventTarget) {
         void this.dispatchEvent('change', value)
         void this.dispatchEvent('delta', delta)
@@ -47,9 +53,10 @@ export class SequencedRegister<T> {
       throw unknownError(cause, 'SequencedRegister.write()')
     }
   }
+
   delete() {
     try {
-      const delta = this.projection.remove()
+      const delta = this.projection.remove(0, 0)
       if (this.eventTarget) {
         void this.dispatchEvent('change', undefined)
         void this.dispatchEvent('delta', delta)
@@ -119,10 +126,9 @@ export class SequencedRegister<T> {
    */
   toJSON(): SequencedRegisterSnapshot<T> {
     try {
-      const [meta, values] = this.projection.sequence()
-      return [Array.isArray(meta) ? meta : Array.from(meta), values]
+      return this.projection.sequence()
     } catch (cause) {
-      throw unknownError(cause, 'SequencedArray.toJSON()')
+      throw unknownError(cause, 'SequencedRegister.toJSON()')
     }
   }
 
@@ -135,14 +141,26 @@ export class SequencedRegister<T> {
    * ╚══════╝╚═╝╚═╝     ╚══════╝ ╚═════╝   ╚═╝    ╚═════╝╚══════╝╚══════╝
    */
 
-  retire(actorID: number) {}
-
-  /** Releases the replica's native sequence state. */
+  /** Releases resources held by the map. */
   destroy(): void {
     try {
-      this.projection.destroy()
+      void this.projection.destroy()
     } catch (cause) {
-      throw unknownError(cause, 'SequencedArray.destroy()')
+      throw unknownError(cause, 'SequencedRegister.destroy()')
+    }
+  }
+
+  /**
+   * Retires an actor so its acknowledgements are no longer required for compaction.
+   * The retirement decision must be applied separately to each replica.
+   * @param actorID The actor to retire.
+   * @throws {SequencedError} If retirement fails.
+   */
+  retire(actorID: number): void {
+    try {
+      void this.projection.retire(actorID)
+    } catch (cause) {
+      throw unknownError(cause, 'SequencedRegister.retire()')
     }
   }
 
@@ -188,7 +206,7 @@ export class SequencedRegister<T> {
     options?: boolean | AddEventListenerOptions
   ): void {
     try {
-      ;(this.eventTarget ??= new EventTarget()).addEventListener(
+      void (this.eventTarget ??= new EventTarget()).addEventListener(
         type,
         listener as EventListenerOrEventListenerObject | null,
         options
@@ -210,7 +228,7 @@ export class SequencedRegister<T> {
     options?: boolean | EventListenerOptions
   ): void {
     try {
-      this.eventTarget?.removeEventListener(
+      void this.eventTarget?.removeEventListener(
         type,
         listener as EventListenerOrEventListenerObject | null,
         options
@@ -230,7 +248,7 @@ export class SequencedRegister<T> {
     detail: SequencedRegisterEventMap<T>[K]
   ): void {
     try {
-      this.eventTarget?.dispatchEvent(new CustomEvent(type, { detail }))
+      void this.eventTarget?.dispatchEvent(new CustomEvent(type, { detail }))
     } catch (cause) {
       throw unknownError(cause, 'SequencedRegister.dispatchEvent()')
     }

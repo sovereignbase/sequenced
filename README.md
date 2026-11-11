@@ -18,6 +18,8 @@ Replicated Array, Map, Register and Text implementations built on [Sequencer](ht
   - [Usage](#usage-2) · [Errors](#errors-2) · [Benchmarks](#benchmarks-2) · [Tests](#tests-2)
 - [Text](#text)
   - [Usage](#usage-2) · [Errors](#errors-2) · [Benchmarks](#benchmarks-2) · [Tests](#tests-2)
+- [Tuple](#tuple)
+  - [Usage](#usage-2) · [Errors](#errors-2) · [Benchmarks](#benchmarks-2) · [Tests](#tests-2)
 - [License](#license)
 
 ## Array
