@@ -1,6 +1,7 @@
 import { SequencedArray } from './SequencedArray/class.js'
 import { SequencedMap } from './SequencedMap/class.js'
 import { SequencedRegister } from './SequencedRegister/class.js'
+import { SequencedStruct } from './SequencedStruct/class.js'
 import { SequencedText } from './SequencedText/class.js'
 import { SequencedTuple } from './SequencedTuple/class.js'
 
@@ -8,6 +9,7 @@ export type {
   SequencedArray,
   SequencedMap,
   SequencedRegister,
+  SequencedStruct,
   SequencedText,
   SequencedTuple,
 }
@@ -47,6 +49,8 @@ export class Sequenced {
   static readonly Map = SequencedMap
   /** */
   static readonly Register = SequencedRegister
+  /** */
+  static readonly Struct = SequencedStruct
   /** Creates a text document whose positions are UTF-16 code unit offsets. */
   static readonly Text = SequencedText
   /** */
