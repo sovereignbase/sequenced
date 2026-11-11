@@ -93,6 +93,48 @@ export class SequencedRegister<T> {
   }
 
   /**
+   * Returns the current register value.
+   * @returns The value, or `undefined` if the register is empty.
+   */
+  valueOf(): Readonly<T | undefined> {
+    return this.read()
+  }
+
+  /**
+   * Returns a string representation of the current register value.
+   * @returns The value converted to a string.
+   */
+  toString(): string {
+    return String(this.read())
+  }
+
+  /**
+   * Converts the register to a primitive value.
+   *
+   * Preserves primitive values for default and numeric conversions.
+   * Object values and string conversions use their string representation.
+   *
+   * @param hint The preferred primitive type.
+   * @returns The converted primitive value.
+   */
+  [Symbol.toPrimitive](
+    hint: 'default' | 'number' | 'string'
+  ): string | number | bigint | boolean | symbol | null | undefined {
+    const value = this.read()
+
+    if (
+      hint === 'string' ||
+      (value !== null &&
+        (typeof value === 'object' || typeof value === 'function'))
+    ) {
+      return String(value)
+    }
+
+    return value as
+      string | number | bigint | boolean | symbol | null | undefined
+  }
+
+  /**
    * ██████╗ ███████╗██████╗ ██╗     ██╗ ██████╗ █████╗ ████████╗██╗ ██████╗ ███╗   ██╗
    * ██╔══██╗██╔════╝██╔══██╗██║     ██║██╔════╝██╔══██╗╚══██╔══╝██║██╔═══██╗████╗  ██║
    * ██████╔╝█████╗  ██████╔╝██║     ██║██║     ███████║   ██║   ██║██║   ██║██╔██╗ ██║

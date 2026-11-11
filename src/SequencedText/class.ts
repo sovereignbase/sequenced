@@ -19,14 +19,14 @@ export class SequencedText {
   /** The event target, allocated when the first listener is registered. */
   declare private eventTarget: EventTarget
 
-  /** Reads one projection value and scopes unexpected failures to this library. */
-  #value(at: number): string | undefined {
-    try {
-      return this.projection.value(at)
-    } catch (cause) {
-      throw unknownError(cause, 'SequencedText.#value()')
-    }
-  }
+  /**
+   *  ██████╗██████╗ ██╗   ██╗██████╗
+   * ██╔════╝██╔══██╗██║   ██║██╔══██╗
+   * ██║     ██████╔╝██║   ██║██║  ██║
+   * ██║     ██╔══██╗██║   ██║██║  ██║
+   * ╚██████╗██║  ██║╚██████╔╝██████╔╝
+   *  ╚═════╝╚═╝  ╚═╝ ╚═════╝ ╚═════╝
+   */
 
   /**
    * Creates an empty text document or restores a replication snapshot.
@@ -40,24 +40,6 @@ export class SequencedText {
     } catch (cause) {
       throw unknownError(cause, 'SequencedText.constructor()')
     }
-  }
-  /**
-   * Applies incoming gossip and emits visible text edits and any reply gossip.
-   * @param delta The received replication data. Sequencer handles transport validation.
-   * @remarks This method does not throw.
-   */
-  apply(delta: unknown): void {
-    try {
-      const result = this.projection.apply(delta)
-      if (result?.[0])
-        void this.dispatchEvent(
-          'change',
-          result[0].map(([start, end, values]) =>
-            values ? [start, end, values.join('')] : [start, end]
-          )
-        )
-      if (result?.[1]) void this.dispatchEvent('delta', result[1])
-    } catch {}
   }
 
   /**
@@ -77,39 +59,6 @@ export class SequencedText {
     } catch (cause) {
       throw unknownError(cause, 'SequencedText.insert()')
     }
-  }
-
-  /**
-   * Returns the length of the visible text in UTF-16 code units.
-   */
-  get length(): number {
-    try {
-      return this.projection.length()
-    } catch (cause) {
-      throw unknownError(cause, 'SequencedText.length()')
-    }
-  }
-
-  /**
-   * Merges another replica's complete sequence and emits the resulting events.
-   * @param snapshot The received replication state. Sequencer handles transport validation.
-   * @remarks This method does not throw.
-   */
-  merge(snapshot: unknown): void {
-    try {
-      const result = this.projection.merge(snapshot)
-      if (!result) return
-
-      const [change, delta] = result
-
-      void this.dispatchEvent(
-        'change',
-        change.map(([start, end, values]) =>
-          values ? [start, end, values.join('')] : [start, end]
-        )
-      )
-      if (delta) void this.dispatchEvent('delta', delta)
-    } catch {}
   }
 
   /**
@@ -166,6 +115,115 @@ export class SequencedText {
   }
 
   /**
+   * Returns the visible text as a string.
+   */
+  valueOf(): string {
+    try {
+      return this.projection.values().join('')
+    } catch (cause) {
+      throw unknownError(cause, 'SequencedText.valueOf()')
+    }
+  }
+
+  /**
+   * Returns the visible text as a string.
+   */
+  toString(): string {
+    return this.valueOf()
+  }
+
+  /**
+   * Returns the length of the visible text in UTF-16 code units.
+   */
+  get length(): number {
+    try {
+      return this.projection.length()
+    } catch (cause) {
+      throw unknownError(cause, 'SequencedText.length()')
+    }
+  }
+
+  /**
+   * Returns the visible text when the document is converted to a primitive value.
+   */
+  [Symbol.toPrimitive](): string {
+    return this.valueOf()
+  }
+
+  /**
+   * Returns a live iterator over visible UTF-16 code units in document order.
+   */
+  *[Symbol.iterator](): IterableIterator<string> {
+    for (let index = 0; index < this.length; index++) {
+      const value = this.value(index)
+      if (typeof value !== 'string') continue
+      yield value
+    }
+  }
+
+  /**
+   * ██████╗ ███████╗██████╗ ██╗     ██╗ ██████╗ █████╗ ████████╗██╗ ██████╗ ███╗   ██╗
+   * ██╔══██╗██╔════╝██╔══██╗██║     ██║██╔════╝██╔══██╗╚══██╔══╝██║██╔═══██╗████╗  ██║
+   * ██████╔╝█████╗  ██████╔╝██║     ██║██║     ███████║   ██║   ██║██║   ██║██╔██╗ ██║
+   * ██╔══██╗██╔══╝  ██╔═══╝ ██║     ██║██║     ██╔══██║   ██║   ██║██║   ██║██║╚██╗██║
+   * ██║  ██║███████╗██║     ███████╗██║╚██████╗██║  ██║   ██║   ██║╚██████╔╝██║ ╚████║
+   * ╚═╝  ╚═╝╚══════╝╚═╝     ╚══════╝╚═╝ ╚═════╝╚═╝  ╚═╝   ╚═╝   ╚═╝ ╚═════╝ ╚═════╝
+   */
+
+  /**
+   * Applies incoming gossip and emits visible text edits and any reply gossip.
+   * @param delta The received replication data. Sequencer handles transport validation.
+   * @remarks This method does not throw.
+   */
+  apply(delta: unknown): void {
+    try {
+      const result = this.projection.apply(delta)
+      if (!result) return
+      const [change, gossip] = result
+      if (change)
+        void this.dispatchEvent(
+          'change',
+          change.map(([start, end, values]) =>
+            values ? [start, end, values.join('')] : [start, end]
+          )
+        )
+      if (gossip) void this.dispatchEvent('delta', gossip)
+    } catch {}
+  }
+
+  /**
+   * Merges another replica's complete sequence and emits the resulting events.
+   * @param snapshot The received replication state. Sequencer handles transport validation.
+   * @remarks This method does not throw.
+   */
+  merge(snapshot: unknown): void {
+    try {
+      const result = this.projection.merge(snapshot)
+      if (!result) return
+
+      const [change, delta] = result
+
+      if (change)
+        void this.dispatchEvent(
+          'change',
+          change.map(([start, end, values]) =>
+            values ? [start, end, values.join('')] : [start, end]
+          )
+        )
+      if (delta) void this.dispatchEvent('delta', delta)
+    } catch {}
+  }
+
+  /**
+   * ██████╗ ███████╗██████╗ ███████╗██╗███████╗████████╗███████╗███╗   ██╗ ██████╗███████╗
+   * ██╔══██╗██╔════╝██╔══██╗██╔════╝██║██╔════╝╚══██╔══╝██╔════╝████╗  ██║██╔════╝██╔════╝
+   * ██████╔╝█████╗  ██████╔╝███████╗██║███████╗   ██║   █████╗  ██╔██╗ ██║██║     █████╗
+   * ██╔═══╝ ██╔══╝  ██╔══██╗╚════██║██║╚════██║   ██║   ██╔══╝  ██║╚██╗██║██║     ██╔══╝
+   * ██║     ███████╗██║  ██║███████║██║███████║   ██║   ███████╗██║ ╚████║╚██████╗███████╗
+   * ╚═╝     ╚══════╝╚═╝  ╚═╝╚══════╝╚═╝╚══════╝   ╚═╝   ╚══════╝╚═╝  ╚═══╝ ╚═════╝╚══════╝
+   */
+
+  /**
    * Synchronously emits a `snapshot` event containing the current replication state.
    */
   snapshot(): void {
@@ -180,37 +238,54 @@ export class SequencedText {
    */
   toJSON(): SequencedTextSnapshot {
     try {
-      const [meta, values] = this.projection.sequence(true)
-      return [Array.isArray(meta) ? meta : Array.from(meta), values]
+      return this.projection.sequence(true)
     } catch (cause) {
       throw unknownError(cause, 'SequencedText.toJSON()')
     }
   }
 
   /**
-   * Returns the visible text as a string.
+   * ██╗     ██╗███████╗███████╗ ██████╗██╗   ██╗ ██████╗██╗     ███████╗
+   * ██║     ██║██╔════╝██╔════╝██╔════╝╚██╗ ██╔╝██╔════╝██║     ██╔════╝
+   * ██║     ██║█████╗  █████╗  ██║      ╚████╔╝ ██║     ██║     █████╗
+   * ██║     ██║██╔══╝  ██╔══╝  ██║       ╚██╔╝  ██║     ██║     ██╔══╝
+   * ███████╗██║██║     ███████╗╚██████╗   ██║   ╚██████╗███████╗███████╗
+   * ╚══════╝╚═╝╚═╝     ╚══════╝ ╚═════╝   ╚═╝    ╚═════╝╚══════╝╚══════╝
    */
-  toString(): string {
-    return this.valueOf()
-  }
 
-  /**
-   * Returns the visible text as a string.
-   */
-  valueOf(): string {
+  /** Releases the resources associated with this register. */
+  destroy(): void {
     try {
-      return this.projection.values().join('')
+      void this.projection.destroy()
     } catch (cause) {
-      throw unknownError(cause, 'SequencedText.valueOf()')
+      throw unknownError(cause, 'SequencedText.destroy()')
     }
   }
 
   /**
-   * Returns the visible text when the document is converted to a primitive value.
+   * Retires an actor from replication acknowledgements.
+   *
+   * Retired actors are no longer required to acknowledge history for compaction.
+   * The retirement must be applied separately to each replica.
+   *
+   * @param actorID The identifier of the actor to retire.
    */
-  [Symbol.toPrimitive](): string {
-    return this.valueOf()
+  retire(actorID: number): void {
+    try {
+      void this.projection.retire(actorID)
+    } catch (cause) {
+      throw unknownError(cause, 'SequencedText.retire()')
+    }
   }
+
+  /**
+   * ██╗   ██╗████████╗██╗██╗     ██╗████████╗██╗███████╗███████╗
+   * ██║   ██║╚══██╔══╝██║██║     ██║╚══██╔══╝██║██╔════╝██╔════╝
+   * ██║   ██║   ██║   ██║██║     ██║   ██║   ██║█████╗  ███████╗
+   * ██║   ██║   ██║   ██║██║     ██║   ██║   ██║██╔══╝  ╚════██║
+   * ╚██████╔╝   ██║   ██║███████╗██║   ██║   ██║███████╗███████║
+   *  ╚═════╝    ╚═╝   ╚═╝╚══════╝╚═╝   ╚═╝   ╚═╝╚══════╝╚══════╝
+   */
 
   /**
    * Returns the visible text for Node.js console inspection.
@@ -231,15 +306,13 @@ export class SequencedText {
   }
 
   /**
-   * Returns a live iterator over visible UTF-16 code units in document order.
+   * ███████╗██╗   ██╗███████╗███╗   ██╗████████╗    ████████╗ █████╗ ██████╗  ██████╗ ███████╗████████╗
+   * ██╔════╝██║   ██║██╔════╝████╗  ██║╚══██╔══╝    ╚══██╔══╝██║╔══██╗██╔══██╗██╔════╝ ██╔════╝╚══██╔══╝
+   * █████╗  ██║   ██║█████╗  ██╔██╗ ██║   ██║          ██║   ███████║██████╔╝██║  ███╗█████╗     ██║
+   * ██╔══╝  ╚██╗ ██╔╝██╔══╝  ██║╚██╗██║   ██║          ██║   ██╔══██║██╔══██╗██║   ██║██╔══╝     ██║
+   * ███████╗ ╚████╔╝ ███████╗██║ ╚████║   ██║          ██║   ██║  ██║██║  ██║╚██████╔╝███████╗   ██║
+   * ╚══════╝  ╚═══╝  ╚══════╝╚═╝  ╚═══╝   ╚═╝          ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝   ╚═╝
    */
-  *[Symbol.iterator](): IterableIterator<string> {
-    for (let index = 0; index < this.length; index++) {
-      const value = this.#value(index)
-      if (typeof value !== 'string') continue
-      yield value
-    }
-  }
 
   /**
    * Registers a callback or listener object for a typed document event.
@@ -253,7 +326,7 @@ export class SequencedText {
     options?: boolean | AddEventListenerOptions
   ): void {
     try {
-      ;(this.eventTarget ??= new EventTarget()).addEventListener(
+      void (this.eventTarget ??= new EventTarget()).addEventListener(
         type,
         listener as EventListenerOrEventListenerObject | null,
         options
@@ -275,7 +348,7 @@ export class SequencedText {
     options?: boolean | EventListenerOptions
   ): void {
     try {
-      this.eventTarget?.removeEventListener(
+      void this.eventTarget?.removeEventListener(
         type,
         listener as EventListenerOrEventListenerObject | null,
         options
@@ -295,9 +368,27 @@ export class SequencedText {
     detail: SequencedTextEventMap[K]
   ): void {
     try {
-      this.eventTarget?.dispatchEvent(new CustomEvent(type, { detail }))
+      void this.eventTarget?.dispatchEvent(new CustomEvent(type, { detail }))
     } catch (cause) {
       throw unknownError(cause, 'SequencedText.dispatchEvent()')
+    }
+  }
+
+  /**
+   * ██╗  ██╗███████╗██╗     ██████╗ ███████╗██████╗ ███████╗
+   * ██║  ██║██╔════╝██║     ██╔══██╗██╔════╝██╔══██╗██╔════╝
+   * ███████║█████╗  ██║     ██████╔╝█████╗  ██████╔╝███████╗
+   * ██╔══██║██╔══╝  ██║     ██╔═══╝ ██╔══╝  ██╔══██╗╚════██║
+   * ██║  ██║███████╗███████╗██║     ███████╗██║  ██║███████║
+   * ╚═╝  ╚═╝╚══════╝╚══════╝╚═╝     ╚══════╝╚═╝  ╚═╝╚══════╝
+   */
+
+  /** Reads one projection value and scopes unexpected failures to this library. */
+  private value(at: number): string | undefined {
+    try {
+      return this.projection.value(at)
+    } catch (cause) {
+      throw unknownError(cause, 'SequencedText.value()')
     }
   }
 }
