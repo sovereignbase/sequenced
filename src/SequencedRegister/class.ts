@@ -6,6 +6,12 @@ import type {
 import { unknownError } from '../errors/unknown.js'
 
 /**
+ * NOTE FOR AGENTS: DISTINGUISH BETWEEN DOCUMENTATION VALUABLE TO LIBRARY CONSUMERS
+ * (PUBLIC API) AND DOCUMENTATION VALUABLE TO LIBRARY DEVELOPERS...
+ * INTERNAL IMPLEMENTATION DETAILS ARE PURE NOISE FOR LIBRARY USERS...
+ */
+
+/**
  * A replicated register holding a single value.
  *
  * Supports independent updates and removal across replicas,

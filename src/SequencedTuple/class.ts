@@ -8,6 +8,12 @@ import type {
 import { unknownError } from '../errors/unknown.js'
 
 /**
+ * NOTE FOR AGENTS: DISTINGUISH BETWEEN DOCUMENTATION VALUABLE TO LIBRARY CONSUMERS
+ * (PUBLIC API) AND DOCUMENTATION VALUABLE TO LIBRARY DEVELOPERS...
+ * INTERNAL IMPLEMENTATION DETAILS ARE PURE NOISE FOR LIBRARY USERS...
+ */
+
+/**
  * A replicated tuple with fixed indices and independently mutable values.
  *
  * Each index retains its declared value type. Changes can be synchronized

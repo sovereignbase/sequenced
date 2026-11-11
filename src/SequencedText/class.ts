@@ -8,6 +8,12 @@ import type {
 } from './types/type.js'
 
 /**
+ * NOTE FOR AGENTS: DISTINGUISH BETWEEN DOCUMENTATION VALUABLE TO LIBRARY CONSUMERS
+ * (PUBLIC API) AND DOCUMENTATION VALUABLE TO LIBRARY DEVELOPERS...
+ * INTERNAL IMPLEMENTATION DETAILS ARE PURE NOISE FOR LIBRARY USERS...
+ */
+
+/**
  * A replicated text document with synchronous editing and typed events.
  *
  * Positions and lengths are measured in UTF-16 code units. Editing ranges include

@@ -8,23 +8,11 @@ import type {
   SequencedArrayEventListenerFor,
 } from './types/type.js'
 
-/** ECMAScript ToIntegerOrInfinity; unary + also rejects BigInt and Symbol. */
-function integer(value: number): number {
-  const number = +value
-  return Number.isNaN(number) || number === 0 ? 0 : Math.trunc(number)
-}
-
-/** Resolves a relative array position and clamps it to the visible bounds. */
-function position(value: number, length: number): number {
-  const index = integer(value)
-  return index < 0 ? Math.max(length + index, 0) : Math.min(index, length)
-}
-
-/** Rejects a non-callable callback with `INVALID_CALLBACK`. */
-function callable(callback: unknown): asserts callback is Function {
-  if (typeof callback !== 'function')
-    throw new SequencedError('INVALID_CALLBACK', 'Callback must be a function')
-}
+/**
+ * NOTE FOR AGENTS: DISTINGUISH BETWEEN DOCUMENTATION VALUABLE TO LIBRARY CONSUMERS
+ * (PUBLIC API) AND DOCUMENTATION VALUABLE TO LIBRARY DEVELOPERS...
+ * INTERNAL IMPLEMENTATION DETAILS ARE PURE NOISE FOR LIBRARY USERS...
+ */
 
 /**
  * A dense replicated sequence with the ES2024 Array instance methods.
@@ -42,23 +30,14 @@ export class SequencedArray<T> implements Iterable<T> {
   /** The event target, allocated when the first listener is registered. */
   private eventTarget?: EventTarget
 
-  /** Reads one projection value and scopes unexpected failures to this library. */
-  #value(at: number): T | undefined {
-    try {
-      return this.projection.value(at)
-    } catch (cause) {
-      throw unknownError(cause, 'SequencedArray.#value()')
-    }
-  }
-
-  /** Reads a projection range whose end position is inclusive. */
-  #values(start?: number, end?: number): T[] {
-    try {
-      return this.projection.values(start, end)
-    } catch (cause) {
-      throw unknownError(cause, 'SequencedArray.#values()')
-    }
-  }
+  /**
+   *  ██████╗██████╗ ██╗   ██╗██████╗
+   * ██╔════╝██╔══██╗██║   ██║██╔══██╗
+   * ██║     ██████╔╝██║   ██║██║  ██║
+   * ██║     ██╔══██╗██║   ██║██║  ██║
+   * ╚██████╗██║  ██║╚██████╔╝██████╔╝
+   *  ╚═════╝╚═╝  ╚═╝ ╚═════╝ ╚═════╝
+   */
 
   /**
    * Creates an empty array or restores a replication snapshot.
@@ -92,9 +71,9 @@ export class SequencedArray<T> implements Iterable<T> {
     if (length !== +value)
       throw new SequencedError('INVALID_ARRAY_LENGTH', 'Invalid array length')
     const previous = this.length
-    if (length < previous) this.edit(length, previous - length, [])
+    if (length < previous) void this.edit(length, previous - length, [])
     else if (length > previous)
-      this.edit(
+      void this.edit(
         previous,
         0,
         new Array<T>(length - previous).fill(undefined as T)
@@ -108,7 +87,7 @@ export class SequencedArray<T> implements Iterable<T> {
    */
   get(index: number): T | undefined {
     return Number.isInteger(index) && index >= 0 && index < this.length
-      ? this.#value(index)
+      ? this.valueAt(index)
       : undefined
   }
 
@@ -119,9 +98,9 @@ export class SequencedArray<T> implements Iterable<T> {
    */
   at(index: number): T | undefined {
     const length = this.length
-    const offset = integer(index)
+    const offset = this.integer(index)
     const at = offset < 0 ? length + offset : offset
-    return at >= 0 && at < length ? this.#value(at) : undefined
+    return at >= 0 && at < length ? this.valueAt(at) : undefined
   }
 
   /**
@@ -131,8 +110,8 @@ export class SequencedArray<T> implements Iterable<T> {
    * @throws {SequencedError} With code `ARRAY_INDEX_OUT_OF_BOUNDS` for an invalid position.
    */
   set(index: number, value: T): void {
-    this.checkIndex(index)
-    this.edit(index, 1, [value])
+    void this.checkIndex(index)
+    void this.edit(index, 1, [value])
   }
 
   /**
@@ -141,8 +120,8 @@ export class SequencedArray<T> implements Iterable<T> {
    * @throws {SequencedError} With code `ARRAY_INDEX_OUT_OF_BOUNDS` for an invalid position.
    */
   delete(index: number): void {
-    this.checkIndex(index)
-    this.edit(index, 1, [])
+    void this.checkIndex(index)
+    void this.edit(index, 1, [])
   }
 
   /**
@@ -152,7 +131,7 @@ export class SequencedArray<T> implements Iterable<T> {
    */
   push(...items: T[]): number {
     const length = this.length
-    this.edit(length, 0, items)
+    void this.edit(length, 0, items)
     return length + items.length
   }
 
@@ -163,7 +142,7 @@ export class SequencedArray<T> implements Iterable<T> {
    */
   unshift(...items: T[]): number {
     const length = this.length
-    this.edit(0, 0, items)
+    void this.edit(0, 0, items)
     return length + items.length
   }
 
@@ -171,16 +150,16 @@ export class SequencedArray<T> implements Iterable<T> {
   pop(): T | undefined {
     const length = this.length
     if (length === 0) return undefined
-    const value = this.#value(length - 1)
-    this.edit(length - 1, 1, [])
+    const value = this.valueAt(length - 1)
+    void this.edit(length - 1, 1, [])
     return value
   }
 
   /** Removes and returns the first element, or returns `undefined` if empty. */
   shift(): T | undefined {
     if (this.length === 0) return undefined
-    const value = this.#value(0)
-    this.edit(0, 1, [])
+    const value = this.valueAt(0)
+    void this.edit(0, 1, [])
     return value
   }
 
@@ -193,15 +172,18 @@ export class SequencedArray<T> implements Iterable<T> {
    */
   splice(start?: number, deleteCount?: number, ...items: T[]): T[] {
     const length = this.length
-    const at = position(start ?? 0, length)
+    const at = this.position(start ?? 0, length)
     const count =
       arguments.length === 0
         ? 0
         : arguments.length === 1
           ? length - at
-          : Math.min(Math.max(integer(deleteCount as number), 0), length - at)
-    const removed = count ? this.#values(at, at + count - 1) : []
-    this.edit(at, count, items)
+          : Math.min(
+              Math.max(this.integer(deleteCount as number), 0),
+              length - at
+            )
+    const removed = count ? this.valuesInRange(at, at + count - 1) : []
+    void this.edit(at, count, items)
     return removed
   }
 
@@ -214,9 +196,9 @@ export class SequencedArray<T> implements Iterable<T> {
    */
   fill(value: T, start = 0, end = this.length): this {
     const length = this.length
-    const at = position(start, length)
-    const count = Math.max(position(end, length) - at, 0)
-    if (count) this.edit(at, count, new Array<T>(count).fill(value))
+    const at = this.position(start, length)
+    const count = Math.max(this.position(end, length) - at, 0)
+    if (count) void this.edit(at, count, new Array<T>(count).fill(value))
     return this
   }
 
@@ -229,20 +211,21 @@ export class SequencedArray<T> implements Iterable<T> {
    */
   copyWithin(target: number, start: number, end = this.length): this {
     const length = this.length
-    const to = position(target, length)
-    const from = position(start, length)
+    const to = this.position(target, length)
+    const from = this.position(start, length)
     const count = Math.min(
-      Math.max(position(end, length) - from, 0),
+      Math.max(this.position(end, length) - from, 0),
       length - to
     )
-    if (count) this.edit(to, count, this.#values(from, from + count - 1))
+    if (count)
+      void this.edit(to, count, this.valuesInRange(from, from + count - 1))
     return this
   }
 
   /** Reverses the visible elements in place and returns this array. */
   reverse(): this {
-    const values = this.#values()
-    if (values.length > 1) this.edit(0, values.length, values.reverse())
+    const values = this.valuesInRange()
+    if (values.length > 1) void this.edit(0, values.length, values.reverse())
     return this
   }
 
@@ -253,11 +236,112 @@ export class SequencedArray<T> implements Iterable<T> {
    * @returns This array.
    */
   sort(compareFn?: (a: T, b: T) => number): this {
-    const values = this.#values().sort(compareFn)
+    const values = this.valuesInRange().sort(compareFn)
     if (values.length)
-      this.edit(0, Math.min(values.length, this.length), values)
+      void this.edit(0, Math.min(values.length, this.length), values)
     return this
   }
+
+  /**
+   * ██████╗ ███████╗██████╗ ██╗     ██╗ ██████╗ █████╗ ████████╗██╗ ██████╗ ███╗   ██╗
+   * ██╔══██╗██╔════╝██╔══██╗██║     ██║██╔════╝██╔══██╗╚══██╔══╝██║██╔═══██╗████╗  ██║
+   * ██████╔╝█████╗  ██████╔╝██║     ██║██║     ███████║   ██║   ██║██║   ██║██╔██╗ ██║
+   * ██╔══██╗██╔══╝  ██╔═══╝ ██║     ██║██║     ██╔══██║   ██║   ██║██║   ██║██║╚██╗██║
+   * ██║  ██║███████╗██║     ███████╗██║╚██████╗██║  ██║   ██║   ██║╚██████╔╝██║ ╚████║
+   * ╚═╝  ╚═╝╚══════╝╚═╝     ╚══════╝╚═╝ ╚═════╝╚═╝  ╚═╝   ╚═╝   ╚═╝ ╚═════╝ ╚═╝  ╚═══╝
+   */
+
+  /**
+   * Applies incoming gossip and emits visible changes and any reply gossip.
+   * @param delta The received replication data. Sequencer handles transport validation.
+   * @remarks This method does not throw.
+   */
+  apply(delta: unknown): void {
+    try {
+      void this.received(this.projection.apply(delta))
+    } catch {}
+  }
+
+  /**
+   * Merges another replica's complete sequence and emits the resulting events.
+   * @param snapshot The received replication state. Sequencer handles transport validation.
+   * @remarks This method does not throw.
+   */
+  merge(snapshot: unknown): void {
+    try {
+      void this.received(this.projection.merge(snapshot))
+    } catch {}
+  }
+
+  /**
+   * ██████╗ ███████╗██████╗ ███████╗██╗███████╗████████╗███████╗███╗   ██╗ ██████╗███████╗
+   * ██╔══██╗██╔════╝██╔══██╗██╔════╝██║██╔════╝╚══██╔══╝██╔════╝████╗  ██║██╔════╝██╔════╝
+   * ██████╔╝█████╗  ██████╔╝███████╗██║███████╗   ██║   █████╗  ██╔██╗ ██║██║     █████╗
+   * ██╔═══╝ ██╔══╝  ██╔══██╗╚════██║██║╚════██║   ██║   ██╔══╝  ██║╚██╗██║██║     ██╔══╝
+   * ██║     ███████╗██║  ██║███████║██║███████║   ██║   ███████╗██║ ╚████║╚██████╗███████╗
+   * ╚═╝     ╚══════╝╚═╝  ╚═╝╚══════╝╚═╝╚══════╝   ╚═╝   ╚══════╝╚═╝  ╚═══╝ ╚═════╝╚══════╝
+   */
+
+  /** Synchronously emits a `snapshot` event containing the current replication state. */
+  snapshot(): void {
+    void this.dispatchEvent('snapshot', this.toJSON())
+  }
+
+  /**
+   * Returns the complete replication state, including retained history.
+   * @returns Structural metadata as a numeric array and the retained element data.
+   * Used automatically by `JSON.stringify()`.
+   */
+  toJSON(): SequencedArraySnapshot<T> {
+    try {
+      return this.projection.sequence()
+    } catch (cause) {
+      throw unknownError(cause, 'SequencedArray.toJSON()')
+    }
+  }
+
+  /**
+   * ██╗     ██╗███████╗███████╗ ██████╗██╗   ██╗ ██████╗██╗     ███████╗
+   * ██║     ██║██╔════╝██╔════╝██╔════╝╚██╗ ██╔╝██╔════╝██║     ██╔════╝
+   * ██║     ██║█████╗  █████╗  ██║      ╚████╔╝ ██║     ██║     █████╗
+   * ██║     ██║██╔══╝  ██╔══╝  ██║       ╚██╔╝  ██║     ██║     ██╔══╝
+   * ███████╗██║██║     ███████╗╚██████╗   ██║   ╚██████╗███████╗███████╗
+   * ╚══════╝╚═╝╚═╝     ╚══════╝ ╚═════╝   ╚═╝    ╚═════╝╚══════╝╚══════╝
+   */
+
+  /** Releases the replica's native sequence state. */
+  destroy(): void {
+    try {
+      void this.projection.destroy()
+    } catch (cause) {
+      throw unknownError(cause, 'SequencedArray.destroy()')
+    }
+  }
+
+  /**
+   * Retires an actor from replication acknowledgements.
+   *
+   * Retired actors are no longer required to acknowledge history for compaction.
+   * The retirement must be applied separately to each replica.
+   *
+   * @param actorID The identifier of the actor to retire.
+   */
+  retire(actorID: number): void {
+    try {
+      void this.projection.retire(actorID)
+    } catch (cause) {
+      throw unknownError(cause, 'SequencedRegister.retire()')
+    }
+  }
+
+  /**
+   * ██╗   ██╗████████╗██╗██╗     ██╗████████╗██╗███████╗███████╗
+   * ██║   ██║╚══██╔══╝██║██║     ██║╚══██╔══╝██║██╔════╝██╔════╝
+   * ██║   ██║   ██║   ██║██║     ██║   ██║   ██║█████╗  ███████╗
+   * ██║   ██║   ██║   ██║██║     ██║   ██║   ██║██╔══╝  ╚════██║
+   * ╚██████╔╝   ██║   ██║███████╗██║   ██║   ██║███████╗███████║
+   *  ╚═════╝   ╚═╝   ╚═╝╚══════╝╚═╝   ╚═╝   ╚═╝╚══════╝╚══════╝
+   */
 
   /**
    * Returns a shallow copy of a visible range as a plain array.
@@ -266,9 +350,9 @@ export class SequencedArray<T> implements Iterable<T> {
    */
   slice(start = 0, end = this.length): T[] {
     const length = this.length
-    const from = position(start, length)
-    const to = position(end, length)
-    return to > from ? this.#values(from, to - 1) : []
+    const from = this.position(start, length)
+    const to = this.position(end, length)
+    return to > from ? this.valuesInRange(from, to - 1) : []
   }
 
   /**
@@ -276,7 +360,7 @@ export class SequencedArray<T> implements Iterable<T> {
    * @param items Values or arrays to concatenate, using native Array spreading rules.
    */
   concat(...items: (T | ConcatArray<T>)[]): T[] {
-    return this.#values().concat(...items)
+    return this.valuesInRange().concat(...items)
   }
 
   /**
@@ -285,7 +369,7 @@ export class SequencedArray<T> implements Iterable<T> {
    * @param fromIndex The search start; defaults to zero. Negative values count from the end.
    */
   includes(searchElement: T, fromIndex?: number): boolean {
-    return this.#values().includes(searchElement, fromIndex)
+    return this.valuesInRange().includes(searchElement, fromIndex)
   }
 
   /**
@@ -294,7 +378,7 @@ export class SequencedArray<T> implements Iterable<T> {
    * @param fromIndex The search start; defaults to zero. Negative values count from the end.
    */
   indexOf(searchElement: T, fromIndex?: number): number {
-    return this.#values().indexOf(searchElement, fromIndex)
+    return this.valuesInRange().indexOf(searchElement, fromIndex)
   }
 
   /**
@@ -304,7 +388,7 @@ export class SequencedArray<T> implements Iterable<T> {
    * Negative values count from the end.
    */
   lastIndexOf(searchElement: T, fromIndex?: number): number {
-    const values = this.#values()
+    const values = this.valuesInRange()
     return arguments.length < 2
       ? values.lastIndexOf(searchElement)
       : values.lastIndexOf(searchElement, fromIndex)
@@ -316,7 +400,7 @@ export class SequencedArray<T> implements Iterable<T> {
    * @returns The joined string, with `null` and `undefined` represented as empty strings.
    */
   join(separator?: string): string {
-    return this.#values().join(separator)
+    return this.valuesInRange().join(separator)
   }
 
   /** Returns the visible elements joined with commas. */
@@ -333,7 +417,7 @@ export class SequencedArray<T> implements Iterable<T> {
     locales?: Intl.LocalesArgument,
     options?: Intl.NumberFormatOptions & Intl.DateTimeFormatOptions
   ): string {
-    return Reflect.apply(Array.prototype.toLocaleString, this.#values(), [
+    return Reflect.apply(Array.prototype.toLocaleString, this.valuesInRange(), [
       locales,
       options,
     ])
@@ -347,12 +431,12 @@ export class SequencedArray<T> implements Iterable<T> {
     this: SequencedArray<A>,
     depth?: D
   ): FlatArray<A[], D>[] {
-    return this.#values().flat(depth)
+    return this.valuesInRange().flat(depth)
   }
 
   /** Returns a shallow, reversed copy as a plain array. */
   toReversed(): T[] {
-    return this.#values().toReversed()
+    return this.valuesInRange().toReversed()
   }
 
   /**
@@ -360,7 +444,7 @@ export class SequencedArray<T> implements Iterable<T> {
    * @param compareFn A comparator; omission uses native Array string ordering.
    */
   toSorted(compareFn?: (a: T, b: T) => number): T[] {
-    return this.#values().toSorted(compareFn)
+    return this.valuesInRange().toSorted(compareFn)
   }
 
   /**
@@ -370,7 +454,11 @@ export class SequencedArray<T> implements Iterable<T> {
    * @param items The replacement elements.
    */
   toSpliced(start?: number, deleteCount?: number, ...items: T[]): T[] {
-    return Reflect.apply(Array.prototype.toSpliced, this.#values(), arguments)
+    return Reflect.apply(
+      Array.prototype.toSpliced,
+      this.valuesInRange(),
+      arguments
+    )
   }
 
   /**
@@ -380,7 +468,7 @@ export class SequencedArray<T> implements Iterable<T> {
    * @throws {RangeError} If the resolved index is outside the array.
    */
   with(index: number, value: T): T[] {
-    return this.#values().with(index, value)
+    return this.valuesInRange().with(index, value)
   }
 
   /**
@@ -408,9 +496,9 @@ export class SequencedArray<T> implements Iterable<T> {
     predicate: (value: T, index: number, array: this) => unknown,
     thisArg?: unknown
   ): boolean {
-    callable(predicate)
+    void this.callable(predicate)
     let result = true
-    this.visit((value, index) => {
+    void this.visit((value, index) => {
       if (!Reflect.apply(predicate, thisArg, [value, index, this])) {
         result = false
         return false
@@ -429,9 +517,9 @@ export class SequencedArray<T> implements Iterable<T> {
     predicate: (value: T, index: number, array: this) => unknown,
     thisArg?: unknown
   ): boolean {
-    callable(predicate)
+    void this.callable(predicate)
     let result = false
-    this.visit((value, index) => {
+    void this.visit((value, index) => {
       if (Reflect.apply(predicate, thisArg, [value, index, this])) {
         result = true
         return false
@@ -464,11 +552,11 @@ export class SequencedArray<T> implements Iterable<T> {
     predicate: (value: T, index: number, array: this) => unknown,
     thisArg?: unknown
   ): T[] {
-    callable(predicate)
+    void this.callable(predicate)
     const result: T[] = []
-    this.visit((value, index) => {
+    void this.visit((value, index) => {
       if (Reflect.apply(predicate, thisArg, [value, index, this]))
-        result.push(value)
+        void result.push(value)
     })
     return result
   }
@@ -483,9 +571,9 @@ export class SequencedArray<T> implements Iterable<T> {
     callback: (value: T, index: number, array: this) => U,
     thisArg?: unknown
   ): U[] {
-    callable(callback)
+    void this.callable(callback)
     const result = new Array<U>(this.length)
-    this.visit((value, index) => {
+    void this.visit((value, index) => {
       result[index] = Reflect.apply(callback, thisArg, [value, index, this])
     })
     return result
@@ -502,14 +590,15 @@ export class SequencedArray<T> implements Iterable<T> {
     callback: (value: T, index: number, array: this) => U | ReadonlyArray<U>,
     thisArg?: unknown
   ): U[] {
-    callable(callback)
+    void this.callable(callback)
     const result: U[] = []
-    this.visit((value, index) => {
+    void this.visit((value, index) => {
       const mapped = Reflect.apply(callback, thisArg, [value, index, this])
       if (Array.isArray(mapped)) {
         const length = mapped.length
-        for (let i = 0; i < length; i++) if (i in mapped) result.push(mapped[i])
-      } else result.push(mapped as U)
+        for (let i = 0; i < length; i++)
+          if (i in mapped) void result.push(mapped[i])
+      } else void result.push(mapped as U)
     })
     return result
   }
@@ -524,8 +613,8 @@ export class SequencedArray<T> implements Iterable<T> {
     callback: (value: T, index: number, array: this) => void,
     thisArg?: unknown
   ): void {
-    callable(callback)
-    this.visit((value, index) => {
+    void this.callable(callback)
+    void this.visit((value, index) => {
       Reflect.apply(callback, thisArg, [value, index, this])
     })
   }
@@ -580,9 +669,9 @@ export class SequencedArray<T> implements Iterable<T> {
     predicate: (value: T, index: number, array: this) => unknown,
     thisArg?: unknown
   ): T | undefined {
-    callable(predicate)
+    void this.callable(predicate)
     let result: T | undefined
-    this.visit(
+    void this.visit(
       (value, index) => {
         if (Reflect.apply(predicate, thisArg, [value, index, this])) {
           result = value
@@ -619,9 +708,9 @@ export class SequencedArray<T> implements Iterable<T> {
     predicate: (value: T, index: number, array: this) => unknown,
     thisArg?: unknown
   ): T | undefined {
-    callable(predicate)
+    void this.callable(predicate)
     let result: T | undefined
-    this.visit(
+    void this.visit(
       (value, index) => {
         if (Reflect.apply(predicate, thisArg, [value, index, this])) {
           result = value
@@ -691,7 +780,7 @@ export class SequencedArray<T> implements Iterable<T> {
   /** Returns a live iterator over visible values in ascending index order. */
   *values(): ArrayIterator<T> {
     for (let index = 0; index < this.length; index++)
-      yield this.#value(index) as T
+      yield this.valueAt(index) as T
   }
 
   /** Returns a live iterator over the visible, zero-based indices. */
@@ -702,7 +791,7 @@ export class SequencedArray<T> implements Iterable<T> {
   /** Returns a live iterator of `[index, value]` pairs in ascending index order. */
   *entries(): ArrayIterator<[number, T]> {
     for (let index = 0; index < this.length; index++)
-      yield [index, this.#value(index) as T]
+      yield [index, this.valueAt(index) as T]
   }
 
   /** Returns the same live value iterator as `values()`. */
@@ -710,76 +799,29 @@ export class SequencedArray<T> implements Iterable<T> {
     return this.values()
   }
 
-  /**
-   * Applies incoming gossip and emits visible changes and any reply gossip.
-   * @param delta The received replication data. Sequencer handles transport validation.
-   * @remarks This method does not throw.
-   */
-  apply(delta: unknown): void {
-    try {
-      this.received(this.projection.apply(delta))
-    } catch {}
-  }
-
-  /**
-   * Merges another replica's complete sequence and emits the resulting events.
-   * @param snapshot The received replication state. Sequencer handles transport validation.
-   * @remarks This method does not throw.
-   */
-  merge(snapshot: unknown): void {
-    try {
-      this.received(this.projection.merge(snapshot))
-    } catch {}
-  }
-
-  /** Dispatches visible splices and reply gossip returned by the projection. */
-  private received(result: Result<T> | undefined): void {
-    if (!result) return
-    if (result[0].length) this.dispatchEvent('change', result[0])
-    if (result[1]?.length) this.dispatchEvent('delta', result[1])
-  }
-
-  /** Synchronously emits a `snapshot` event containing the current replication state. */
-  snapshot(): void {
-    this.dispatchEvent('snapshot', this.toJSON())
-  }
-
-  /**
-   * Returns the complete replication state, including retained history.
-   * @returns Structural metadata as a numeric array and the retained element data.
-   * Used automatically by `JSON.stringify()`.
-   */
-  toJSON(): SequencedArraySnapshot<T> {
-    try {
-      const [meta, values] = this.projection.sequence()
-      return [Array.isArray(meta) ? meta : Array.from(meta), values]
-    } catch (cause) {
-      throw unknownError(cause, 'SequencedArray.toJSON()')
-    }
-  }
-
-  /** Releases the replica's native sequence state. */
-  destroy(): void {
-    try {
-      this.projection.destroy()
-    } catch (cause) {
-      throw unknownError(cause, 'SequencedArray.destroy()')
-    }
-  }
-
   /** Returns a plain array of visible values for Node.js console inspection. */
   [Symbol.for('nodejs.util.inspect.custom')](): T[] {
-    return this.#values()
+    return this.valuesInRange()
   }
+
   /** Returns a plain array of visible values for Deno console inspection. */
   [Symbol.for('Deno.customInspect')](): T[] {
-    return this.#values()
+    return this.valuesInRange()
   }
 
   /** The built-in object tag, `SequencedArray`. */
   get [Symbol.toStringTag](): string {
     return 'SequencedArray'
   }
+
+  /**
+   * ███████╗██╗   ██╗███████╗███╗   ██╗████████╗   ████████╗ █████╗ ██████╗  ██████╗ ███████╗████████╗
+   * ██╔════╝╚██╗ ██╔╝██╔════╝████╗  ██║╚══██╔══╝   ╚══██╔══╝██╔══██╗██╔══██╗██╔════╝ ██╔════╝╚══██╔══╝
+   * █████╗   ╚████╔╝ █████╗  ██╔██╗ ██║   ██║         ██║   ███████║██████╔╝██║  ███╗█████╗     ██║
+   * ██╔══╝    ╚██╔╝  ██╔══╝  ██║╚██╗██║   ██║         ██║   ██╔══██║██╔══██╗██║   ██║██╔══╝     ██║
+   * ███████╗   ██║   ███████╗██║ ╚████║   ██║         ██║   ██║  ██║██║  ██║╚██████╔╝███████╗   ██║
+   * ╚══════╝   ╚═╝   ╚══════╝╚═╝  ╚═══╝   ╚═╝         ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝   ╚═╝
+   */
 
   /**
    * Registers a callback or listener object for a typed collection event.
@@ -793,7 +835,7 @@ export class SequencedArray<T> implements Iterable<T> {
     options?: boolean | AddEventListenerOptions
   ): void {
     try {
-      ;(this.eventTarget ??= new EventTarget()).addEventListener(
+      void (this.eventTarget ??= new EventTarget()).addEventListener(
         type,
         listener as EventListenerOrEventListenerObject | null,
         options
@@ -815,7 +857,7 @@ export class SequencedArray<T> implements Iterable<T> {
     options?: boolean | EventListenerOptions
   ): void {
     try {
-      this.eventTarget?.removeEventListener(
+      void this.eventTarget?.removeEventListener(
         type,
         listener as EventListenerOrEventListenerObject | null,
         options
@@ -835,10 +877,65 @@ export class SequencedArray<T> implements Iterable<T> {
     detail: SequencedArrayEventMap<T>[K]
   ): void {
     try {
-      this.eventTarget?.dispatchEvent(new CustomEvent(type, { detail }))
+      void this.eventTarget?.dispatchEvent(new CustomEvent(type, { detail }))
     } catch (cause) {
       throw unknownError(cause, 'SequencedArray.dispatchEvent()')
     }
+  }
+
+  /**
+   * ██╗  ██╗███████╗██╗     ██████╗ ███████╗██████╗ ███████╗
+   * ██║  ██║██╔════╝██║     ██╔══██╗██╔════╝██╔══██╗██╔════╝
+   * ███████║█████╗  ██║     ██████╔╝█████╗  ██████╔╝███████╗
+   * ██╔══██║██╔══╝  ██║     ██╔═══╝ ██╔══╝  ██╔══██╗╚════██║
+   * ██║  ██║███████╗███████╗██║     ███████╗██║  ██║███████║
+   * ╚═╝  ╚═╝╚══════╝╚══════╝╚═╝     ╚══════╝╚═╝  ╚═╝╚══════╝
+   */
+
+  /** Dispatches visible splices and reply gossip returned by the projection. */
+  private received(result: Result<T> | undefined): void {
+    if (!result) return
+    if (result[0].length) void this.dispatchEvent('change', result[0])
+    if (result[1]?.length) void this.dispatchEvent('delta', result[1])
+  }
+
+  /** Reads one projection value and scopes unexpected failures to this library. */
+  private valueAt(at: number): T | undefined {
+    try {
+      return this.projection.value(at)
+    } catch (cause) {
+      throw unknownError(cause, 'SequencedArray.private valueAt()')
+    }
+  }
+
+  /** Reads a projection range whose end position is inclusive. */
+  private valuesInRange(start?: number, end?: number): T[] {
+    try {
+      return this.projection.values(start, end)
+    } catch (cause) {
+      throw unknownError(cause, 'SequencedArray.private valuesInRange()')
+    }
+  }
+
+  /** Converts a numeric index using ECMAScript ToIntegerOrInfinity semantics. */
+  private integer(value: number): number {
+    const number = +value
+    return Number.isNaN(number) || number === 0 ? 0 : Math.trunc(number)
+  }
+
+  /** Resolves a relative array position and clamps it to the visible bounds. */
+  private position(value: number, length: number): number {
+    const index = this.integer(value)
+    return index < 0 ? Math.max(length + index, 0) : Math.min(index, length)
+  }
+
+  /** Rejects a non-callable callback with `INVALID_CALLBACK`. */
+  private callable(callback: unknown): asserts callback is Function {
+    if (typeof callback !== 'function')
+      throw new SequencedError(
+        'INVALID_CALLBACK',
+        'Callback must be a function'
+      )
   }
 
   /** Requires an absolute index that addresses an existing element. */
@@ -864,8 +961,8 @@ export class SequencedArray<T> implements Iterable<T> {
         const change = items.length
           ? ([[start, start + count, items]] as const)
           : ([[start, start + count]] as const)
-        this.dispatchEvent('change', change)
-        this.dispatchEvent('delta', delta)
+        void this.dispatchEvent('change', change)
+        void this.dispatchEvent('delta', delta)
       }
     } catch (cause) {
       throw unknownError(cause, 'SequencedArray.edit()')
@@ -892,9 +989,9 @@ export class SequencedArray<T> implements Iterable<T> {
     thisArg: unknown,
     backwards: boolean
   ): number {
-    callable(predicate)
+    void this.callable(predicate)
     let result = -1
-    this.visit(
+    void this.visit(
       (value, index) => {
         if (Reflect.apply(predicate, thisArg, [value, index, this])) {
           result = index
@@ -914,10 +1011,10 @@ export class SequencedArray<T> implements Iterable<T> {
     supplied: boolean,
     backwards: boolean
   ): U {
-    callable(callback)
+    void this.callable(callback)
     let result = initial
     let initialized = supplied
-    this.visit((value, index) => {
+    void this.visit((value, index) => {
       if (!initialized) {
         result = value as unknown as U
         initialized = true
