@@ -6,6 +6,8 @@
 
 # Sequenced
 
+Work in progress...
+
 Replicated Array, Map, Register and Text implementations built on [Sequencer](https://github.com/sovereignbase/sequencer).
 
 ## Contents
