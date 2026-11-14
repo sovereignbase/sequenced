@@ -17,7 +17,7 @@ the start position and exclude the end position.</p>
 </div></section>
 <div class="tsd-signature"><span class="tsd-signature-keyword">interface</span> <span class="tsd-kind-interface">SequencedText</span> <span class="tsd-signature-symbol">{</span><br/>    <span class="tsd-signature-keyword">get</span> <a class="tsd-kind-get-signature" href="#tostringtagtostringtag">&quot;[toStringTag]&quot;</a><span class="tsd-signature-symbol">()</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <span class="tsd-signature-keyword">get</span> <a class="tsd-kind-get-signature" href="#lengthlength">length</a><span class="tsd-signature-symbol">()</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-call-signature" href="#iterator-1">&quot;[iterator]&quot;</a><span class="tsd-signature-symbol">()</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">IterableIterator</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-call-signature" href="#toprimitive-1">&quot;[toPrimitive]&quot;</a><span class="tsd-signature-symbol">()</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-call-signature" href="#addeventlistener-1">addEventListener</a><span class="tsd-signature-symbol">&lt;</span><a class="tsd-signature-type tsd-kind-type-parameter" href="#addeventlistenerk">K</a> <span class="tsd-signature-keyword">extends</span> <span class="tsd-signature-keyword">keyof</span> <a href="../types/SequencedTextEventMap.html" class="tsd-signature-type tsd-kind-type-alias">SequencedTextEventMap</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">(</span><br/>        <span class="tsd-kind-parameter">type</span><span class="tsd-signature-symbol">:</span> <a class="tsd-signature-type tsd-kind-type-parameter" href="#addeventlistenerk">K</a><span class="tsd-signature-symbol">,</span><br/>        <span class="tsd-kind-parameter">listener</span><span class="tsd-signature-symbol">:</span> <a href="../types/SequencedTextEventListenerFor.html" class="tsd-signature-type tsd-kind-type-alias">SequencedTextEventListenerFor</a><span class="tsd-signature-symbol">&lt;</span><a class="tsd-signature-type tsd-kind-type-parameter" href="#addeventlistenerk">K</a><span class="tsd-signature-symbol">&gt;</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol">,</span><br/>        <span class="tsd-kind-parameter">options</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">AddEventListenerOptions</span><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-call-signature" href="#apply-1">apply</a><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">delta</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-call-signature" href="#destroy-1">destroy</a><span class="tsd-signature-symbol">()</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-call-signature" href="#dispatchevent-1">dispatchEvent</a><span class="tsd-signature-symbol">&lt;</span><a class="tsd-signature-type tsd-kind-type-parameter" href="#dispatcheventk">K</a> <span class="tsd-signature-keyword">extends</span> <span class="tsd-signature-keyword">keyof</span> <a href="../types/SequencedTextEventMap.html" class="tsd-signature-type tsd-kind-type-alias">SequencedTextEventMap</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">(</span><br/>        <span class="tsd-kind-parameter">type</span><span class="tsd-signature-symbol">:</span> <a class="tsd-signature-type tsd-kind-type-parameter" href="#dispatcheventk">K</a><span class="tsd-signature-symbol">,</span><br/>        <span class="tsd-kind-parameter">detail</span><span class="tsd-signature-symbol">:</span> <a href="../types/SequencedTextEventMap.html" class="tsd-signature-type tsd-kind-type-alias">SequencedTextEventMap</a><span class="tsd-signature-symbol">[</span><a class="tsd-signature-type tsd-kind-type-parameter" href="#dispatcheventk">K</a><span class="tsd-signature-symbol">]</span><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-call-signature" href="#insert-1">insert</a><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">at</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">characters</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-call-signature" href="#merge-1">merge</a><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">snapshot</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-call-signature" href="#remove-1">remove</a><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">selectionStart</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">selecectionEnd</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-call-signature" href="#removeeventlistener-1">removeEventListener</a><span class="tsd-signature-symbol">&lt;</span><a class="tsd-signature-type tsd-kind-type-parameter" href="#removeeventlistenerk">K</a> <span class="tsd-signature-keyword">extends</span> <span class="tsd-signature-keyword">keyof</span> <a href="../types/SequencedTextEventMap.html" class="tsd-signature-type tsd-kind-type-alias">SequencedTextEventMap</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">(</span><br/>        <span class="tsd-kind-parameter">type</span><span class="tsd-signature-symbol">:</span> <a class="tsd-signature-type tsd-kind-type-parameter" href="#removeeventlistenerk">K</a><span class="tsd-signature-symbol">,</span><br/>        <span class="tsd-kind-parameter">listener</span><span class="tsd-signature-symbol">:</span> <a href="../types/SequencedTextEventListenerFor.html" class="tsd-signature-type tsd-kind-type-alias">SequencedTextEventListenerFor</a><span class="tsd-signature-symbol">&lt;</span><a class="tsd-signature-type tsd-kind-type-parameter" href="#removeeventlistenerk">K</a><span class="tsd-signature-symbol">&gt;</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol">,</span><br/>        <span class="tsd-kind-parameter">options</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">EventListenerOptions</span><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-call-signature" href="#replace-1">replace</a><span class="tsd-signature-symbol">(</span><br/>        <span class="tsd-kind-parameter">selectionStart</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">,</span><br/>        <span class="tsd-kind-parameter">selecectionEnd</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">,</span><br/>        <span class="tsd-kind-parameter">characters</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-call-signature" href="#retire-1">retire</a><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">actorID</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-call-signature" href="#snapshot-1">snapshot</a><span class="tsd-signature-symbol">()</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-call-signature" href="#tojson-1">toJSON</a><span class="tsd-signature-symbol">()</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-keyword">readonly</span> <span class="tsd-signature-symbol">[</span><span class="tsd-signature-keyword">readonly</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">,</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">]</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-call-signature" href="#tostring-1">toString</a><span class="tsd-signature-symbol">()</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-call-signature" href="#valueof-1">valueOf</a><span class="tsd-signature-symbol">()</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/sovereignbase/crdt/blob/cf74c7bba7f14d6623ed9f1021e59cde14f441d1/src/SequencedText/class.ts#L22">src/SequencedText/class.ts:22</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/sovereignbase/sequenced/blob/3e56f8b26d350f728870c14c9c64e6755e5d8d3b/src/SequencedText/class.ts#L22">src/SequencedText/class.ts:22</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -60,7 +60,7 @@ the start position and exclude the end position.</p>
 </div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/sovereignbase/crdt/blob/cf74c7bba7f14d6623ed9f1021e59cde14f441d1/src/SequencedText/class.ts#L310">src/SequencedText/class.ts:310</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/sovereignbase/sequenced/blob/3e56f8b26d350f728870c14c9c64e6755e5d8d3b/src/SequencedText/class.ts#L310">src/SequencedText/class.ts:310</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="length"><span>length</span><a href="#length" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
@@ -71,7 +71,7 @@ the start position and exclude the end position.</p>
 </div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">number</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/sovereignbase/crdt/blob/cf74c7bba7f14d6623ed9f1021e59cde14f441d1/src/SequencedText/class.ts#L144">src/SequencedText/class.ts:144</a></li></ul></aside></div></li></ul></section></section></details>
+<li>Defined in <a href="https://github.com/sovereignbase/sequenced/blob/3e56f8b26d350f728870c14c9c64e6755e5d8d3b/src/SequencedText/class.ts#L144">src/SequencedText/class.ts:144</a></li></ul></aside></div></li></ul></section></section></details>
 <details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Methods"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
 <h2 class="tsd-anchor-link" id="methods-1">Methods<a href="#methods-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary>
 <section>
@@ -85,7 +85,7 @@ the start position and exclude the end position.</p>
 </div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">IterableIterator</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">&gt;</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/sovereignbase/crdt/blob/cf74c7bba7f14d6623ed9f1021e59cde14f441d1/src/SequencedText/class.ts#L162">src/SequencedText/class.ts:162</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/sovereignbase/sequenced/blob/3e56f8b26d350f728870c14c9c64e6755e5d8d3b/src/SequencedText/class.ts#L162">src/SequencedText/class.ts:162</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="toprimitive"><span>[to<wbr/>Primitive]</span><a href="#toprimitive" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
@@ -96,7 +96,7 @@ the start position and exclude the end position.</p>
 </div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/sovereignbase/crdt/blob/cf74c7bba7f14d6623ed9f1021e59cde14f441d1/src/SequencedText/class.ts#L155">src/SequencedText/class.ts:155</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/sovereignbase/sequenced/blob/3e56f8b26d350f728870c14c9c64e6755e5d8d3b/src/SequencedText/class.ts#L155">src/SequencedText/class.ts:155</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="addeventlistener"><span>add<wbr/>Event<wbr/>Listener</span><a href="#addeventlistener" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
@@ -123,7 +123,7 @@ the start position and exclude the end position.</p>
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/sovereignbase/crdt/blob/cf74c7bba7f14d6623ed9f1021e59cde14f441d1/src/SequencedText/class.ts#L329">src/SequencedText/class.ts:329</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/sovereignbase/sequenced/blob/3e56f8b26d350f728870c14c9c64e6755e5d8d3b/src/SequencedText/class.ts#L329">src/SequencedText/class.ts:329</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="apply"><span>apply</span><a href="#apply" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
@@ -144,7 +144,7 @@ the start position and exclude the end position.</p>
 <h4 class="tsd-anchor-link" id="remarks">Remarks<a href="#remarks" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p>This method does not throw.</p>
 </div></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/sovereignbase/crdt/blob/cf74c7bba7f14d6623ed9f1021e59cde14f441d1/src/SequencedText/class.ts#L184">src/SequencedText/class.ts:184</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/sovereignbase/sequenced/blob/3e56f8b26d350f728870c14c9c64e6755e5d8d3b/src/SequencedText/class.ts#L184">src/SequencedText/class.ts:184</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="destroy"><span>destroy</span><a href="#destroy" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
@@ -155,7 +155,7 @@ the start position and exclude the end position.</p>
 </div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/sovereignbase/crdt/blob/cf74c7bba7f14d6623ed9f1021e59cde14f441d1/src/SequencedText/class.ts#L263">src/SequencedText/class.ts:263</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/sovereignbase/sequenced/blob/3e56f8b26d350f728870c14c9c64e6755e5d8d3b/src/SequencedText/class.ts#L263">src/SequencedText/class.ts:263</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="dispatchevent"><span>dispatch<wbr/>Event</span><a href="#dispatchevent" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
@@ -179,7 +179,7 @@ the start position and exclude the end position.</p>
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/sovereignbase/crdt/blob/cf74c7bba7f14d6623ed9f1021e59cde14f441d1/src/SequencedText/class.ts#L372">src/SequencedText/class.ts:372</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/sovereignbase/sequenced/blob/3e56f8b26d350f728870c14c9c64e6755e5d8d3b/src/SequencedText/class.ts#L372">src/SequencedText/class.ts:372</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="insert"><span>insert</span><a href="#insert" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
@@ -204,7 +204,7 @@ An empty string leaves the document unchanged.</p>
 <h4 class="tsd-anchor-link" id="throws">Throws<a href="#throws" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p>If the underlying projection cannot perform the insertion.</p>
 </div></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/sovereignbase/crdt/blob/cf74c7bba7f14d6623ed9f1021e59cde14f441d1/src/SequencedText/class.ts#L59">src/SequencedText/class.ts:59</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/sovereignbase/sequenced/blob/3e56f8b26d350f728870c14c9c64e6755e5d8d3b/src/SequencedText/class.ts#L59">src/SequencedText/class.ts:59</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="merge"><span>merge</span><a href="#merge" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
@@ -225,7 +225,7 @@ An empty string leaves the document unchanged.</p>
 <h4 class="tsd-anchor-link" id="remarks-1">Remarks<a href="#remarks-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p>This method does not throw.</p>
 </div></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/sovereignbase/crdt/blob/cf74c7bba7f14d6623ed9f1021e59cde14f441d1/src/SequencedText/class.ts#L205">src/SequencedText/class.ts:205</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/sovereignbase/sequenced/blob/3e56f8b26d350f728870c14c9c64e6755e5d8d3b/src/SequencedText/class.ts#L205">src/SequencedText/class.ts:205</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="remove"><span>remove</span><a href="#remove" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
@@ -250,7 +250,7 @@ An empty selection leaves the document unchanged.</p>
 <h4 class="tsd-anchor-link" id="throws-1">Throws<a href="#throws-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p>If the underlying projection cannot perform the removal.</p>
 </div></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/sovereignbase/crdt/blob/cf74c7bba7f14d6623ed9f1021e59cde14f441d1/src/SequencedText/class.ts#L78">src/SequencedText/class.ts:78</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/sovereignbase/sequenced/blob/3e56f8b26d350f728870c14c9c64e6755e5d8d3b/src/SequencedText/class.ts#L78">src/SequencedText/class.ts:78</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="removeeventlistener"><span>remove<wbr/>Event<wbr/>Listener</span><a href="#removeeventlistener" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
@@ -277,7 +277,7 @@ An empty selection leaves the document unchanged.</p>
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/sovereignbase/crdt/blob/cf74c7bba7f14d6623ed9f1021e59cde14f441d1/src/SequencedText/class.ts#L351">src/SequencedText/class.ts:351</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/sovereignbase/sequenced/blob/3e56f8b26d350f728870c14c9c64e6755e5d8d3b/src/SequencedText/class.ts#L351">src/SequencedText/class.ts:351</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="replace"><span>replace</span><a href="#replace" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
@@ -305,7 +305,7 @@ An empty selection inserts the replacement text at the selection position.</p>
 <h4 class="tsd-anchor-link" id="throws-2">Throws<a href="#throws-2" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p>If the underlying projection cannot perform the replacement.</p>
 </div></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/sovereignbase/crdt/blob/cf74c7bba7f14d6623ed9f1021e59cde14f441d1/src/SequencedText/class.ts#L101">src/SequencedText/class.ts:101</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/sovereignbase/sequenced/blob/3e56f8b26d350f728870c14c9c64e6755e5d8d3b/src/SequencedText/class.ts#L101">src/SequencedText/class.ts:101</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="retire"><span>retire</span><a href="#retire" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
@@ -324,7 +324,7 @@ The retirement must be applied separately to each replica.</p>
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/sovereignbase/crdt/blob/cf74c7bba7f14d6623ed9f1021e59cde14f441d1/src/SequencedText/class.ts#L279">src/SequencedText/class.ts:279</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/sovereignbase/sequenced/blob/3e56f8b26d350f728870c14c9c64e6755e5d8d3b/src/SequencedText/class.ts#L279">src/SequencedText/class.ts:279</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="snapshot"><span>snapshot</span><a href="#snapshot" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
@@ -335,7 +335,7 @@ The retirement must be applied separately to each replica.</p>
 </div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/sovereignbase/crdt/blob/cf74c7bba7f14d6623ed9f1021e59cde14f441d1/src/SequencedText/class.ts#L235">src/SequencedText/class.ts:235</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/sovereignbase/sequenced/blob/3e56f8b26d350f728870c14c9c64e6755e5d8d3b/src/SequencedText/class.ts#L235">src/SequencedText/class.ts:235</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="tojson"><span>to<wbr/>JSON</span><a href="#tojson" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
@@ -348,7 +348,7 @@ The retirement must be applied separately to each replica.</p>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-keyword">readonly</span> <span class="tsd-signature-symbol">[</span><span class="tsd-signature-keyword">readonly</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">,</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">]</span></h4><p>Structural metadata as a numeric array and the retained UTF-16 content.</p>
 <aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/sovereignbase/crdt/blob/cf74c7bba7f14d6623ed9f1021e59cde14f441d1/src/SequencedText/class.ts#L245">src/SequencedText/class.ts:245</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/sovereignbase/sequenced/blob/3e56f8b26d350f728870c14c9c64e6755e5d8d3b/src/SequencedText/class.ts#L245">src/SequencedText/class.ts:245</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="tostring"><span>to<wbr/>String</span><a href="#tostring" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
@@ -359,7 +359,7 @@ The retirement must be applied separately to each replica.</p>
 </div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/sovereignbase/crdt/blob/cf74c7bba7f14d6623ed9f1021e59cde14f441d1/src/SequencedText/class.ts#L137">src/SequencedText/class.ts:137</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/sovereignbase/sequenced/blob/3e56f8b26d350f728870c14c9c64e6755e5d8d3b/src/SequencedText/class.ts#L137">src/SequencedText/class.ts:137</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="valueof"><span>value<wbr/>Of</span><a href="#valueof" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
@@ -370,7 +370,7 @@ The retirement must be applied separately to each replica.</p>
 </div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/sovereignbase/crdt/blob/cf74c7bba7f14d6623ed9f1021e59cde14f441d1/src/SequencedText/class.ts#L126">src/SequencedText/class.ts:126</a></li></ul></aside></div></li></ul></section></section></details></div>
+<li>Defined in <a href="https://github.com/sovereignbase/sequenced/blob/3e56f8b26d350f728870c14c9c64e6755e5d8d3b/src/SequencedText/class.ts#L126">src/SequencedText/class.ts:126</a></li></ul></aside></div></li></ul></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

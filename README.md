@@ -61,32 +61,32 @@ Iterators use the current SequencedArray contents, including modifications made 
 
 <!-- BEGIN GENERATED:array:benchmarks -->
 
-2026-11-09 · ops/sec
+2026-11-14 · ops/sec
 
-Node v24.16.0 · win32 x64 · Intel(R) Core(TM) i5-10210U CPU @ 1.60GHz · Sequencer 1.1.1
+Node v24.22.1 · win32 x64 · 11th Gen Intel(R) Core(TM) i7-1185G7 @ 3.00GHz · Sequencer 1.2.6
 
 | Operation             |        100 |      1,000 |     10,000 |
 | --------------------- | ---------: | ---------: | ---------: |
-| `length`              | 47,786,961 | 29,948,201 | 44,745,858 |
-| `at.random`           | 17,576,370 | 20,524,800 | 22,746,290 |
-| `get.random`          | 19,904,505 | 20,733,674 | 20,380,596 |
-| `values`              |    139,992 |     16,188 |      1,547 |
-| `slice.all`           |  2,654,214 |    895,624 |    113,585 |
-| `slice.random`        |  4,653,562 |  7,021,944 |  6,594,310 |
-| `push`                |  1,037,871 |  1,561,241 |  1,575,968 |
-| `unshift`             |  1,302,172 |    918,723 |    965,787 |
-| `splice.random`       |    564,648 |    492,500 |    502,791 |
-| `set.random`          |    628,545 |    556,888 |    453,973 |
-| `delete.random`       |    836,620 |    744,439 |    697,408 |
-| `apply.insert.random` |  1,233,279 |  1,143,011 |  1,159,843 |
-| `apply.set.random`    |    441,545 |    447,300 |    401,141 |
-| `apply.delete.random` |    542,549 |    600,903 |    534,935 |
-| `merge.insert.random` |    117,422 |    124,571 |     87,507 |
-| `merge.set.random`    |     49,957 |     63,633 |     52,387 |
-| `merge.delete.random` |     91,403 |     86,758 |     57,413 |
-| `merge.identical`     |    820,542 |    866,191 |    840,658 |
-| `snapshot`            |  1,903,505 |  2,443,859 |  2,104,232 |
-| `toJSON`              |  2,979,185 |  4,765,566 |  4,515,536 |
+| `length`              | 98,704,597 | 84,003,540 | 78,221,618 |
+| `at.random`           | 38,197,636 | 40,380,598 | 36,577,234 |
+| `get.random`          | 37,192,670 | 39,684,813 | 35,332,093 |
+| `values`              |    253,474 |     26,579 |      2,666 |
+| `slice.all`           |  8,403,879 |  1,473,556 |    362,152 |
+| `slice.random`        | 14,616,796 | 15,449,214 | 14,672,133 |
+| `push`                |  2,749,953 |  3,084,919 |  2,824,470 |
+| `unshift`             |  2,242,852 |  2,217,423 |  2,038,033 |
+| `splice.random`       |    886,023 |    940,617 |    760,326 |
+| `set.random`          |    938,234 |  1,029,983 |    842,581 |
+| `delete.random`       |  1,327,708 |  1,431,492 |  1,141,852 |
+| `apply.insert.random` |  2,117,109 |  2,005,417 |  1,692,657 |
+| `apply.set.random`    |    826,654 |    811,874 |    698,529 |
+| `apply.delete.random` |  1,048,604 |    942,372 |    849,477 |
+| `merge.insert.random` |    227,773 |    235,591 |    168,697 |
+| `merge.set.random`    |    113,004 |    108,081 |     84,975 |
+| `merge.delete.random` |    187,324 |    157,643 |    123,475 |
+| `merge.identical`     |  2,098,146 |  2,164,497 |  2,021,359 |
+| `snapshot`            |  5,046,274 |  5,112,577 |  4,965,332 |
+| `toJSON`              |  9,843,324 | 11,504,047 | 11,375,431 |
 
 <!-- END GENERATED:array:benchmarks -->
 
@@ -94,34 +94,28 @@ Node v24.16.0 · win32 x64 · Intel(R) Core(TM) i5-10210U CPU @ 1.60GHz · Seque
 
 <!-- BEGIN GENERATED:array:tests -->
 
-2026-11-09 · **passed**
-
 | Test suite  | Passed | Failed | Skipped |
 | ----------- | -----: | -----: | ------: |
-| compability |      8 |      1 |       0 |
-| convergence |      8 |      0 |       0 |
-| equivelance |    280 |      0 |       0 |
-| events      |     40 |      0 |       0 |
-| integration |      4 |      2 |       0 |
-| unit        |     66 |      0 |       0 |
-
-| Statements | Branches | Functions |  Lines |
-| ---------: | -------: | --------: | -----: |
-|     99.56% |     100% |    98.70% | 99.52% |
+| compability |      — |      — |       — |
+| convergence |      — |      — |       — |
+| equivelance |      — |      — |       — |
+| events      |      — |      — |       — |
+| integration |      — |      — |       — |
+| unit        |      — |      — |       — |
 
 #### Compatibility
 
-| Runtime      | Version       | Status |
-| ------------ | ------------- | ------ |
-| Node.js ESM  | v24.16.0      | passed |
-| Node.js CJS  | v24.16.0      | passed |
-| Bun          | 1.4.4         | passed |
-| Deno         | 2.9.6         | passed |
-| Edge Runtime | 4.0.1         | passed |
-| workerd      | 1.20261109.1  | passed |
-| Chromium     | 158.0.8127.18 | passed |
-| Firefox      | —             | failed |
-| WebKit       | 27.2          | passed |
+| Runtime      | Version | Status  |
+| ------------ | ------- | ------- |
+| Node.js ESM  | —       | not run |
+| Node.js CJS  | —       | not run |
+| Bun          | —       | not run |
+| Deno         | —       | not run |
+| Edge Runtime | —       | not run |
+| workerd      | —       | not run |
+| Chromium     | —       | not run |
+| Firefox      | —       | not run |
+| WebKit       | —       | not run |
 
 <!-- END GENERATED:array:tests -->
 
@@ -155,41 +149,41 @@ Keys can be strings or finite numbers. `Number(number)` and `String(number)` are
 
 <!-- BEGIN GENERATED:map:benchmarks -->
 
-2026-11-09 · ops/sec
+2026-11-14 · ops/sec
 
-Node v24.16.0 · win32 x64 · Intel(R) Core(TM) i5-10210U CPU @ 1.60GHz · Sequencer 1.1.1
+Node v24.22.1 · win32 x64 · 11th Gen Intel(R) Core(TM) i7-1185G7 @ 3.00GHz · Sequencer 1.2.6
 
-| Operation             |        100 |      1,000 |     10,000 |
-| --------------------- | ---------: | ---------: | ---------: |
-| `get.random`          | 14,794,386 | 10,727,142 |  6,903,206 |
-| `has.random`          | 26,212,538 |  7,703,037 | 10,038,049 |
-| `set.random`          |    207,374 |    206,128 |    223,938 |
-| `delete.random`       |    204,218 |    210,891 |    187,994 |
-| `apply.set.random`    |    181,981 |     95,089 |    169,094 |
-| `apply.delete.random` |    226,397 |    170,031 |    169,206 |
-| `set.new`             |    469,794 |    351,970 |    292,561 |
-| `apply.set.new`       |    504,651 |    355,603 |    303,857 |
-| `size`                | 56,130,358 | 64,896,627 | 70,386,496 |
-| `clear`               |     57,877 |     29,199 |      4,380 |
-| `keys`                |  2,191,474 |    271,580 |     34,484 |
-| `values`              |     61,648 |      9,387 |      1,432 |
-| `entries`             |     52,289 |      8,848 |      1,022 |
-| `iterator`            |     42,036 |     10,362 |      1,103 |
-| `forEach`             |     77,711 |     10,493 |        968 |
-| `merge.set.random`    |     35,316 |     64,534 |     56,443 |
-| `merge.delete.random` |     49,495 |     51,018 |     35,142 |
-| `merge.set.new`       |    156,740 |    290,539 |    260,880 |
-| `merge.identical`     |    449,920 |  1,131,742 |  1,107,214 |
-| `snapshot`            |    562,421 |  1,693,816 |  1,712,923 |
-| `toJSON`              |  1,881,007 |  3,059,154 |  4,481,062 |
-| `construct`           |     61,677 |     11,430 |        676 |
-| `destroy`             |  1,167,444 |  1,040,378 |    149,882 |
-| `addEventListener`    |  4,041,075 |  6,088,581 |  5,970,394 |
-| `removeEventListener` | 11,622,838 | 11,476,169 | 12,819,136 |
-| `dispatchEvent`       |  2,638,984 |  2,719,239 |  2,729,382 |
-| `toStringTag`         | 57,997,530 | 67,795,200 | 67,317,727 |
-| `inspect.node`        |      5,692 |      6,542 |        459 |
-| `inspect.deno`        |     61,928 |      6,368 |        482 |
+| Operation             |         100 |       1,000 |      10,000 |
+| --------------------- | ----------: | ----------: | ----------: |
+| `get.random`          |  33,352,766 |  26,800,796 |  21,148,694 |
+| `has.random`          |  52,961,611 |  36,402,654 |  28,689,026 |
+| `set.random`          |     642,496 |     479,808 |     453,586 |
+| `delete.random`       |     637,714 |     503,527 |     475,884 |
+| `apply.set.random`    |     543,571 |     432,901 |     362,620 |
+| `apply.delete.random` |     541,172 |     435,900 |     366,294 |
+| `set.new`             |   1,192,807 |     776,695 |     601,756 |
+| `apply.set.new`       |   1,146,930 |     803,856 |     564,611 |
+| `size`                | 125,392,973 | 130,704,293 | 114,469,828 |
+| `clear`               |     321,534 |      76,335 |       8,177 |
+| `keys`                |   5,301,764 |     538,766 |      51,900 |
+| `values`              |     192,912 |      18,897 |       1,724 |
+| `entries`             |     151,120 |      15,974 |       1,429 |
+| `iterator`            |     159,559 |      17,409 |       1,432 |
+| `forEach`             |     179,953 |      17,393 |       1,683 |
+| `merge.set.random`    |     162,121 |     148,651 |     131,018 |
+| `merge.delete.random` |     165,646 |     151,969 |     120,501 |
+| `merge.set.new`       |     653,776 |     552,903 |     470,769 |
+| `merge.identical`     |   2,288,067 |   2,351,600 |   2,412,547 |
+| `snapshot`            |   2,929,647 |   3,182,918 |   3,187,690 |
+| `toJSON`              |   9,940,859 |  10,400,352 |  10,890,655 |
+| `construct`           |     224,860 |      27,283 |       1,309 |
+| `destroy`             |   3,300,083 |   3,196,818 |     871,096 |
+| `addEventListener`    |  10,972,471 |  11,200,592 |   9,018,118 |
+| `removeEventListener` |  24,687,753 |  26,069,488 |  23,277,353 |
+| `dispatchEvent`       |   4,450,243 |   4,532,995 |   4,020,358 |
+| `toStringTag`         | 128,102,719 | 124,628,177 | 112,276,239 |
+| `inspect.node`        |     127,774 |      11,942 |         795 |
+| `inspect.deno`        |     131,683 |      11,562 |         821 |
 
 <!-- END GENERATED:map:benchmarks -->
 
@@ -197,34 +191,28 @@ Node v24.16.0 · win32 x64 · Intel(R) Core(TM) i5-10210U CPU @ 1.60GHz · Seque
 
 <!-- BEGIN GENERATED:map:tests -->
 
-2026-11-09 · **passed**
-
 | Test suite  | Passed | Failed | Skipped |
 | ----------- | -----: | -----: | ------: |
-| compability |      8 |      1 |       0 |
-| convergence |     16 |      0 |       0 |
-| equivelance |    132 |      0 |       0 |
-| events      |     61 |      0 |       0 |
-| integration |      4 |      2 |       0 |
-| unit        |     95 |      0 |       0 |
-
-| Statements | Branches | Functions | Lines |
-| ---------: | -------: | --------: | ----: |
-|       100% |     100% |      100% |  100% |
+| compability |      — |      — |       — |
+| convergence |      — |      — |       — |
+| equivelance |      — |      — |       — |
+| events      |      — |      — |       — |
+| integration |      — |      — |       — |
+| unit        |      — |      — |       — |
 
 #### Compatibility
 
-| Runtime      | Version       | Status |
-| ------------ | ------------- | ------ |
-| Node.js ESM  | v24.16.0      | passed |
-| Node.js CJS  | v24.16.0      | passed |
-| Bun          | 1.4.4         | passed |
-| Deno         | 2.9.6         | passed |
-| Edge Runtime | 4.0.1         | passed |
-| workerd      | 1.20261109.1  | passed |
-| Chromium     | 158.0.8127.18 | passed |
-| Firefox      | —             | failed |
-| WebKit       | 27.2          | passed |
+| Runtime      | Version | Status  |
+| ------------ | ------- | ------- |
+| Node.js ESM  | —       | not run |
+| Node.js CJS  | —       | not run |
+| Bun          | —       | not run |
+| Deno         | —       | not run |
+| Edge Runtime | —       | not run |
+| workerd      | —       | not run |
+| Chromium     | —       | not run |
+| Firefox      | —       | not run |
+| WebKit       | —       | not run |
 
 <!-- END GENERATED:map:tests -->
 
@@ -254,30 +242,30 @@ Sequencer errors are propagated unchanged.
 
 <!-- BEGIN GENERATED:text:benchmarks -->
 
-2026-11-09 · ops/sec
+2026-11-14 · ops/sec
 
-Node v24.16.0 · win32 x64 · Intel(R) Core(TM) i5-10210U CPU @ 1.60GHz · Sequencer 1.1.1
+Node v24.22.1 · win32 x64 · 11th Gen Intel(R) Core(TM) i7-1185G7 @ 3.00GHz · Sequencer 1.2.6
 
 | Operation              |        100 |      1,000 |     10,000 |
 | ---------------------- | ---------: | ---------: | ---------: |
-| `length`               | 35,574,711 | 52,361,891 | 56,766,581 |
-| `toString`             |    674,408 |     85,870 |      8,564 |
-| `iterator`             |     93,874 |     16,736 |      1,751 |
-| `insert.head`          |    481,323 |    978,980 |    707,760 |
-| `insert.middle`        |    701,681 |    936,238 |    963,094 |
-| `insert.tail`          |    825,986 |  1,158,841 |    650,390 |
-| `insert.random`        |    809,767 |    920,316 |    834,366 |
-| `remove.random`        |    677,174 |    669,399 |    527,320 |
-| `replace.random`       |    478,545 |    490,337 |    358,303 |
-| `apply.insert.random`  |    861,215 |    805,659 |    844,471 |
-| `apply.remove.random`  |    520,426 |    410,439 |    282,954 |
-| `apply.replace.random` |    393,058 |    314,509 |    231,755 |
-| `merge.insert.random`  |     98,958 |     58,367 |     10,882 |
-| `merge.remove.random`  |    100,748 |     76,629 |     39,499 |
-| `merge.replace.random` |     57,774 |     36,601 |      9,856 |
-| `merge.identical`      |    698,045 |    349,723 |     52,795 |
-| `snapshot`             |    610,650 |    109,992 |     10,364 |
-| `toJSON`               |    868,205 |    116,103 |      8,347 |
+| `length`               | 99,017,105 | 85,384,746 | 82,441,963 |
+| `toString`             |  1,420,979 |    149,641 |     16,807 |
+| `iterator`             |    218,086 |     23,624 |      2,194 |
+| `insert.head`          |  1,232,134 |  1,250,306 |  1,205,574 |
+| `insert.middle`        |  1,248,595 |  1,240,700 |  1,265,953 |
+| `insert.tail`          |  1,350,798 |  1,428,122 |  1,414,812 |
+| `insert.random`        |    973,572 |  1,125,050 |  1,157,439 |
+| `remove.random`        |  1,067,818 |  1,026,492 |    815,437 |
+| `replace.random`       |    636,444 |    728,613 |    683,628 |
+| `apply.insert.random`  |  1,291,084 |  1,295,605 |  1,239,938 |
+| `apply.remove.random`  |    838,283 |    825,575 |    696,573 |
+| `apply.replace.random` |    611,638 |    595,300 |    567,022 |
+| `merge.insert.random`  |    166,379 |    104,998 |     19,988 |
+| `merge.remove.random`  |    179,535 |    155,469 |     76,373 |
+| `merge.replace.random` |     95,362 |     58,579 |     18,003 |
+| `merge.identical`      |  1,121,308 |    667,538 |    129,929 |
+| `snapshot`             |  1,092,745 |    182,241 |     18,696 |
+| `toJSON`               |  1,609,037 |    204,621 |     20,561 |
 
 <!-- END GENERATED:text:benchmarks -->
 
@@ -285,34 +273,28 @@ Node v24.16.0 · win32 x64 · Intel(R) Core(TM) i5-10210U CPU @ 1.60GHz · Seque
 
 <!-- BEGIN GENERATED:text:tests -->
 
-2026-11-09 · **passed**
-
 | Test suite  | Passed | Failed | Skipped |
 | ----------- | -----: | -----: | ------: |
-| compability |      8 |      1 |       0 |
-| convergence |      8 |      0 |       0 |
-| equivelance |     66 |      0 |       0 |
-| events      |     34 |      0 |       0 |
-| integration |      4 |      2 |       0 |
-| unit        |     59 |      0 |       0 |
-
-| Statements | Branches | Functions |  Lines |
-| ---------: | -------: | --------: | -----: |
-|     98.64% |     100% |    95.45% | 98.50% |
+| compability |      — |      — |       — |
+| convergence |      — |      — |       — |
+| equivelance |      — |      — |       — |
+| events      |      — |      — |       — |
+| integration |      — |      — |       — |
+| unit        |      — |      — |       — |
 
 #### Compatibility
 
-| Runtime      | Version       | Status |
-| ------------ | ------------- | ------ |
-| Node.js ESM  | v24.16.0      | passed |
-| Node.js CJS  | v24.16.0      | passed |
-| Bun          | 1.4.4         | passed |
-| Deno         | 2.9.6         | passed |
-| Edge Runtime | 4.0.1         | passed |
-| workerd      | 1.20261109.1  | passed |
-| Chromium     | 158.0.8127.18 | passed |
-| Firefox      | —             | failed |
-| WebKit       | 27.2          | passed |
+| Runtime      | Version | Status  |
+| ------------ | ------- | ------- |
+| Node.js ESM  | —       | not run |
+| Node.js CJS  | —       | not run |
+| Bun          | —       | not run |
+| Deno         | —       | not run |
+| Edge Runtime | —       | not run |
+| workerd      | —       | not run |
+| Chromium     | —       | not run |
+| Firefox      | —       | not run |
+| WebKit       | —       | not run |
 
 <!-- END GENERATED:text:tests -->
 
