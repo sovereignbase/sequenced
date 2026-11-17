@@ -1,4 +1,5 @@
 import type { Gossip, Sequence } from '@sovereignbase/sequencer'
+import type {CanonicalData} from "../../.types/type.js"
 
 /**
  * NOTE FOR AGENTS: DISTINGUISH BETWEEN DOCUMENTATION VALUABLE TO LIBRARY CONSUMERS
@@ -7,7 +8,7 @@ import type { Gossip, Sequence } from '@sovereignbase/sequencer'
  */
 
 /** A map key, numeric keys must be finite at runtime, and negative zero becomes zero. */
-export type SerializableKey = string | number
+export type SerializableKey = CanonicalData
 
 /** A key/value pair stored in the replicated sequence. */
 export type SequencedMapEntry<K extends SerializableKey, V> = readonly [K, V]

@@ -1,5 +1,5 @@
 import { Bytes } from '@sovereignbase/bytecodec'
-import { unknownError } from '../errors/unknown.js'
+import { unknownError } from '../.errors/unknown.js'
 
 /**
  * Reads an actor identifier from the first four decoded bytes in little-endian order.

@@ -1,6 +1,6 @@
-import { unknownError } from '../errors/unknown.js'
+import { unknownError } from '../.errors/unknown.js'
 import { Projection } from '@sovereignbase/sequencer'
-import { SequencedError } from '../errors/class.js'
+import { SequencedError } from '../.errors/class.js'
 import type { Result } from '@sovereignbase/sequencer'
 import type {
   SequencedArraySnapshot,

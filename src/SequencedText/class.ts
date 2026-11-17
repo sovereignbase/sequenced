@@ -1,4 +1,4 @@
-import { unknownError } from '../errors/unknown.js'
+import { unknownError } from '../.errors/unknown.js'
 import { Projection } from '@sovereignbase/sequencer'
 
 import type {
