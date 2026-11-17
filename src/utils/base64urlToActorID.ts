@@ -1,6 +1,5 @@
 import { Bytes } from '@sovereignbase/bytecodec'
-import { unknownError } from '../.errors/unknown.js'
-
+import { unknownError } from '../.errors/class.js'
 /**
  * Reads an actor identifier from the first four decoded bytes in little-endian order.
  * @param base64url The encoded bytes; at least four decoded bytes are required.
