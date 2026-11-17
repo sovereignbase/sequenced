@@ -2,7 +2,7 @@
   "type": "module",
   "license": "Apache-2.0",
   "name": "@sovereignbase/sequenced",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Replicated Array, Map and Text implementations built on Sequencer",
   "keywords": [
     "crdt",
@@ -87,7 +87,8 @@
   "homepage": "https://sovereignbase.dev/sequenced",
   "dependencies": {
     "@sovereignbase/bytecodec": "^2.0.1",
-    "@sovereignbase/sequencer": "1.2.6"
+    "@sovereignbase/sequencer": "1.2.6",
+    "@sovereignbase/utils": "^2.7.0"
   },
   "allowScripts": {
     "bun@1.4.4": true,

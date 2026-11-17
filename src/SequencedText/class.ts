@@ -1,11 +1,10 @@
-import { unknownError } from '../.errors/unknown.js'
 import { Projection } from '@sovereignbase/sequencer'
-
 import type {
   SequencedTextSnapshot,
   SequencedTextEventMap,
   SequencedTextEventListenerFor,
 } from './types/type.js'
+import { unknownError } from '../.errors/class.js'
 
 /**
  * NOTE FOR AGENTS: DISTINGUISH BETWEEN DOCUMENTATION VALUABLE TO LIBRARY CONSUMERS
@@ -21,9 +20,9 @@ import type {
  */
 export class SequencedText {
   /** The sequencer projection that owns the document's UTF-16 content. */
-  declare private readonly projection: Projection<string>
+  private readonly projection: Projection<string>
   /** The event target, allocated when the first listener is registered. */
-  declare private eventTarget: EventTarget
+  private eventTarget?: EventTarget
 
   /**
    *  ██████╗██████╗ ██╗   ██╗██████╗

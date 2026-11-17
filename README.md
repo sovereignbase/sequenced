@@ -1,31 +1,37 @@
 [![npm version](https://img.shields.io/npm/v/@sovereignbase/sequenced)](https://www.npmjs.com/package/@sovereignbase/sequenced)
+
 [![JSR](https://jsr.io/badges/@sovereignbase/sequenced)](https://jsr.io/@sovereignbase/sequenced)
+
 [![CI](https://github.com/sovereignbase/sequenced/actions/workflows/ci.yaml/badge.svg?branch=master)](https://github.com/sovereignbase/sequenced/actions/workflows/ci.yaml)
+
 [![codecov](https://codecov.io/gh/sovereignbase/sequenced/branch/master/graph/badge.svg)](https://codecov.io/gh/sovereignbase/sequenced)
+
 [![license](https://img.shields.io/npm/l/@sovereignbase/sequenced)](LICENSE)
 
 # Sequenced
 
 Work in progress...
 
-Replicated Array, Map, Register and Text implementations built on [Sequencer](https://github.com/sovereignbase/sequencer).
+Conflict-free replicated data types built on [Sequencer](https://github.com/sovereignbase/sequencer).
 
 ## Contents
 
 - [Array](#array)
   - [Usage](#usage) · [Errors](#errors) · [Benchmarks](#benchmarks) · [Tests](#tests)
-- [Map](#map)
+- [Catalog](#catalog)
   - [Usage](#usage-1) · [Errors](#errors-1) · [Benchmarks](#benchmarks-1) · [Tests](#tests-1)
+- [Map](#map)
+  - [Usage](#usage-2) · [Errors](#errors-2) · [Benchmarks](#benchmarks-2) · [Tests](#tests-2)
 - [Register](#register)
-  - [Usage](#usage-2) · [Errors](#errors-2) · [Benchmarks](#benchmarks-2) · [Tests](#tests-2)
+  - [Usage](#usage-3) · [Errors](#errors-3) · [Benchmarks](#benchmarks-3) · [Tests](#tests-3)
 - [Set](#set)
-  - [Usage](#usage-2) · [Errors](#errors-2) · [Benchmarks](#benchmarks-2) · [Tests](#tests-2)
+  - [Usage](#usage-4) · [Errors](#errors-4) · [Benchmarks](#benchmarks-4) · [Tests](#tests-4)
 - [Struct](#struct)
-  - [Usage](#usage-2) · [Errors](#errors-2) · [Benchmarks](#benchmarks-2) · [Tests](#tests-2)
+  - [Usage](#usage-5) · [Errors](#errors-5) · [Benchmarks](#benchmarks-5) · [Tests](#tests-5)
 - [Text](#text)
-  - [Usage](#usage-2) · [Errors](#errors-2) · [Benchmarks](#benchmarks-2) · [Tests](#tests-2)
+  - [Usage](#usage-6) · [Errors](#errors-6) · [Benchmarks](#benchmarks-6) · [Tests](#tests-6)
 - [Tuple](#tuple)
-  - [Usage](#usage-2) · [Errors](#errors-2) · [Benchmarks](#benchmarks-2) · [Tests](#tests-2)
+  - [Usage](#usage-7) · [Errors](#errors-7) · [Benchmarks](#benchmarks-7) · [Tests](#tests-7)
 - [License](#license)
 
 ## Array
@@ -37,11 +43,15 @@ import { Sequenced } from '@sovereignbase/sequenced'
 
 const alice = new Sequenced.Array<string>(1)
 const bob = new Sequenced.Array<string>(2)
+
 alice.addEventListener('delta', (event) => bob.apply(event.detail))
 bob.addEventListener('delta', (event) => alice.apply(event.detail))
+
 alice.push('hello', 'world')
 alice.set(1, 'there')
+
 console.log([...bob]) // ['hello', 'there']
+
 alice.destroy()
 bob.destroy()
 ```
@@ -123,6 +133,24 @@ Node v24.22.1 · win32 x64 · 11th Gen Intel(R) Core(TM) i7-1185G7 @ 3.00GHz · 
 
 <!-- END GENERATED:array:tests -->
 
+## Catalog
+
+### Usage
+
+#### Errors
+
+### Benchmarks
+
+<!-- BEGIN GENERATED:catalog:benchmarks -->
+
+<!-- END GENERATED:catalog:benchmarks -->
+
+### Tests
+
+<!-- BEGIN GENERATED:catalog:tests -->
+
+<!-- END GENERATED:catalog:tests -->
+
 ## Map
 
 ### Usage
@@ -132,9 +160,12 @@ import { Sequenced } from '@sovereignbase/sequenced'
 
 const map = new Sequenced.Map<string | number, number>(1)
 map.set('apples', 3).set(1, 10)
+
 console.log(map.get('apples')) // 3
 console.log([...map]) // [['apples', 3], [1, 10]]
+
 map.delete(1)
+
 const snapshot = map.toJSON()
 map.destroy()
 ```
@@ -220,6 +251,90 @@ Node v24.22.1 · win32 x64 · 11th Gen Intel(R) Core(TM) i7-1185G7 @ 3.00GHz · 
 
 <!-- END GENERATED:map:tests -->
 
+## Register
+
+### Usage
+
+#### Errors
+
+### Benchmarks
+
+<!-- BEGIN GENERATED:register:benchmarks -->
+
+<!-- END GENERATED:register:benchmarks -->
+
+### Tests
+
+<!-- BEGIN GENERATED:register:tests -->
+
+<!-- END GENERATED:register:tests -->
+
+## Set
+
+### Usage
+
+```typescript
+import { Sequenced } from '@sovereignbase/sequenced'
+
+const alice = new Sequenced.Set<string>(1)
+const bob = new Sequenced.Set<string>(2)
+
+alice.addEventListener('delta', (event) => bob.apply(event.detail))
+bob.addEventListener('delta', (event) => alice.apply(event.detail))
+
+alice.add('apple')
+alice.add('banana')
+alice.add('apple')
+
+console.log([...bob]) // ['apple', 'banana']
+console.log(bob.has('apple')) // true
+
+alice.delete('apple')
+console.log([...bob]) // ['banana']
+
+alice.destroy()
+bob.destroy()
+```
+
+Values can be strings or numbers. Each value occurs only once in the Set.
+
+#### Errors
+
+| Code                | Meaning                                   |
+| ------------------- | ----------------------------------------- |
+| `INVALID_SET_VALUE` | A value is neither a string nor a number. |
+| `INVALID_CALLBACK`  | The `forEach` callback is not callable.   |
+
+### Benchmarks
+
+<!-- BEGIN GENERATED:set:benchmarks -->
+
+<!-- END GENERATED:set:benchmarks -->
+
+### Tests
+
+<!-- BEGIN GENERATED:set:tests -->
+
+<!-- END GENERATED:set:tests -->
+
+## Struct
+
+### Usage
+
+#### Errors
+
+### Benchmarks
+
+<!-- BEGIN GENERATED:struct:benchmarks -->
+
+<!-- END GENERATED:struct:benchmarks -->
+
+### Tests
+
+<!-- BEGIN GENERATED:struct:tests -->
+
+<!-- END GENERATED:struct:tests -->
+
 ## Text
 
 ### Usage
@@ -231,8 +346,11 @@ const text = new Sequenced.Text(1)
 text.insert(0, 'Hello world')
 text.replace(6, 11, 'there')
 text.insert(text.length, '!')
+
 console.log(text.toString()) // 'Hello there!'
+
 text.remove(5, text.length)
+
 console.log(text.toString()) // 'Hello'
 ```
 
@@ -302,6 +420,26 @@ Node v24.22.1 · win32 x64 · 11th Gen Intel(R) Core(TM) i7-1185G7 @ 3.00GHz · 
 
 <!-- END GENERATED:text:tests -->
 
+## Tuple
+
+### Usage
+
+#### Errors
+
+### Benchmarks
+
+<!-- BEGIN GENERATED:tuple:benchmarks -->
+
+<!-- END GENERATED:tuple:benchmarks -->
+
+### Tests
+
+<!-- BEGIN GENERATED:tuple:tests -->
+
+<!-- END GENERATED:tuple:tests -->
+
 ## License
 
-Apache-2.0
+Licensed under the Apache License, Version 2.0.
+
+Copyright © 2026 Sovereignbase.

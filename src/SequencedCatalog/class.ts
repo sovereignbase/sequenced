@@ -1,11 +1,10 @@
+import { unknownError } from '../.errors/class.js'
 import { SequencedArray } from '../SequencedArray/class.js'
 import type {
   SequencedArrayEventMap,
   SequencedArrayEventListener,
   SequencedArraySnapshot,
 } from '../SequencedArray/types/type.js'
-import { unknownError } from '../.errors/unknown.js'
-
 /**
  * A replicated catalog unique by configured key, sorted binary search.
  *

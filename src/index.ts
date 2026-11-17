@@ -1,4 +1,5 @@
 import { SequencedArray } from './SequencedArray/class.js'
+import { SequencedCatalog } from './SequencedCatalog/class.js'
 import { SequencedMap } from './SequencedMap/class.js'
 import { SequencedRegister } from './SequencedRegister/class.js'
 import { SequencedSet } from './SequencedSet/class.js'
@@ -8,6 +9,7 @@ import { SequencedTuple } from './SequencedTuple/class.js'
 
 export type {
   SequencedArray,
+  SequencedCatalog,
   SequencedMap,
   SequencedRegister,
   SequencedSet,
@@ -18,8 +20,10 @@ export type {
 
 export { SequencedError, type SequencedErrorCode } from './.errors/class.js'
 
-export type * from './SequencedMap/types/type.js'
+export type * from './.types/type.js'
 export type * from './SequencedArray/types/type.js'
+export type * from './SequencedCatalog/types/type.js'
+export type * from './SequencedMap/types/type.js'
 export type * from './SequencedRegister/types/type.js'
 export type * from './SequencedSet/types/type.js'
 export type * from './SequencedStruct/types/type.js'
@@ -30,6 +34,8 @@ export type * from './SequencedTuple/types/type.js'
 export class Sequenced {
   /** Creates a dense array with Array instance methods and replication events. */
   static readonly Array = SequencedArray
+  /** */
+  static readonly Catalog = SequencedCatalog
   /** Creates a map whose keys are strings or finite numbers. */
   static readonly Map = SequencedMap
   /** */

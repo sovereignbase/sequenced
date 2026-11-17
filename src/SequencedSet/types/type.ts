@@ -1,8 +1,8 @@
 import type { Gossip, Sequence } from '@sovereignbase/sequencer'
-import { CanonicalData } from '../../.types/type.js'
+import type { CanonicalData } from '../../.types/type.js'
 
 /**
- * Maps text event names to their `CustomEvent.detail` payloads.
+ * Maps set event names to their `CustomEvent.detail` payloads.
  */
 export type SequencedSetEventMap = {
   /**
@@ -11,20 +11,18 @@ export type SequencedSetEventMap = {
   snapshot: Sequence<CanonicalData>
 
   /**
-   * Dispatched with ordered edits to the visible text. The list may be empty
-   * when applied or merged state leaves the visible text unchanged.
+   * The signed change in the number of visible values.
    */
   change: number
 
   /**
-   * Dispatched with gossip produced by a local edit or as a reply to applied
-   * or merged state. Inserted content is represented as UTF-16 code units.
+   * Gossip produced by a local edit or as a reply to applied or merged state.
    */
   delta: Gossip<CanonicalData>
 }
 
 /**
- * A callback or listener object for a text event.
+ * A callback or listener object for a set event.
  *
  * @typeParam K The event name that determines the event's `detail` type.
  */
@@ -33,7 +31,7 @@ export type SequencedSetEventListener<K extends keyof SequencedSetEventMap> =
   | { handleEvent(event: CustomEvent<SequencedSetEventMap[K]>): void }
 
 /**
- * Resolves a document event name to its typed listener, or uses a DOM event
+ * Resolves a set event name to its typed listener, or uses a DOM event
  * listener for an unrecognized event name.
  *
  * @typeParam K The event name to resolve.

@@ -1,6 +1,5 @@
-import { unknownError } from '../.errors/unknown.js'
 import { Projection } from '@sovereignbase/sequencer'
-import { SequencedError } from '../.errors/class.js'
+import { SequencedError, unknownError } from '../.errors/class.js'
 import type { Change, Result } from '@sovereignbase/sequencer'
 import type {
   SerializableKey,

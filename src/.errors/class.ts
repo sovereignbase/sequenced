@@ -12,6 +12,8 @@ export type SequencedErrorCode =
   | 'INVALID_MAP_KEY'
   /** A map entry is not a two-element key/value pair. */
   | 'INVALID_MAP_ENTRY'
+  /** A set value is neither a string nor a number. */
+  | 'INVALID_SET_VALUE'
   /** An unexpected failure was wrapped with its original cause. */
   | 'UNKNOWN_ERROR'
 
@@ -36,4 +38,19 @@ export class SequencedError extends Error {
     this.code = code
     this.name = 'SequencedError'
   }
+}
+
+/**
+ * Preserves an existing library error or wraps an unexpected failure once.
+ * @param cause The value thrown by the failed operation.
+ * @param operation The operation name to include in the error message.
+ * @returns The original library error, or an `UNKNOWN_ERROR` retaining `cause`.
+ */
+export function unknownError(
+  cause: unknown,
+  operation: string
+): SequencedError {
+  return cause instanceof SequencedError
+    ? cause
+    : new SequencedError('UNKNOWN_ERROR', `${operation} failed.`, { cause })
 }

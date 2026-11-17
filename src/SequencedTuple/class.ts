@@ -5,8 +5,7 @@ import type {
   SequencedTupleSnapshot,
   TupleIndex,
 } from './types/type.js'
-import { unknownError } from '../.errors/unknown.js'
-
+import { unknownError } from '../.errors/class.js'
 /**
  * NOTE FOR AGENTS: DISTINGUISH BETWEEN DOCUMENTATION VALUABLE TO LIBRARY CONSUMERS
  * (PUBLIC API) AND DOCUMENTATION VALUABLE TO LIBRARY DEVELOPERS...

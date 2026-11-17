@@ -1,11 +1,10 @@
+import { unknownError } from '../.errors/class.js'
 import { SequencedMap } from '../SequencedMap/class.js'
 import type {
   SequencedMapEventMap,
   SequencedMapEventListener,
   SequencedMapSnapshot,
 } from '../SequencedMap/types/type.js'
-import { unknownError } from '../.errors/unknown.js'
-
 type StructKey<T> = keyof T & string
 type StructValue<T extends Record<string, unknown>> = T[StructKey<T>]
 
