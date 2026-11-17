@@ -1,5 +1,5 @@
 import type { Gossip, Sequence } from '@sovereignbase/sequencer'
-import type {CanonicalData} from "../../.types/type.js"
+import type { CanonicalData } from '../../.types/type.js'
 
 /**
  * NOTE FOR AGENTS: DISTINGUISH BETWEEN DOCUMENTATION VALUABLE TO LIBRARY CONSUMERS
