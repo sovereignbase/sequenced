@@ -18,20 +18,18 @@ Conflict-free replicated data types built on [Sequencer](https://github.com/sove
 
 - [Array](#array)
   - [Usage](#usage) · [Errors](#errors) · [Benchmarks](#benchmarks) · [Tests](#tests)
-- [Catalog](#catalog)
-  - [Usage](#usage-1) · [Errors](#errors-1) · [Benchmarks](#benchmarks-1) · [Tests](#tests-1)
 - [Map](#map)
-  - [Usage](#usage-2) · [Errors](#errors-2) · [Benchmarks](#benchmarks-2) · [Tests](#tests-2)
+  - [Usage](#usage-1) · [Errors](#errors-1) · [Benchmarks](#benchmarks-1) · [Tests](#tests-1)
 - [Register](#register)
-  - [Usage](#usage-3) · [Errors](#errors-3) · [Benchmarks](#benchmarks-3) · [Tests](#tests-3)
+  - [Usage](#usage-2) · [Errors](#errors-2) · [Benchmarks](#benchmarks-2) · [Tests](#tests-2)
 - [Set](#set)
-  - [Usage](#usage-4) · [Errors](#errors-4) · [Benchmarks](#benchmarks-4) · [Tests](#tests-4)
+  - [Usage](#usage-3) · [Errors](#errors-3) · [Benchmarks](#benchmarks-3) · [Tests](#tests-3)
 - [Struct](#struct)
-  - [Usage](#usage-5) · [Errors](#errors-5) · [Benchmarks](#benchmarks-5) · [Tests](#tests-5)
+  - [Usage](#usage-4) · [Errors](#errors-4) · [Benchmarks](#benchmarks-4) · [Tests](#tests-4)
 - [Text](#text)
-  - [Usage](#usage-6) · [Errors](#errors-6) · [Benchmarks](#benchmarks-6) · [Tests](#tests-6)
+  - [Usage](#usage-5) · [Errors](#errors-5) · [Benchmarks](#benchmarks-5) · [Tests](#tests-5)
 - [Tuple](#tuple)
-  - [Usage](#usage-7) · [Errors](#errors-7) · [Benchmarks](#benchmarks-7) · [Tests](#tests-7)
+  - [Usage](#usage-6) · [Errors](#errors-6) · [Benchmarks](#benchmarks-6) · [Tests](#tests-6)
 - [License](#license)
 
 ## Array
@@ -132,24 +130,6 @@ Node v24.22.1 · win32 x64 · 11th Gen Intel(R) Core(TM) i7-1185G7 @ 3.00GHz · 
 | WebKit       | —       | not run |
 
 <!-- END GENERATED:array:tests -->
-
-## Catalog
-
-### Usage
-
-#### Errors
-
-### Benchmarks
-
-<!-- BEGIN GENERATED:catalog:benchmarks -->
-
-<!-- END GENERATED:catalog:benchmarks -->
-
-### Tests
-
-<!-- BEGIN GENERATED:catalog:tests -->
-
-<!-- END GENERATED:catalog:tests -->
 
 ## Map
 
