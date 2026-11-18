@@ -1,11 +1,14 @@
-import { Projection } from '@sovereignbase/sequencer'
 import type {
-  SequencedTupleEventMap,
-  SequencedTupleEventListenerFor,
-  SequencedTupleSnapshot,
   TupleIndex,
+  SequencedTupleEventMap,
+  SequencedTupleSnapshot,
+  SequencedTupleEventListenerFor,
 } from './types/type.js'
-import { unknownError } from '../.errors/class.js'
+import { Projection } from '@sovereignbase/sequencer'
+import { SequencedError, unknownError } from '../.errors/class.js'
+
+export type * from './types/type.js'
+
 /**
  * NOTE FOR AGENTS: DISTINGUISH BETWEEN DOCUMENTATION VALUABLE TO LIBRARY CONSUMERS
  * (PUBLIC API) AND DOCUMENTATION VALUABLE TO LIBRARY DEVELOPERS...

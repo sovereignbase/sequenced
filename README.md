@@ -23,8 +23,6 @@ Conflict-free replicated data types built on [Sequencer](https://github.com/sove
 - [Register](#register)
   - [Usage](#usage-2) · [Errors](#errors-2) · [Benchmarks](#benchmarks-2) · [Tests](#tests-2)
 - [Set](#set)
-  - [Usage](#usage-3) · [Errors](#errors-3) · [Benchmarks](#benchmarks-3) · [Tests](#tests-3)
-- [Struct](#struct)
   - [Usage](#usage-4) · [Errors](#errors-4) · [Benchmarks](#benchmarks-4) · [Tests](#tests-4)
 - [Text](#text)
   - [Usage](#usage-5) · [Errors](#errors-5) · [Benchmarks](#benchmarks-5) · [Tests](#tests-5)
@@ -296,24 +294,6 @@ Values can be strings or numbers. Each value occurs only once in the Set.
 <!-- BEGIN GENERATED:set:tests -->
 
 <!-- END GENERATED:set:tests -->
-
-## Struct
-
-### Usage
-
-#### Errors
-
-### Benchmarks
-
-<!-- BEGIN GENERATED:struct:benchmarks -->
-
-<!-- END GENERATED:struct:benchmarks -->
-
-### Tests
-
-<!-- BEGIN GENERATED:struct:tests -->
-
-<!-- END GENERATED:struct:tests -->
 
 ## Text
 

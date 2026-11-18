@@ -41,14 +41,21 @@ export class SequencedSet<V extends CanonicalData> implements Iterable<V> {
    * @param trustedSnapshot Optional replication state to restore.
    * @throws {SequencedError} If the underlying projection cannot be created.
    */
-  constructor(actorID: number, trustedSnapshot?: unknown) {
+  constructor(
+    actorID: number,
+    public readonly regex?: RegExp,
+    trustedSnapshot?: unknown
+  ) {
     try {
       this.set = new Set<V>()
       this.projection = new Projection<V>(actorID, trustedSnapshot)
       try {
         for (let i = this.projection.length() - 1; i >= 0; i--) {
           const value = this.projection.value(i)
-          if (typeof value !== 'string' && typeof value !== 'number')
+          if (
+            (typeof value !== 'string' && typeof value !== 'number') ||
+            (regex && !regex.test(String(value)))
+          )
             void this.projection.remove(i, i)
           else if (this.set.has(value)) continue
           else void this.set.add(value)
@@ -86,6 +93,13 @@ export class SequencedSet<V extends CanonicalData> implements Iterable<V> {
           'INVALID_SET_VALUE',
           'Set values must be strings or numbers'
         )
+
+      if (this.regex && !this.regex.test(String(value)))
+        throw new SequencedError(
+          'INVALID_SET_VALUE',
+          'Set values must be strings or numbers'
+        )
+
       if (this.set.has(value)) return
 
       const delta = this.projection.insert([value], this.projection.length())

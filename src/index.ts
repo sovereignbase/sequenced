@@ -2,30 +2,18 @@ import { SequencedArray } from './SequencedArray/class.js'
 import { SequencedMap } from './SequencedMap/class.js'
 import { SequencedRegister } from './SequencedRegister/class.js'
 import { SequencedSet } from './SequencedSet/class.js'
-import { SequencedStruct } from './SequencedStruct/class.js'
 import { SequencedText } from './SequencedText/class.js'
 import { SequencedTuple } from './SequencedTuple/class.js'
 
-export {
-  SequencedArray,
-  SequencedMap,
-  SequencedRegister,
-  SequencedSet,
-  SequencedStruct,
-  SequencedText,
-  SequencedTuple,
-}
+export type * from './.types/type.js'
+export type * from './SequencedArray/class.js'
+export type * from './SequencedMap/class.js'
+export type * from './SequencedRegister/class.js'
+export type * from './SequencedSet/class.js'
+export type * from './SequencedText/class.js'
+export type * from './SequencedTuple/class.js'
 
 export { SequencedError, type SequencedErrorCode } from './.errors/class.js'
-
-export type * from './.types/type.js'
-export type * from './SequencedArray/types/type.js'
-export type * from './SequencedMap/types/type.js'
-export type * from './SequencedRegister/types/type.js'
-export type * from './SequencedSet/types/type.js'
-export type * from './SequencedStruct/types/type.js'
-export type * from './SequencedText/types/type.js'
-export type * from './SequencedTuple/types/type.js'
 
 /** Provides constructors for replicated text, array and map collections. */
 export class Sequenced {
@@ -35,10 +23,8 @@ export class Sequenced {
   static readonly Map = SequencedMap
   /** */
   static readonly Register = SequencedRegister
-  /** */
+  /** Creates a set whose values are strings or finite numbers. */
   static readonly Set = SequencedSet
-  /** */
-  static readonly Struct = SequencedStruct
   /** Creates a text document whose positions are UTF-16 code unit offsets. */
   static readonly Text = SequencedText
   /** */
