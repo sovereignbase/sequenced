@@ -20,8 +20,6 @@ Conflict-free replicated data types built on [Sequencer](https://github.com/sove
   - [Usage](#usage) · [Errors](#errors) · [Benchmarks](#benchmarks) · [Tests](#tests)
 - [Map](#map)
   - [Usage](#usage-1) · [Errors](#errors-1) · [Benchmarks](#benchmarks-1) · [Tests](#tests-1)
-- [Register](#register)
-  - [Usage](#usage-2) · [Errors](#errors-2) · [Benchmarks](#benchmarks-2) · [Tests](#tests-2)
 - [Set](#set)
   - [Usage](#usage-4) · [Errors](#errors-4) · [Benchmarks](#benchmarks-4) · [Tests](#tests-4)
 - [Text](#text)
@@ -228,24 +226,6 @@ Node v24.22.1 · win32 x64 · 11th Gen Intel(R) Core(TM) i7-1185G7 @ 3.00GHz · 
 | WebKit       | —       | not run |
 
 <!-- END GENERATED:map:tests -->
-
-## Register
-
-### Usage
-
-#### Errors
-
-### Benchmarks
-
-<!-- BEGIN GENERATED:register:benchmarks -->
-
-<!-- END GENERATED:register:benchmarks -->
-
-### Tests
-
-<!-- BEGIN GENERATED:register:tests -->
-
-<!-- END GENERATED:register:tests -->
 
 ## Set
 
